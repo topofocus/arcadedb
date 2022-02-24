@@ -99,7 +99,8 @@ g =  p.green.on_black.detach
   puts ""
   puts " -----------------------------"
   puts " Display the database-structure"
-  puts g[" browse db: \"name\", extended: \"false|true\" "]
+  puts g[" puts browse db: \"name\", extended: \"false|true\" "]+ "browses the first database found, "
+  puts   "                                                      if called without parameters"
   puts " Display this helpscreen:  "+ g["help"]
   puts "-"*80
   puts ""
