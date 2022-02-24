@@ -52,11 +52,11 @@ $ Arcade::Api.query( <database>  ) { <query>  }
 
 
 `<query>` is  either a  string or   
-a hash  ` { :query => " ", `
-			`:language => one of :sql, :cypher, :gmelion: :neo4j ,` 
-			`:params =>   a  hash of parameters,` 
-			`:limit => a number ,`
-			`:serializer:  one of :graph, :record }`
+a hash  ` { :query => " ", `  
+			`:language => one of :sql, :cypher, :gmelion: :neo4j ,`   
+			`:params =>   a  hash of parameters,`   
+			`:limit => a number ,`  
+			`:serializer:  one of :graph, :record }`  
 
 
 
