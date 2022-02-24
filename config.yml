@@ -7,19 +7,19 @@
   :test:
     dbname: test
     user:  root
-    pass: topo1focus
+    pass: root
   :devel:
     dbname: devel
     user: root
-    pass: topo1focus
+    pass: root
   :production:
     dbname: DeFi
     user: root
-    pass: topo1focus
+    pass: root
 :admin:
   :host: localhost
   :port: 2480
   :user: root
-  :pass: topo1focus
+  :pass: root
 :logger: stdout           # 'file' or 'stdout'
 
