@@ -1,0 +1,115 @@
+#!/usr/bin/env ruby
+## loads the active-orient environment 
+## and starts an interactive shell
+##
+## Parameter:  
+##	       production (p)
+##	       development (d)  [default]
+##	       test (t)
+require 'bundler/setup'
+require 'terminal-table'
+require 'pastel'
+require 'arcade'
+#begin
+
+
+read_yml = -> (key) do
+  YAML::load_file( File.expand_path('../../config.yml',__FILE__) )[key]
+end
+
+def browse  db: Arcade::Api.databases.first , extended: false
+
+  headings = -> do
+       ar= ["","Name" , "Parents", "Type","Properties", 'Unique', 'Automatic'] 
+       extended ?  ar : ar - ['Properties']
+  end
+  rows = ->(r) do
+         ar=["Type", r['name'],r['parent_types'],r['type']," " ,  " "] 
+         !extended ? ar : ar + [""]
+  end
+  indizes = ->(i) do
+    if extended
+       ["Index",i['name'], "on #{i['typeName']}", i['type'],i['properties'], i['unique'],i['automatic'] ]
+    else
+       ["Index",i['name'], "", i['type'], i['unique'],i['automatic'] ]
+    end
+  end
+
+   list=  Arcade::Api.query(db){ "select from schema:types" }
+   if list.is_a? Array
+     Terminal::Table.new do |t|
+       add_additional_separator =false 
+       t.title = "Database: #{db}"
+       t.headings =  headings.call
+#       t.style = { :border => :markdown }
+       t.style = { border: :unicode_thick_edge }
+       list.each.with_index do |row,j|
+         t.add_separator if (add_additional_separator || !row['indexes'].empty? || !row['properties'].empty?) && j >0
+         add_additional_separator =false 
+         t.add_row  rows[row]
+         if  !row['indexes'].empty?
+           add_additional_separator = true
+           row['indexes'].each do |i|
+             t.add_row indizes[i]
+           end
+         end
+         if  !row['properties'].empty?
+           add_additional_separator = true
+           row['properties'].each do |p|
+             ar= ["Property",p['name'],"",p['type']," "," "] 
+             t.add_row !extended ? ar : ar + [""]
+           end
+         end
+       end
+     end
+   else
+     list
+   end
+end
+
+
+
+
+
+
+include Arcade
+
+def help
+p =  Pastel.new
+c =  p.bright_white.bold.on_yellow.detach
+g =  p.green.on_black.detach
+  puts "-"*80
+  puts " Namespace is: Arcade ! "
+  puts ""
+  puts c[" Available ArcadeDB-Statements                                                  "]
+  puts " ----------------------------"
+  puts g[" Api.databases "]+"                  # returns an Array of known databases "
+  puts g[" Api.create_database <a string> "] + " # returns true if successfull   "
+  puts g[" Api.drop_database   <a string> "]
+  puts ""
+  puts " Create and fetch documents and vertices"
+  puts " ----------------------------"
+  puts g[" Api.create_document <database>, <type>,    attribute: value   ,  ... "]
+  puts g[" Api.get_record <database>,  <rid>  "] +"#  returns a hash  "
+  puts ""
+  puts " submit queries"
+  puts " ----------------------------"
+  puts g[" Api.execute( <database> ) { <query> } "]+" #submit query as block"
+  puts g[" Api.query( <database> )   { <query> } "]
+  puts ""
+  puts " -----------------------------"
+  puts " Display the database-structure"
+  puts g[" browse db: \"name\", extended: \"false|true\" "]
+  puts " Display this helpscreen:  "+ g["help"]
+  puts "-"*80
+  puts ""
+end
+
+help
+#C =  Arcade::Database.new
+#D = MiniSql::Connection.get( C.connection, {}  )
+#require 'pry'
+require 'irb'
+ARGV.clear
+IRB.start(__FILE__)
+#Pry.start(__FILE__)

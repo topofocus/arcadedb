@@ -1,0 +1,106 @@
+#!/usr/bin/env ruby
+## loads the active-orient environment 
+## and starts an interactive shell
+##
+## Parameter:  
+##	       production (p)
+##	       development (d)  [default]
+##	       test (t)
+require 'bundler/setup'
+require 'yaml'
+require 'logger'
+require 'pastel'
+require 'terminal-table'
+require 'arcade'
+#begin
+
+module CoreExtensions
+
+  module Hash
+    module TablePresenter
+      def table_header
+          keys
+      end
+      def table_row
+          values
+      end
+    end
+  end
+
+  module Array
+    module TablePresenter
+      def as_table(&b)
+        the_table_header = first.table_header(&b)
+        the_table_rows = map &:table_row
+        Terminal::Table.new headings: the_table_header, rows: the_table_rows , style: { border: :unicode  }
+      end
+    end
+  end
+end
+
+Array.include CoreExtensions::Array::TablePresenter
+Hash.include CoreExtensions::Hash::TablePresenter
+
+
+read_yml = -> (key) do
+  YAML::load_file( File.expand_path('../../config.yml',__FILE__) )[key]
+end
+def list_types  db= Arcade::Api.databases.first 
+   list=  Arcade::Api.query(db){ "select from schema:types" }
+   puts "list: #{list}"
+   output = Terminal::Table.new do |t|
+     t.title = "database: #{db}"
+     t.headings =   ["Name" , "Parents", "Type", 'Properties','Unique', 'Automatic']
+     t.style = { :border => :markdown }
+     list.each do |row|
+       t.add_row [ row['name'],row['parent_types'],row['type'] ]
+       if  !row['indexes'].empty?
+         t.add_separator
+         row['indexes'].each do |i|
+           t.add_row [i['name'], i['typeName'], i['type'],i['properties'], i['unique'],i['automatic'] ]
+         end
+       end
+       if  !row['properties'].empty?
+         t.add_separator
+         row['properties'].each do |p|
+           t.add_row[p['name'],p['id'],p['type']]
+         end
+       end
+     end
+   end
+end
+
+
+
+
+
+include Arcade
+
+puts "-"*80
+puts "---   Namespace Arcade is included "
+puts ""
+puts " Available ArcadeDB-Statements"
+puts " ----------------------------"
+puts " Api.databases                   # returns an Array of known databases       "
+puts " Api.create_database <a string>  # returns true if succesfull   "
+puts " Api.drop_database   <a string>   "
+puts ""
+puts " Create and fetch documents and vertices"
+puts " ----------------------------"
+puts " Api.create_document <database>, <type>,    attribute: value   ,  ... "
+puts " Api.get_record <database>,  <rid>  #  returns a hash  "
+puts ""
+puts " submit queries"
+puts " ----------------------------"
+puts " Api.execute( <database> ) { <query> }  #submit query as block"
+puts " Api.query( <database> ) { <query> }    "
+puts ""
+puts "-"*80
+puts ""
+#C =  Arcade::Database.new
+#D = MiniSql::Connection.get( C.connection, {}  )
+#require 'pry'
+require 'irb'
+ARGV.clear
+IRB.start(__FILE__)
+#Pry.start(__FILE__)
