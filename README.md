@@ -59,6 +59,21 @@ a hash  ` { :query => " ", `
 			`:serializer:  one of :graph, :record }`  
 
 
+## Include in your own project
+
+Until a gem is released, first clone the project and set up your project environment
+```
+mkdir workspace && cd workspace
+git clone https://github.com/topofocus/arcadedb
+mkdir my-project && cd my-project
+bundle init
+cat "gem arcadedb, path='../arcadedb' " >> Gemfile
+bundle install && bundle upate
+cp ../arcadedb/config.yml .
+mkdir bin
+cp ../arcadedb/bin/console bin/
+````
+
 
 ## Contributing
 
