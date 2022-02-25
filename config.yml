@@ -13,13 +13,13 @@
     user: root
     pass: root
   :production:
-    dbname: DeFi
+    dbname: production
     user: root
     pass: root
 :admin:
   :host: localhost
   :port: 2480
   :user: root
-  :pass: root
-:logger: stdout           # 'file' or 'stdout'
+  :pass: root 
+logger: stdout           # 'file' or 'stdout'
 
