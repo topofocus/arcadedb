@@ -2,8 +2,11 @@ module Arcade
   class Config
     extend Dry::Configurable
   # central place to initialize constants
-
-   ProjectRoot = File.expand_path( "../../", __FILE__ ) unless Arcade.const_defined?(:ProjectRoot)
+    unless Arcade.const_defined?(:ProjectRoot)
+      Arcade::ProjectRoot = File.expand_path( "../../", __FILE__ ) 
+      # logger is not present at this stage
+      STDERR.puts "Using default database credentials and settings fron #{Arcade::ProjectRoot}"
+    end
     # initialised a hash  { environment => property }
     setting :username, default: :user,      reader: true,
       constructor:  ->( v ) { yml(:environment).map{|x,y|  [x , y[v.to_s]] }.to_h}
