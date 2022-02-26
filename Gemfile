@@ -6,9 +6,6 @@ source "https://rubygems.org"
 gemspec
 gem 'sdoc'
 gem  'dry-configurable'
-gem  'dry-schema'
-gem  'dry-struct'
-gem  'dry-core'
 # gem  'mini_sql', path: '../mini_sql/'
 group :development, :test do
 	gem "awesome_print"
