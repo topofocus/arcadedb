@@ -15,6 +15,7 @@ end
 #require 'mini_sql'
 require 'httparty'
 require_relative '../lib/errors'
+require_relative '../lib/support'
 require_relative '../lib/logging'
 require_relative '../lib/config'
 require_relative '../lib/arcade/api/operations'
