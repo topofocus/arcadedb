@@ -7,8 +7,8 @@
   :test:
     dbname: test
     user:  root
-    pass: root
-  :devel:
+    pass:  root
+  :development:
     dbname: devel
     user: root
     pass: root
@@ -20,6 +20,6 @@
   :host: localhost
   :port: 2480
   :user: root
-  :pass: root 
+  :pass: topo1focus
 logger: stdout           # 'file' or 'stdout'
 

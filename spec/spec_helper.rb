@@ -12,26 +12,26 @@ require 'postgres_helper'
 read_yml = -> (key) do
 	YAML::load_file( File.expand_path('../spec.yml',__FILE__))[key]
 end
-OPT ||= read_yml[:pg]
+#OPT ||= read_yml[:pg]
 #[:oetl,:orientdb, :admin].each{|kw| OPT[kw] =  read_yml[kw] }
 
 
- if OPT.empty?
-   puts "spec/spec.yml not found or misconfigurated"
-   puts "expected: "
-   puts <<EOS
-:pg
- :server: localhost
- :port: 5432
- :user: root
- :password: some_password
- :dbname: some_database
-EOS
+# if OPT.empty?
+#   puts "spec/spec.yml not found or misconfigurated"
+#   puts "expected: "
+#   puts <<EOS
+#:pg
+# :server: localhost
+# :port: 5432
+# :user: root
+# :password: some_password
+# :dbname: some_database
+#EOS
 #  Kernel.exit
- else 
-	 puts "OPT: #{OPT.inspect}"
-   OPT[:connected] = connect
- end
+# else 
+#	 puts "OPT: #{OPT.inspect}"
+#   OPT[:connected] = connect
+# end
 
 
 RSpec.configure do |config|
