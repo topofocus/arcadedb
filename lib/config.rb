@@ -18,7 +18,8 @@ module Arcade
              constructor:  ->( v ) { "http://"+yml(:admin)[v]+':'+yml(:admin)[:port].to_s+"/api/v1/" })
     setting :pg,      default:  :pg,       reader: true , constructor:  ->( v ) { yml(v)}
     setting :admin,   default:  :admin,    reader: true , constructor:  ->( v ) { yml(v)}
-    setting :logger , default:  :logger,   reader: true , constructor:  ->( v ) { yml(v)}
+    setting :logger,  default:  :logger,   reader: true , constructor:  ->( v ) { yml(v)}
+    setting :namespace, default:  :namespace,   reader: true , constructor:  ->( v ) { yml(v)}
 
 
     private

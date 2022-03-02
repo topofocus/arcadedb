@@ -36,7 +36,7 @@ module Arcade
       post_data  "drop/#{name}"
     end
     #
-    # adds a document to the database 
+    # adds a document to the database
     #
     # specify database-fields as hash-type parameters
     #
@@ -45,7 +45,12 @@ module Arcade
     # returns the rid of the inserted dataset
     def self.create_document database, type, **attributes
       payload = { "@type" => type }.merge( attributes ).to_json
-      options = { body: payload }.merge( auth ).merge( json )
+
+      options = if @session_id.nil?
+                  { body: payload }.merge( auth ).merge( json )
+                else
+        { body: payload }.merge( auth ).merge( json ).merge( headers: { "arcadedb-session-id" => @session_id })
+                end
       result  = self.post Arcade::Config.base_uri + "document/#{database}", options
       analyse_result result, "post document"
     end
@@ -55,14 +60,18 @@ module Arcade
     # the  query is provided as block
     #
     # returns an Array of results (if propriate)
-    # i.e 
+    # i.e
     # Arcade::Api.execcute( "devel" ) { 'select from test  ' }
-    #  => [{"@rid"=>"#57:0", "@type"=>"test", "name"=>"Hugo"}, {"@rid"=>"#60:0", "@type"=>"test", "name"=>"Hubert"}] 
+    #  => [{"@rid"=>"#57:0", "@type"=>"test", "name"=>"Hugo"}, {"@rid"=>"#60:0", "@type"=>"test", "name"=>"Hubert"}]
     #
     def self.execute database
-      pl = provide_payload(yield) 
-      puts "pl: #{pl}"
-      options = { body: pl }.merge( auth ).merge( json )
+      pl = provide_payload(yield)
+      #puts "pl: #{pl}"
+      options = if @session_id.nil?
+        { body: pl }.merge( auth ).merge( json )
+                else
+        { body: pl }.merge( auth ).merge( json ).merge( headers: { "arcadedb-session-id" => @session_id })
+                end
       result = self.post Arcade::Config.base_uri + "command/#{database}" , options
       analyse_result result,"execute"
     end
@@ -93,16 +102,25 @@ module Arcade
     #
     def self.begin_transaction database
       result = self.post Arcade::Config.base_uri + "begin/#{database}" , auth
-      analyse_result(result, 'begin transaction')
+      @session_id= result.headers["arcadedb-session-id"]
+    #  @session_id = analyse_result(result, 'begin transaction')
+
       # returns the session-id 
     end
-    def self.commit database, id
-      options =  auth.merge( headers: { "arcadedb-session-id" => id })
+
+    def self.session
+      @session_id
+    end
+    def self.commit database
+    options =  auth.merge( headers: { "arcadedb-session-id" => @session_id })
+      @session_id =  nil
       result = self.post Arcade::Config.base_uri + "commit/#{database}" , options
+
     end
 
-    def  self.rollback database, id
-      options =  auth.merge( headers: { "arcadedb-session-id" => id })
+    def  self.rollback database
+      options =  auth.merge( headers: { "arcadedb-session-id" => @session_id })
+      @session_id =  nil
       result = self.post Arcade::Config.base_uri + "rollback/#{database}" , options
     end
 

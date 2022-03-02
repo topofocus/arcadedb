@@ -26,5 +26,5 @@ end
 #if RUBY_PLATFORM == 'java' 
 #guard( 'jruby-rspec') {fire}  #', :spec_paths => ["spec"]
 #else
-guard( :rspec, cmd: "bundle exec rspec") { fire }
+guard( :rspec, cmd: "bundle exec rspec --format documentation ") { fire }
 #end
