@@ -28,14 +28,11 @@ To start an interactive console, a small script is provided in the bin-directory
 
 ```
 $ cd bin && ./console.rb
-
-
 ```
 
-## Usage
+## Database Management
 
-Actually, only a basic HTTP-APi-Access is implemented.
-
+The console allows a low-level management of the database-server
 It allows to play around using simple api-calls:
 ```ruby
 
@@ -43,11 +40,14 @@ $ Arcade::Api.databases                   # returns an array of known databases
 $ Arcade::Api.create_database <a string>  # returns true if succesfull
 $ Arcade::Api.drop_database   <a string>  # returns true if successfull
 
+$ Arcade::Api.begin_transaction <databas>
 $ Arcade::Api.create_document <database>, <type>,  attribute: value , ...
-$ Arcade::Api.get_record <database>,  rid  #  returns a hash
-
 $ Arcade::Api.execute( <database>  ) { <query>  }
+$ Arcade::Api.commit <database>         #  or Arcade.Api.rollback  
+
+
 $ Arcade::Api.query( <database>  ) { <query>  }
+$ Arcade::Api.get_record <database>,  rid  #  returns a hash
 ```
 
 
@@ -57,6 +57,28 @@ a hash  ` { :query => " ", `
 			`:params =>   a  hash of parameters,`   
 			`:limit => a number ,`  
 			`:serializer:  one of :graph, :record }`  
+
+
+## Database Operations
+
+A `ArcadeDB`-Database is accessed through the `Database`-Class
+
+```ruby
+DB =  Aracde::Database.new {:development | :production | :test}
+
+```
+Simple commands are implemented on this level
+
+```ruby
+
+$ DB.get <rid>                               # returns a Aracde:Base object
+
+$ DB.create_type {document | vertex} , <name>
+$ DB.create <name>, attribute: value ....    # returns a rid
+$ DB.create_edge <name>, from: <rid> or [rid, rid, ..] , to: <rid> or [rid, rid, ..]
+
+```
+
 
 
 ## Include in your own project
