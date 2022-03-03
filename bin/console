@@ -107,8 +107,11 @@ g =  p.green.on_black.detach
 end
 
 help
-#C =  Arcade::Database.new
-#D = MiniSql::Connection.get( C.connection, {}  )
+
+puts  "D:: MiniSqL PG-Connecton"
+puts  "DB:: Arcade::Database-instance"
+DB =  Arcade::Database.new
+D = MiniSql::Connection.get( DB.connection, {}  )
 #require 'pry'
 require 'irb'
 ARGV.clear
