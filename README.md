@@ -61,7 +61,8 @@ a hash  ` { :query => " ", `
 
 ## Database Operations
 
-A `ArcadeDB`-Database is accessed through the `Database`-Class
+The `Database`-Class connects to the standard database as specified in the `config.yml` file. It returns `Arcade::Base`-Objects if apropiate.
+
 
 ```ruby
 DB =  Aracde::Database.new {:development | :production | :test}
