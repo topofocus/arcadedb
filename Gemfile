@@ -6,7 +6,10 @@ source "https://rubygems.org"
 gemspec
 gem 'sdoc'
 gem  'dry-configurable'
-# gem  'mini_sql', path: '../mini_sql/'
+gem  'pg'
+#gem  'sequel'
+
+#gem  'mini_sql' #, path: '../mini_sql/'
 group :development, :test do
 	gem "awesome_print"
   gem 'pastel'

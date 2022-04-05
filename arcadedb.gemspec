@@ -39,7 +39,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rspec", "~> 4.0"
   #	'activesupport', '>= 6.0'
 #	spec.add_dependency 'activemodel'
-  spec.add_dependency 'httparty'
+  spec.add_dependency "typhoeus" # httparty'
   spec.add_dependency 'dry-schema'
   spec.add_dependency 'dry-struct'
   spec.add_dependency 'dry-core'

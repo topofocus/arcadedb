@@ -11,7 +11,7 @@
   :development:
     dbname: devel
     user: root
-    pass: root
+    pass:  root
   :production:
     dbname: production
     user: root
@@ -20,6 +20,7 @@
   :host: localhost
   :port: 2480
   :user: root
-  :pass: topo1focus
-logger: stdout           # 'file' or 'stdout'
+  :pass: root 
+:logger: stdout           # 'file' or 'stdout'
+:namespace: Arcade        # Default Namespace
 

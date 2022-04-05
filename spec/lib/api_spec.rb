@@ -25,7 +25,11 @@ RSpec.describe Arcade::Api do
   context "create a document type " do
     before(:all) do
       r= Arcade::Api.execute( Arcade::Config.database[:test]) { "create document type test_document" } 
-      puts "R::#{r}"
+      expect( r.size ).to eq 1
+      expect( r.first ).to be_a Hash
+      expect( r.first.keys ).to eq ["typeName", "operation"]
+      expect( r.first["typeName"] ).to eq "test_document"
+      expect( r.first["operation"] ).to eq "create document type"
     end
 
     it "The document type is present" do

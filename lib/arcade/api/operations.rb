@@ -22,7 +22,7 @@ module Arcade
 
 =end
 
-    include HTTParty
+    #include HTTParty
 
     def self.databases
       get_data 'databases'
@@ -51,8 +51,7 @@ module Arcade
                 else
         { body: payload }.merge( auth ).merge( json ).merge( headers: { "arcadedb-session-id" => @session_id })
                 end
-      result  = self.post Arcade::Config.base_uri + "document/#{database}", options
-      analyse_result result, "post document"
+      post_data "document/#{database}", options
     end
 
     # executes a sql-query in the specified database
@@ -67,19 +66,17 @@ module Arcade
     def self.execute database
       pl = provide_payload(yield)
       #puts "pl: #{pl}"
-      options = if @session_id.nil?
-        { body: pl }.merge( auth ).merge( json )
-                else
-        { body: pl }.merge( auth ).merge( json ).merge( headers: { "arcadedb-session-id" => @session_id })
-                end
-      result = self.post Arcade::Config.base_uri + "command/#{database}" , options
-      analyse_result result,"execute"
+      options =   { body: pl }.merge( auth ).merge( json )
+      unless @session.nil?
+        options = options.merge( headers: { "arcadedb-session-id" => @session_id })
+      end
+      post_data "command/#{database}" , options
     end
+
     # same for impodent queries
     def self.query  database
       options = { body: provide_payload(yield)  }.merge( auth ).merge( json ) 
-      result = self.post Arcade::Config.base_uri + "query/#{database}" , options
-      analyse_result result, "query"
+      post_data  "query/#{database}" , options
     end
 
     # fetches a record by providing  database and  rid  
@@ -101,8 +98,9 @@ module Arcade
     #  ------------ Transaction -------------------
     #
     def self.begin_transaction database
-      result = self.post Arcade::Config.base_uri + "begin/#{database}" , auth
-      @session_id= result.headers["arcadedb-session-id"]
+      result  = Typhoeus.post Arcade::Config.base_uri + "begin/{database}", auth
+      puts "result: #{result.inspect}"
+      @session_id = result.headers["arcadedb-session-id"]
     #  @session_id = analyse_result(result, 'begin transaction')
 
       # returns the session-id 
@@ -114,14 +112,14 @@ module Arcade
     def self.commit database
     options =  auth.merge( headers: { "arcadedb-session-id" => @session_id })
       @session_id =  nil
-      result = self.post Arcade::Config.base_uri + "commit/#{database}" , options
+      post_data  "commit/#{database}", options
 
     end
 
     def  self.rollback database
       options =  auth.merge( headers: { "arcadedb-session-id" => @session_id })
       @session_id =  nil
-      result = self.post Arcade::Config.base_uri + "rollback/#{database}" , options
+      post_data  "rollback/#{database}", options
     end
 
     private
@@ -158,7 +156,7 @@ module Arcade
     end
 
     def self.get_data command
-      result = self.get Arcade::Config.base_uri + command , auth
+      result  = Typhoeus.get Arcade::Config.base_uri + command, auth
       analyse_result(result, command)
     end
 
@@ -167,38 +165,41 @@ module Arcade
     end
 #  not tested
     def self.delete_data command
-      result = self.delete Arcade::Config.base_uri + command , auth
+      result  = Typhoeus.delete Arcade::Config.base_uri + command, auth
       analyse_result(result, command)
     end
 
-    def self.post_data command
-      result = self.post Arcade::Config.base_uri + command , auth
+    def self.post_data command, options = auth
+      result  = Typhoeus.post Arcade::Config.base_uri + command, options
       analyse_result(result, command)
     end
     #  todo raise exceptions   instead of returning the error-string
     def self.analyse_result r, command
-      result= r.parsed_response
-      if result.is_a?(Hash) && result.key?("result")
-         result['result']   #  return  the  response 
-      elsif r.response.is_a? Net::HTTPOK
-         true
-      elsif r.response.is_a? Net::HTTPInternalServerError
-        puts  result["detail"]
-        result["error"]  # returns the error string
-      elsif r.response.is_a?  Net::HTTPForbidden
-        puts "Authentification Error!"
-      elsif r.response.is_a?  Net::HTTPNotFound
-        puts "No such command: "+ Arcade::Config.base_uri + command
-      else
-        puts  "Admin-Data ERROR: #{r.inspect}"
-        puts  "fired command: "+  Arcade::Config.base_uri + command 
-
-        raise #LoadError result
-      end
+        if r.success?
+          result = JSON.parse( r.response_body )["result"]
+          if result.is_a?(Hash) && result.key?("result")
+          #  return  the  response
+           result['result'] 
+          elsif result == [{}]
+           []
+          else
+            result
+          end
+        elsif r.timed_out?
+          puts "Timeout Error"
+          nil
+        elsif r.response_code > 0
+          body =  JSON.parse( r.response_body )
+          puts "Message: " + r.status_message
+          puts "Code: "+ r.response_code.to_s
+          puts "Exception: "+ body["exception"]
+          puts "Description: "+ body["detail"]
+        end
     end
     def self.auth
-      { :basic_auth => { username: Arcade::Config.admin[:user],
-        password: Arcade::Config.admin[:pass] }}
+       @a ||= { httpauth: :basic,
+         username: Arcade::Config.admin[:user],
+         password: Arcade::Config.admin[:pass] }
     end
 
     def self.json

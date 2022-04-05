@@ -9,6 +9,8 @@ require 'yaml'
 require 'arcade'
 require 'postgres_helper'
 require_relative "../spec/model/test_vertex"
+require_relative "../spec/model/test_edge"
+require_relative "../spec/model/test_document"
 read_yml = -> (key) do
 	YAML::load_file( File.expand_path('../spec.yml',__FILE__))[key]
 end
