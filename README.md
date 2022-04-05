@@ -2,9 +2,9 @@
 
 Ruby Interface to a [Arcade Database](https://arcadedb.com/).
 
-> This ist a pre alpha version with minimal functionality. 
+> This ist a pre alpha version. 
 
-The adapter accesses the HTTP-Json-Api of ArcadeDB.
+The adapter implements the HTTP-JSON-Api of ArcadeDB.
 
 It aims to enable
 * to create and destroy databases 
@@ -27,7 +27,7 @@ For Access through the HTTP-API `:admin`-entries are used.
 To start an interactive console, a small script is provided in the bin-directory.
 
 ```
-$ cd bin && ./console.rb
+$ cd bin && ./console.rb 
 ```
 
 ## Database Management
@@ -40,10 +40,10 @@ $ Arcade::Api.databases                   # returns an array of known databases
 $ Arcade::Api.create_database <a string>  # returns true if succesfull
 $ Arcade::Api.drop_database   <a string>  # returns true if successfull
 
-$ Arcade::Api.begin_transaction <databas>
+$ Arcade::Api.begin_transaction <database>
 $ Arcade::Api.create_document <database>, <type>,  attribute: value , ...
 $ Arcade::Api.execute( <database>  ) { <query>  }
-$ Arcade::Api.commit <database>         #  or Arcade.Api.rollback  
+$ Arcade::Api.commit <database>         #  or Arcade::Api.rollback  
 
 
 $ Arcade::Api.query( <database>  ) { <query>  }
@@ -76,6 +76,7 @@ $ DB.get <rid>                               # returns a Aracde:Base object
 $ DB.create_type {document | vertex} , <name>
 $ DB.create <name>, attribute: value ....    # returns a rid
 $ DB.create_edge <name>, from: <rid> or [rid, rid, ..] , to: <rid> or [rid, rid, ..]
+$ DB.query querystring
 
 ```
 
