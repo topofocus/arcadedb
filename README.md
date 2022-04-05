@@ -71,12 +71,14 @@ Simple commands are implemented on this level
 
 ```ruby
 
-$ DB.get <rid>                               # returns a Aracde:Base object
+$ DB.get <rid>                                  # returns a Aracde:Base object
+$ DB.query querystring                          # returns either an Array of results (as  Hash) 
+                                                # or a Collection of Arcade::Base objects
 
-$ DB.create_type {document | vertex} , <name>
-$ DB.create <name>, attribute: value ....    # returns a rid
+$ DB.create_type {document | vertex} , <name>   # Creates a new Type ( Arcade::Base Class)
+$ DB.create <name>, attribute: value ....       # Creates a new <Document | Vertex> and returns the rid
 $ DB.create_edge <name>, from: <rid> or [rid, rid, ..] , to: <rid> or [rid, rid, ..]
-$ DB.query querystring
+
 
 ```
 
