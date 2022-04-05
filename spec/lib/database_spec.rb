@@ -36,16 +36,16 @@ RSpec.describe Arcade::Database do
       expect(r).to  include 'test_document'
     end
     it "Insert a dataset" do
-      r= DB.create 'test_document' ,  name: "Gugo",  bes: "Über", age: 54
-      expect(r).to eq "#1:0"   # returns the rid
+      r= DB.create 'test_document' ,  name: "Gugo",  age: 54
+      expect(r).to match /\A[#]{,1}[0-9]{1,}:[0-9]{1,}\z/    # returns the rid
 
       rr=  DB.get r
 
-      expect(rr).to be_a   Arcade::Basicdocument
-      # rid is proper formatted
+      expect(rr).to be_a   Arcade::TestDocument
+      # rid is proper fsormatted
       expect(rr.rid).to  match /\A[#]{,1}[0-9]{1,}:[0-9]{1,}\z/
-      expect(rr.values).to be_a Hash
-      expect(rr.values.keys.sort).to eq [:age, :bes, :name]
+      expect(rr.rid).to eq r
+      expect(rr.name).to eq "Gugo"
     end
   end
   context "create a vertex type " do
@@ -97,10 +97,11 @@ RSpec.describe Arcade::Database do
       rid1= DB.create 'test_vertex',  name: "parent", age: 54
       rid2= DB.create 'test_vertex',  name: "child" , age: 4
       edge = DB.create_edge 'test_edge',  from: rid1,  to: rid2  # the edge ist present in the database
-      puts edge.inspect
+
+      expect( edge ).to be_an Array
       edge.each do  |e|
         the_e =  DB.get e
-        expect(the_e).to be_an  Arcade::Basicedge                   #  .. but not  at the ruby side
+        expect(the_e).to be_an  Arcade::TestEdge
         ## includes system attributes
         expect(the_e.attributes).to include(:rid )
         expect(the_e.attributes).to include(:in, :out )
@@ -113,18 +114,22 @@ RSpec.describe Arcade::Database do
     end
 
     #### THIS FAILS EVERYTIME
-    it "Inserts a bunch of records and connects them with edges" do
+    it "Inserts  500 records and connects them with edges" do
 
       rid1=  DB.create 'test_vertex',  name: "parent", age: 54
-      edges =  (1..500).map do |i| 
-                        puts i 
-                        Arcade::Api.begin_transaction DB.database
+      (1..500).each do |i|
+#                        Arcade::Api.begin_transaction DB.database
                         vertex=  DB.create 'test_vertex',  name: "child", age: i
                         edge = DB.create_edge 'test_edge',  from: rid1,  to: vertex  # the edge ist present in the database
-                        Arcade::Api.commit DB.database
-                       print edge 
+ #                       Arcade::Api.commit DB.database
       end
-      expect(edges.size).to eq 500
+
+
+      edges =  DB.query " select from ( traverse out() from #{rid1} ) where name = 'child'  order by age"
+      expect( edges.size ).to eq 500
+      expect( edges.first.age).to eq 1
+      expect( edges.last.age).to eq 500
+      expect( edges.first.name).to eq "child"
 
       
     end

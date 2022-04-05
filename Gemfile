@@ -7,7 +7,9 @@ gemspec
 gem 'sdoc'
 gem  'dry-configurable'
 gem  'pg'
-gem  'mini_sql' #, path: '../mini_sql/'
+#gem  'sequel'
+
+#gem  'mini_sql' #, path: '../mini_sql/'
 group :development, :test do
 	gem "awesome_print"
   gem 'pastel'

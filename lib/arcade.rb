@@ -12,8 +12,11 @@ module Types
   include Dry.Types()
 end
 require 'pg'
-require 'mini_sql'
-require 'httparty'
+#require 'mini_sql'
+#require 'sequel'
+#require 'httparty'
+require 'yaml'
+require 'typhoeus'
 require_relative '../lib/errors'
 require_relative '../lib/support'
 require_relative '../lib/logging'

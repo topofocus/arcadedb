@@ -107,11 +107,21 @@ g =  p.green.on_black.detach
 end
 
 help
+puts ARGV
+e=  ARGV.empty? ? :development :  ARGV.last.downcase.to_sym
+env =  if e =~ /^p/
+				 :production
+			 elsif e =~ /^t/
+				 :test
+			 else
+				 :development
+			 end
 
-puts  "D:: MiniSqL PG-Connecton"
+
+
 puts  "DB:: Arcade::Database-instance"
-DB =  Arcade::Database.new
-D = MiniSql::Connection.get( DB.connection, {}  )
+DB =  Arcade::Database.new env
+#D = MiniSql::Connection.get( DB.connection, {}  )
 #require 'pry'
 require 'irb'
 ARGV.clear

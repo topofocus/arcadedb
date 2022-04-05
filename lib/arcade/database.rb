@@ -1,6 +1,8 @@
 module Arcade
   ##
+  # Implements the PG-Database-Adapter
   #
+  #  currently, only attributes of type String are supported
   ##
   class Database
     include ::Logging
@@ -31,6 +33,7 @@ module Arcade
     # {:parentTypes=>["test1"], :name=>"test2", :type=>"vertex"}]
     #
     def types
+      #  uses API
       t= Api.query(database){ "select from schema:types"   }
                    .map{ |x| x.transform_keys &:to_sym     }   #  symbolize keys
                    .map{ |y| y.delete_if{|_,b,| b.empty? } }   #  eliminate  empty entries
@@ -46,6 +49,7 @@ module Arcade
     #
     #  Parameter:  type --  one of  'vertex', 'document', 'edge'
     def hierarchy type: 'vertex'
+      #  uses API
       # gets all types depending  on the parent-type
       pt = ->( s ) { types.find_all{ |x| x[:parentTypes] &.include?(s) }.map{ |v| v[:name] } }
       # takes an array of base-types. gets recursivly all childs
@@ -73,6 +77,12 @@ module Arcade
    #   Api.query database, &block
    # end
 
+    # ------------ create type -----------
+    #  returns an Array
+    #  Example:  > create_type :vertex, :my_vertex
+    #           => [{"typeName"=>"my_vertex", "operation"=>"create vertex type"}] 
+    #
+    #
     def create_type kind, type
       exe = -> do
         case kind.to_s
@@ -87,8 +97,17 @@ module Arcade
       execute &exe
     end
 
-   # returns an rid of the sucessufully  created vertex or document
+    # ------------ create  -----------
+    # returns an rid of the sucessufully  created vertex or document
+    #
+    #  Parameter:  name of the vertex or document type
+    #              Hash of attributes
+    #
+    #  Example:   > DB.create :my_vertex, a: 14, name: "Hugo"
+    #             => "#177:0" 
+    #
     def create type, **params
+      #  uses API
       Api.create_document database, type,  **params
     end
 
@@ -110,9 +129,6 @@ module Arcade
           host:  Config.pg[:host],
           port:  Config.pg[:port]
 
-        #  add the mini-sql-layer
-        #          MiniSql::Connection.get(c)
-        #
       end
     rescue PG::ConnectionBad => e
       if e.to_s  =~  /Credentials/
@@ -127,6 +143,7 @@ module Arcade
     #
     # returns an array of results
     def query  query_string
+      puts "Query database= #{database}"
       response= Api.query(database){ query_string }
       response.map do |r|
         if r.key? "@rid"
@@ -188,7 +205,7 @@ module Arcade
 
    private
     def allocate_model response
-      puts "Response #{response}"
+     # puts "Response #{response}"
 
       if response.is_a? Hash
         rid =  response["@rid"]
@@ -199,6 +216,7 @@ module Arcade
         # choose the apropiate class
         klass=  Dry::Core::ClassBuilder.new(  name: type_name, parent:  nil, namespace:  namespace).call
         # create a new object of that  class with the appropiate attributes
+        #  alternative :  use hash.except( "@type", "@cat" )
         klass.new  response.reject{|k,_| ["@type", "@cat"].include? k }
       else
         raise "Dataset #{rid} is either not present or the database connection is broken"
