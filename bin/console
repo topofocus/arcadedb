@@ -13,10 +13,6 @@ require 'arcade'
 #begin
 
 
-read_yml = -> (key) do
-  YAML::load_file( File.expand_path('../../config.yml',__FILE__) )[key]
-end
-
 def browse  db: Arcade::Api.databases.first , extended: false
 
   headings = -> do
@@ -107,21 +103,10 @@ g =  p.green.on_black.detach
 end
 
 help
-puts ARGV
 e=  ARGV.empty? ? :development :  ARGV.last.downcase.to_sym
-env =  if e =~ /^p/
-				 :production
-			 elsif e =~ /^t/
-				 :test
-			 else
-				 :development
-			 end
 
-
-
-puts  "DB:: Arcade::Database-instance"
-DB =  Arcade::Database.new env
-#D = MiniSql::Connection.get( DB.connection, {}  )
+puts  "DB = Arcade::Database-instance"
+DB = Arcade::Init.connect e
 #require 'pry'
 require 'irb'
 ARGV.clear

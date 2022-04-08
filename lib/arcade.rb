@@ -21,8 +21,10 @@ require_relative '../lib/errors'
 require_relative '../lib/support'
 require_relative '../lib/logging'
 require_relative '../lib/config'
+require_relative '../lib/conversions'
 require_relative '../lib/arcade/api/operations'
 require_relative '../lib/arcade/base'
 require_relative '../lib/arcade/database'
+require_relative '../lib/init'
 require_relative "../lib/models"
 

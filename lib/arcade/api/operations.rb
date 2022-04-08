@@ -94,7 +94,12 @@ module Arcade
     #   "@cat"=>"v",
     #   "positions"=> [...]...  (weitere Felder)
     #
-    
+
+    def self.insert_record database,  type, **args
+      payload =  { "@type" => type }.merge( args).to_json
+      post_json "document/#{database}", body: payload
+    end
+
     #  ------------ Transaction -------------------
     #
     def self.begin_transaction database
@@ -160,6 +165,10 @@ module Arcade
       analyse_result(result, command)
     end
 
+    def self.post_json command, options
+      result = self.post_data Arcade::Config.base_uri + command , auth.merge(options).merge(json)
+    end
+
     def self.get_json command
       result = self.get Arcade::Config.base_uri + command , auth, json
     end
@@ -170,6 +179,7 @@ module Arcade
     end
 
     def self.post_data command, options = auth
+      puts options
       result  = Typhoeus.post Arcade::Config.base_uri + command, options
       analyse_result(result, command)
     end
@@ -189,9 +199,12 @@ module Arcade
           puts "Timeout Error"
           nil
         elsif r.response_code > 0
-          body =  JSON.parse( r.response_body )
-          puts "Message: " + r.status_message
+          puts r.inspect
           puts "Code: "+ r.response_code.to_s
+          puts "Body: "+ r.response_body.to_s  unless r.response_body.empty?
+          body =  JSON.parse( r.response_body ) unless r.response_body.empty?
+
+          puts "Message: " + r.status_message
           puts "Exception: "+ body["exception"]
           puts "Description: "+ body["detail"]
         end
