@@ -11,10 +11,12 @@ require 'postgres_helper'
 require_relative "../spec/model/test_vertex"
 require_relative "../spec/model/test_edge"
 require_relative "../spec/model/test_document"
+require_relative "../spec/model/test_query"
 require_relative '../spec/model/my/names'
 read_yml = -> (key) do
 	YAML::load_file( File.expand_path('../spec.yml',__FILE__))[key]
 end
+Arcade::Init.connect :test
 
 RSpec.configure do |config|
 	config.mock_with :rspec

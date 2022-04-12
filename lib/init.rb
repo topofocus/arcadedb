@@ -37,5 +37,11 @@ module Arcade
       Init.db
     end
   end
+  # Provides method  `db` to every Query-Object
+  class Query
+    def db
+      Init.db
+    end
+  end
 
 end

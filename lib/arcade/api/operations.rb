@@ -24,6 +24,9 @@ module Arcade
 
     #include HTTParty
 
+     def self.logger
+       Database.logger
+     end
     def self.databases
       get_data 'databases'
     end
@@ -46,10 +49,10 @@ module Arcade
     def self.create_document database, type, **attributes
       payload = { "@type" => type }.merge( attributes ).to_json
 
-      options = if @session_id.nil?
+      options = if session.nil?
                   { body: payload }.merge( auth ).merge( json )
                 else
-        { body: payload }.merge( auth ).merge( json ).merge( headers: { "arcadedb-session-id" => @session_id })
+        { body: payload }.merge( auth ).merge( json ).merge( headers: { "arcadedb-session-id" => session })
                 end
       post_data "document/#{database}", options
     end
@@ -61,22 +64,21 @@ module Arcade
     # returns an Array of results (if propriate)
     # i.e
     # Arcade::Api.execcute( "devel" ) { 'select from test  ' }
-    #  => [{"@rid"=>"#57:0", "@type"=>"test", "name"=>"Hugo"}, {"@rid"=>"#60:0", "@type"=>"test", "name"=>"Hubert"}]
+    #  =y [{"@rid"=>"#57:0", "@type"=>"test", "name"=>"Hugo"}, {"@rid"=>"#60:0", "@type"=>"test", "name"=>"Hubert"}]
     #
     def self.execute database
       pl = provide_payload(yield)
-      #puts "pl: #{pl}"
       options =   { body: pl }.merge( auth ).merge( json )
-      unless @session.nil?
-        options = options.merge( headers: { "arcadedb-session-id" => @session_id })
+      unless session.nil?
+        options = options.merge( headers: { "arcadedb-session-id" => session })
       end
       post_data "command/#{database}" , options
     end
 
-    # same for impodent queries
-    def self.query  database
+    # same for idempotent queries
+    def self.query database
       options = { body: provide_payload(yield)  }.merge( auth ).merge( json ) 
-      post_data  "query/#{database}" , options
+      post_data   "query/#{database}" , options
     end
 
     # fetches a record by providing  database and  rid  
@@ -96,17 +98,15 @@ module Arcade
     #
 
     def self.insert_record database,  type, **args
-      payload =  { "@type" => type }.merge( args).to_json
-      post_json "document/#{database}", body: payload
+#      payload =  { "@type" => type }.merge( args).to_json
+      post_data "document/#{database}", body: payload
     end
 
     #  ------------ Transaction -------------------
     #
     def self.begin_transaction database
-      result  = Typhoeus.post Arcade::Config.base_uri + "begin/{database}", auth
-      puts "result: #{result.inspect}"
+      result  = Typhoeus.post Arcade::Config.base_uri + "begin/#{database}", auth
       @session_id = result.headers["arcadedb-session-id"]
-    #  @session_id = analyse_result(result, 'begin transaction')
 
       # returns the session-id 
     end
@@ -114,28 +114,28 @@ module Arcade
     def self.session
       @session_id
     end
-    def self.commit database
-    options =  auth.merge( headers: { "arcadedb-session-id" => @session_id })
-      @session_id =  nil
-      post_data  "commit/#{database}", options
 
+    def self.commit database
+    options =  auth.merge( headers: { "arcadedb-session-id" => session })
+      post_data  "commit/#{database}", options
+      @session_id =  nil
     end
 
     def  self.rollback database
-      options =  auth.merge( headers: { "arcadedb-session-id" => @session_id })
-      @session_id =  nil
+      options =  auth.merge( headers: { "arcadedb-session-id" => session })
       post_data  "rollback/#{database}", options
+      @session_id =  nil
     end
 
     private
 
-    def self. provide_payload the_yield
+    def self. provide_payload( the_yield, action: :post ) 
       the_yield =  { :query => the_yield } unless the_yield.is_a? Hash
       { language: 'sql' }.merge( 
                                 the_yield.map do | key,  value |
                                   case key
                                   when :query
-                                    [ :command, value ]
+                                   action == :post ? [ :command, value ] : [ :query, value ]
                                   when :limit
                                     [ :limit , value ]
                                   when :params
@@ -160,8 +160,8 @@ module Arcade
                                 end .to_h ).to_json # map
     end
 
-    def self.get_data command
-      result  = Typhoeus.get Arcade::Config.base_uri + command, auth
+    def self.get_data command, options = auth
+      result  = Typhoeus.get Arcade::Config.base_uri + command, options
       analyse_result(result, command)
     end
 
@@ -170,7 +170,7 @@ module Arcade
     end
 
     def self.get_json command
-      result = self.get Arcade::Config.base_uri + command , auth, json
+      result = Typhoeus.get Arcade::Config.base_uri + "query", { body: provide_payload(command)}.merge(auth).merge(json)
     end
 #  not tested
     def self.delete_data command
@@ -179,13 +179,18 @@ module Arcade
     end
 
     def self.post_data command, options = auth
-      puts options
+ #     puts "Post DATA #{command} #{options}"
       result  = Typhoeus.post Arcade::Config.base_uri + command, options
       analyse_result(result, command)
     end
     #  todo raise exceptions   instead of returning the error-string
     def self.analyse_result r, command
         if r.success?
+#          puts "CODE"
+#          puts r.response_code
+          return nil  if r.response_code == 204  # no content
+#          puts r.methods
+#          puts r.response_body["result"].inspect
           result = JSON.parse( r.response_body )["result"]
           if result.is_a?(Hash) && result.key?("result")
           #  return  the  response
@@ -196,17 +201,15 @@ module Arcade
             result
           end
         elsif r.timed_out?
-          puts "Timeout Error"
-          nil
+          logger.error "Timeout Error"
+          []
         elsif r.response_code > 0
-          puts r.inspect
-          puts "Code: "+ r.response_code.to_s
-          puts "Body: "+ r.response_body.to_s  unless r.response_body.empty?
+ #         puts r.inspect
+          logger.error  "Execution Failure – Code: #{ r.response_code } – #{r.status_message} "
+         # puts "Body: "+ r.response_body.to_s  unless r.response_body.empty?
           body =  JSON.parse( r.response_body ) unless r.response_body.empty?
 
-          puts "Message: " + r.status_message
-          puts "Exception: "+ body["exception"]
-          puts "Description: "+ body["detail"]
+          puts "Description: "+ body["detail"] if body.is_a? Hash
         end
     end
     def self.auth

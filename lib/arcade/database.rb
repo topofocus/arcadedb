@@ -118,16 +118,36 @@ module Arcade
     end
 
 
-    def execute &block
-      Api.execute database, &block
+    # execute a command  which modifies the database
+    #
+    # The operation is performed via Transaction/Commit
+    # If an Error occurs, its rolled back
+    #
+    def execute   &block
+      Api.begin_transaction database
+     response = Api.execute database, &block
+     r= response.map do | r |
+        if r.key? "@rid"
+         allocate_model r
+        else
+          r
+       end
+     end
+     Api.commit database
+     r # return associated array of Arcade::Base-objects
+    rescue  Dry::Struct::Error => e
+      Api.rollback database
+      logger.error "Execution  FAILED --> #{e.exception}"
+      []  #  return empty result
     end
 
 
     # returns an array of results
     #
     # detects database-records and  allocates them as model-objects
+    #
     def query  query_object
-      response= Api.query(database){ query_object.to_s }
+      response= Api.execute(database){ query_object.to_s }
       response.map do |r|
         if r.key? "@rid"
           allocate_model r
@@ -138,48 +158,45 @@ module Arcade
     end
 
     #  returns an array of rid's   (same logic as create)
-    def create_edge  edge, from:, to:
+    def create_edge  edge_class, from:, to:
 
       cr = ->( f, t ) do
-        e = execute{ "create edge #{edge} from #{f} to #{t}" }
-        if e.is_a?(Array) 
-        e.first["@rid"]
+        edges = execute { "create edge #{edge_class} from #{f} to #{t}" }
+        if edges.is_a?(Array) 
+          edges.first.rid
         else
-          logger.error "Could not create Edge from #{f} to #{t}"
-          logger.error e
+          logger.error "Could not create Edge  #{edge_class} from #{f} to #{t}"
+          logger.error edges.to_s
         end
       end
       from =  [from] unless from.is_a? Array
       to =  [to] unless to.is_a? Array
 
       from.map do | ff |
-        if ff.rid?
-          to.map  do | tt |
-            cr[ff,tt] if  tt.rid?
-          end
-        end
+          to.map { | tt | cr[ ff,tt ] if  tt.rid? } if ff.rid?
       end.flatten
+
     end
 
 
     # query all:  select @rid, *  from {database}
 
-
-   def get_schema
-     query( "select from schema:types" ).map do |a|
-       puts "a: #{a}"
-       class_name = a["name"]
-       inherent_class =  a["parentTypes"].empty? ? [Object,nil] : a["parentTypes"].map(&:camelscase_and_namespace)
-        namespace, type_name = a["type"].camelcase_and_namespace
-        namespace= Arcade if namespace.nil?
-       klass=  Dry::Core::ClassBuilder.new(  name: type_name,
-                                           parent: nil, 
-                                           namespace:  namespace).call
-     end
-   rescue NameError => e
-     logger.error "Dataset type #{e} not defined."
-     raise
-   end
+#  not used 
+ #  def get_schema
+ #    query( "select from schema:types" ).map do |a|
+ #      puts "a: #{a}"
+ #      class_name = a["name"]
+ #      inherent_class =  a["parentTypes"].empty? ? [Object,nil] : a["parentTypes"].map(&:camelcase_and_namespace)
+ #       namespace, type_name = a["type"].camelcase_and_namespace
+ #       namespace= Arcade if namespace.nil?
+ #      klass=  Dry::Core::ClassBuilder.new(  name: type_name,
+ #                                          parent: nil, 
+ #                                          namespace:  namespace).call
+ #    end
+ #  rescue NameError 
+ #    logger.error "Dataset type #{e} not defined."
+ #    raise
+ #  end
    #  Postgres is not implemented
    # connects to the database and initialises @connection
     def connection
@@ -212,41 +229,43 @@ module Arcade
 
       if response.is_a? Hash
         rid =  response["@rid"]
-        namespace, type_name = response["@type"].camelcase_and_namespace
-        namespace = Arcade if namespace.nil?
+        n, type_name = response["@type"].camelcase_and_namespace
+        n = self.namespace if n.nil?
         # choose the appropriate class
-        klass=  Dry::Core::ClassBuilder.new(  name: type_name, parent:  nil, namespace:  namespace).call
+        klass=  Dry::Core::ClassBuilder.new(  name: type_name, parent:  nil, namespace:  n).call
         # create a new object of that  class with the appropriate attributes
         #  alternative :  use hash.except( "@type", "@cat" )
         klass.new  response.reject{|k,_| ["@type", "@cat"].include? k }
       else
         raise "Dataset #{rid} is either not present or the database connection is broken"
       end
-    rescue  Dry::Struct::Error => e
-      logger.error "Get #{rid} FAILED --> #{e}"
-      nil
-    rescue  => e
-      puts "Error: #{e}"
-      logger.error "Get #{rid} FAILED -->  Model-Class not present"
-        basic_type =  case response["@cat"]
-                      when "d"
-                        :Basicdocument
-                      when "v"
-                        :Basicvertex
-                      when "e"
-                        :Basicedge
-                      end
-        logger.error "Model #{response["@type"]} not defined \n                       Using #{basic_type} instead."
-        klass=  Dry::Core::ClassBuilder.new(  name: basic_type,
-                                            parent:  nil,
-                                         namespace:  Arcade)  #  fix!
-                                        .call
-
-        klass.new rid: response.delete( "@rid" ),
-                   in: response.delete( "@in"  ),
-                  out: response.delete( "@out" ),
-               values: response.reject{ |k,_| ["@type", "@cat"].include? k }.transform_keys(&:to_sym)
-
+#    rescue  Dry::Struct::Error => e
+#      logger.error "Get #{rid} FAILED --> #{e}"
+#      raise
+#    rescue ArgumentError
+#      nil
+#    rescue  => e
+#      puts "Error: #{e.inspect}"
+#      logger.error "Get #{rid} FAILED -->  Model-Class not present"
+#        basic_type =  case response["@cat"]
+#                      when "d"
+#                        :Basicdocument
+#                      when "v"
+#                        :Basicvertex
+#                      when "e"
+#                        :Basicedge
+#                      end
+#        logger.error "Model #{response["@type"]} not defined \n                       Using #{basic_type} instead."
+#        klass=  Dry::Core::ClassBuilder.new(  name: basic_type,
+#                                            parent:  nil,
+#                                         namespace:  Arcade)  #  fix!
+#                                        .call
+#
+#        klass.new rid: response.delete( "@rid" ),
+#                   in: response.delete( "@in"  ),
+#                  out: response.delete( "@out" ),
+#               values: response.reject{ |k,_| ["@type", "@cat"].include? k }.transform_keys(&:to_sym)
+#
     end
 
 

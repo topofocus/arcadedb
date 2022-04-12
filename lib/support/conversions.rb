@@ -2,7 +2,7 @@ module Arcade
   module Support
     module Array
       # Class  extentions to manage to_db and from_db
-      def to_db_
+      def to_db
         if all?{ |x| x.respond_to?(:rid?)}  && any?( &:rid? )
           "["+ map{|x| x.rid? ? x.rid : x.to_or }.join(', ') + ']'
         else
@@ -22,12 +22,12 @@ module Arcade
         map &:to_human
       end
 
-      # used to enable 
+      # used to enable
       # def abc *key
       # where key is a Range, an comma separated List or an item
       # aimed to support #compose_where
       def analyse # :nodoc:
-        if first.is_a?(Range) 
+        if first.is_a?(Range)
           first
         elsif size ==1
           first

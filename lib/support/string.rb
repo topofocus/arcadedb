@@ -19,7 +19,11 @@ module Arcade
       end
 
       def snake_case
-       n=split("::").join
+        n= if split('::').first == Database.namespace.to_s
+           split('::')[1..-1].join
+         else
+           split("::").join
+         end
        n.gsub(/([^\^])([A-Z])/,'\1_\2').downcase
       end
 
@@ -58,8 +62,24 @@ module Arcade
         end
       end
 
+      ## Load the database object if the string is a rid
+      def load_rid
+        db.get self if rid?  rescue nil
+      end
+
+      # updates the record and returns the modified dataset
+      def update **args
+        r=   Arcade::Query.new( from: self , kind: :update, set: args).execute
+        r= r.pop if r.is_a?( Array ) 
+        r["$current"].load_rid
+      end
+
       def to_human
         self
+      end
+      private
+      def db
+        Arcade::Init.db
       end
     end
   end
