@@ -11,30 +11,12 @@ require 'postgres_helper'
 require_relative "../spec/model/test_vertex"
 require_relative "../spec/model/test_edge"
 require_relative "../spec/model/test_document"
+require_relative "../spec/model/test_query"
+require_relative '../spec/model/my/names'
 read_yml = -> (key) do
 	YAML::load_file( File.expand_path('../spec.yml',__FILE__))[key]
 end
-#OPT ||= read_yml[:pg]
-#[:oetl,:orientdb, :admin].each{|kw| OPT[kw] =  read_yml[kw] }
-
-
-# if OPT.empty?
-#   puts "spec/spec.yml not found or misconfigurated"
-#   puts "expected: "
-#   puts <<EOS
-#:pg
-# :server: localhost
-# :port: 5432
-# :user: root
-# :password: some_password
-# :dbname: some_database
-#EOS
-#  Kernel.exit
-# else 
-#	 puts "OPT: #{OPT.inspect}"
-#   OPT[:connected] = connect
-# end
-
+Arcade::Init.connect :test
 
 RSpec.configure do |config|
 	config.mock_with :rspec
