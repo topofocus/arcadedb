@@ -36,13 +36,21 @@ They operate similar to ActiveRecord Model Objects.
 # Assuming, a Database-Type Person is present
 Person.create name: "Hubert" age: 35
 Person.update set: { age: 36 }, where: { name: 'Hubert' }
-Person.where "age > 40"
+persons = Person.where "age > 40"
+persons.first.update age: 37
+
+Person.all
+Person.delete all: true || where: age: 56 , ...
 ```
+
+A Query Proprocessor is implemented. Its adapted from ActiveOrient. The [documentation](https://github.com/topofocus/active-orient/wiki/OrientQuery)
+is still valid,  however the class has changed to `Arcade::Query`. 
+
 The second Layer handles Database-Requests.  
 In the actual implementation, these requests are delegated to the HTTP/JSON-API.
 
-`Arcade__Init` reads database specification of the `config.yml` file.   
-The Database-handle is always present through `Arcade::Init.db`
+`Arcade::Init` uses the database specification of the `config.yml` file.   
+The database-handle is always present through `Arcade::Init.db`
 
 ```ruby
 DB =  Arcade::Init.db
