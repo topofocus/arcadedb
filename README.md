@@ -45,7 +45,7 @@ Person.delete all: true || where: age: 56 , ...
 Model-Classes have to be declared in the model directory. Namespaces are supported. 
 Model-attributes are taken from [Dry-types](https://dry-rb.org/gems/dry-types/1.2/built-in-types/).
 
-A **Query Proprocessor** is implemented. Its adapted from ActiveOrient. The [documentation](https://github.com/topofocus/active-orient/wiki/OrientQuery)
+A **Query Preprocessor** is implemented. Its adapted from ActiveOrient. The [documentation](https://github.com/topofocus/active-orient/wiki/OrientQuery)
 is still valid,  however the class has changed to `Arcade::Query`. 
 
 The **second Layer** handles Database-Requests.  
