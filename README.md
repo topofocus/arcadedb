@@ -29,7 +29,7 @@ $ cd bin && ./console.rb
 
 The adapter uses a 3 layer concept. 
 
-The Top-Layer : `Arcade::Base`-Model-Objects. 
+Top-Layer : `Arcade::Base`-Model-Objects. 
 They operate similar to ActiveRecord Model Objects.
 
 ```ruby
@@ -45,10 +45,10 @@ Person.delete all: true || where: age: 56 , ...
 Model-Classes have to be declared in the model directory. Namespaces are supported. 
 Model-attributes are taken from [Dry-types](https://dry-rb.org/gems/dry-types/1.2/built-in-types/).
 
-A Query Proprocessor is implemented. Its adapted from ActiveOrient. The [documentation](https://github.com/topofocus/active-orient/wiki/OrientQuery)
+A **Query Proprocessor** is implemented. Its adapted from ActiveOrient. The [documentation](https://github.com/topofocus/active-orient/wiki/OrientQuery)
 is still valid,  however the class has changed to `Arcade::Query`. 
 
-The second Layer handles Database-Requests.  
+The **second Layer** handles Database-Requests.  
 In the actual implementation, these requests are delegated to the HTTP/JSON-API.
 
 `Arcade::Init` uses the database specification of the `config.yml` file.   
@@ -69,7 +69,7 @@ DB.query " Select from person where age > 40 "
 DB.execute { " Update person set name='Hubert' return after $current where age = 36 " }
 ```
 
-The third Layer implements the direct interaction with the database API. 
+The **third Layer** implements the direct interaction with the database API. 
 
 ```ruby
 
