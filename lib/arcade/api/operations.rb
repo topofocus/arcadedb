@@ -24,9 +24,6 @@ module Arcade
 
     #include HTTParty
 
-     def self.logger
-       Database.logger
-     end
     def self.databases
       get_data 'databases'
     end
@@ -38,7 +35,7 @@ module Arcade
     def self.drop_database name
       post_data  "drop/#{name}"
     end
-    #
+    # ------------------------------  create document ------------------------------------------------- #
     # adds a document to the database
     #
     # specify database-fields as hash-type parameters
@@ -46,6 +43,7 @@ module Arcade
     # i.e   Arcade::Api.create_document 'devel', 'documents',  name: 'herta meyer', age: 56, sex: 'f'
     #
     # returns the rid of the inserted dataset
+    # 
     def self.create_document database, type, **attributes
       payload = { "@type" => type }.merge( attributes ).to_json
 
@@ -57,6 +55,7 @@ module Arcade
       post_data "document/#{database}", options
     end
 
+    # ------------------------------  execute         ------------------------------------------------- #
     # executes a sql-query in the specified database
     #
     # the  query is provided as block
@@ -75,34 +74,77 @@ module Arcade
       post_data "command/#{database}" , options
     end
 
+    # ------------------------------  query           ------------------------------------------------- #
     # same for idempotent queries
     def self.query database
-      options = { body: provide_payload(yield)  }.merge( auth ).merge( json ) 
+      options = { body: provide_payload(yield)  }.merge( auth ).merge( json )
       post_data   "query/#{database}" , options
     end
 
-    # fetches a record by providing  database and  rid  
+    # ------------------------------  get_record      ------------------------------------------------- #
+    # fetches a record by providing  database and  rid
     # and returns the result as hash
     #
-    def self.get_record database, rid
-      rid =  rid[1..-1] if rid[0]=="#"
+    # > Api.get_record 'devel', '225:6'
+    # > Api.get_record 'devel', 225, 6
+    # > Api.get_record 'devel', '#225:6'
+    #     => {:@out=>0, :@rid=>"#225:6", :@in=>0, :@type=>"my_names", :name=>"Zaber", :@cat=>"v"}
+
+    def self.get_record database, *rid
+      rid =  rid.join(':')
+      rid = rid[1..-1] if rid[0]=="#"
       get_data  "document/#{database}/#{rid}"
     end
-    # Arcade::Api.get_record "OpenBeer", "#555:11"  returns
-    #  {"@out"=>0,
-    #   "@rid"=>"#554:11",
-    #   "@in"=>0,
-    #   "@type"=>"hc_portfolio",
-    #   "@cat"=>"v",
-    #   "positions"=> [...]...  (weitere Felder)
-    #
 
-    def self.insert_record database,  type, **args
-#      payload =  { "@type" => type }.merge( args).to_json
-      post_data "document/#{database}", body: payload
+    # ------------------------------  property        ------------------------------------------------- #
+    # Adds properties to the type
+    #
+    #  call via
+    #  Api.property <database>, <type>, name1: a_format , name2: a_format
+    #
+    #  Format is one of
+    #   Boolean, Integer, Short, Long, Float, Double, String
+    #   Datetime, Binary, Byte, Decimal, Link
+    #   Embedded, EmbeddedList, EmbeddedMap
+    #
+    #   In case of an Error,  anything is rolled back and nil is returned
+    #
+    def self.property database, type, **args
+
+      begin_transaction database
+      success = args.map do | name, format |
+        r= execute(database) {" create property #{type.to_s}.#{name.to_s} #{format.to_s} " } &.first
+        if r.nil?
+          false
+        else
+          r.keys == [ :propertyName, :typeName, :operation ] && r[:operation] == 'create property'
+        end
+      end.uniq
+      if success == [true]
+        commit database
+        true
+      else
+        rollback database
+      end
+
+
     end
 
-    #  ------------ Transaction -------------------
+    # ------------------------------ index            ------------------------------------------------- #
+    def self.index database, type,  name ,  *properties
+      properties = properties.map( &:to_s )
+      unique_requested = "unique" if properties.delete("unique")  
+      unique_requested = "notunique" if  properties.delete("notunique" )
+      automatic = true if
+      properties << name  if properties.empty?
+      success = execute(database) {" create index  if not exists `#{type.to_s}[#{name.to_s}]` on #{type} ( #{properties.join(',')} ) #{unique_requested}" } &.first
+     # puts "success: #{success}"
+      success && success.keys == [ :totalIndexed, :name, :operation ] &&   success[:operation] == 'create index' 
+
+    end
+
+
+    # ------------------------------ transaction      ------------------------------------------------- #
     #
     def self.begin_transaction database
       result  = Typhoeus.post Arcade::Config.base_uri + "begin/#{database}", auth
@@ -111,23 +153,31 @@ module Arcade
       # returns the session-id 
     end
 
-    def self.session
-      @session_id
-    end
 
+    # ------------------------------ commit           ------------------------------------------------- #
     def self.commit database
     options =  auth.merge( headers: { "arcadedb-session-id" => session })
       post_data  "commit/#{database}", options
       @session_id =  nil
     end
 
-    def  self.rollback database
+    # ------------------------------ rollback         ------------------------------------------------- #
+    def  self.rollback database, publish_error=true
       options =  auth.merge( headers: { "arcadedb-session-id" => session })
       post_data  "rollback/#{database}", options
       @session_id =  nil
+      error "A Transaction has been rolled back" , :commit  if publish_error
     end
 
     private
+
+     def self.logger
+       Database.logger
+     end
+
+    def self.session
+      @session_id
+    end
 
     def self. provide_payload( the_yield, action: :post ) 
       the_yield =  { :query => the_yield } unless the_yield.is_a? Hash
@@ -165,51 +215,30 @@ module Arcade
       analyse_result(result, command)
     end
 
-    def self.post_json command, options
-      result = self.post_data Arcade::Config.base_uri + command , auth.merge(options).merge(json)
-    end
-
-    def self.get_json command
-      result = Typhoeus.get Arcade::Config.base_uri + "query", { body: provide_payload(command)}.merge(auth).merge(json)
-    end
-#  not tested
-    def self.delete_data command
-      result  = Typhoeus.delete Arcade::Config.base_uri + command, auth
-      analyse_result(result, command)
-    end
 
     def self.post_data command, options = auth
- #     puts "Post DATA #{command} #{options}"
+     # puts "Post DATA #{command} #{options}"   # debug
       result  = Typhoeus.post Arcade::Config.base_uri + command, options
       analyse_result(result, command)
     end
-    #  todo raise exceptions   instead of returning the error-string
+
+    #  todo raise exceptions   instead of logging the error-message
     def self.analyse_result r, command
         if r.success?
-#          puts "CODE"
-#          puts r.response_code
           return nil  if r.response_code == 204  # no content
-#          puts r.methods
-#          puts r.response_body["result"].inspect
-          result = JSON.parse( r.response_body )["result"]
-          if result.is_a?(Hash) && result.key?("result")
-          #  return  the  response
-           result['result'] 
-          elsif result == [{}]
+          result = JSON.parse( r.response_body, symbolize_names: true )[:result]
+          if result == [{}]
            []
           else
             result
           end
         elsif r.timed_out?
-          logger.error "Timeout Error"
+          error "Timeout Error"
           []
         elsif r.response_code > 0
- #         puts r.inspect
-          logger.error  "Execution Failure – Code: #{ r.response_code } – #{r.status_message} "
-         # puts "Body: "+ r.response_body.to_s  unless r.response_body.empty?
-          body =  JSON.parse( r.response_body ) unless r.response_body.empty?
-
-          puts "Description: "+ body["detail"] if body.is_a? Hash
+#          logger.error  "Execution Failure – Code: #{ r.response_code } – #{r.status_message} "
+          body =  JSON.parse( r.response_body, symbolize_names: true  ) unless r.response_body.empty?
+          logger.error   body[:detail]  if body.is_a? Hash
         end
     end
     def self.auth
@@ -220,6 +249,11 @@ module Arcade
 
     def self.json
       { headers: { "Content-Type" => "application/json"} }
+    end
+#  not tested
+    def self.delete_data command
+      result  = Typhoeus.delete Arcade::Config.base_uri + command, auth
+      analyse_result(result, command)
     end
   end
 end

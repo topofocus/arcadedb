@@ -114,9 +114,17 @@ module Arcade
 
 
     def get rid
-      allocate_model( Api.get_record( database, rid) )
+      if rid.rid?
+        allocate_model( Api.get_record( database, rid))
+      else
+        error "Get requires a rid input"
+      end
     end
 
+    def delete rid
+      r =  Api.execute( database ){ "delete from #{rid}" }
+      success =  r == [{ :count => 1 }]
+    end
 
     # execute a command  which modifies the database
     #
@@ -149,7 +157,7 @@ module Arcade
     def query  query_object
       response= Api.execute(database){ query_object.to_s }
       response.map do |r|
-        if r.key? "@rid"
+        if r.key? :"@rid"
           allocate_model r
         else
           r
@@ -225,19 +233,23 @@ module Arcade
 
    private
     def allocate_model response
-     # puts "Response #{response}"
+#      puts "Response #{response}"  # debugging
 
       if response.is_a? Hash
-        rid =  response["@rid"]
-        n, type_name = response["@type"].camelcase_and_namespace
+        rid =  response[:"@rid"]
+        n, type_name = response[:"@type"].camelcase_and_namespace
         n = self.namespace if n.nil?
         # choose the appropriate class
         klass=  Dry::Core::ClassBuilder.new(  name: type_name, parent:  nil, namespace:  n).call
         # create a new object of that  class with the appropriate attributes
         #  alternative :  use hash.except( "@type", "@cat" )
-        klass.new  response.reject{|k,_| ["@type", "@cat"].include? k }
-      else
-        raise "Dataset #{rid} is either not present or the database connection is broken"
+        new = klass.new  response.reject{|k,_| [:"@type", :"@cat"].include? k }
+        att =  response.except :"@type", :"@cat", :"@rid"
+        v =  att.except  *new.attributes.keys
+        new = new.new( values: v ) unless v.empty?
+        new
+      #else
+      #  raise "Dataset #{rid} is either not present or the database connection is broken"
       end
 #    rescue  Dry::Struct::Error => e
 #      logger.error "Get #{rid} FAILED --> #{e}"

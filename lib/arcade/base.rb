@@ -4,12 +4,17 @@ module Arcade
     extend Arcade::Support::Sql
     # schema schema.strict    #  -- throws an error if  specified keys are missing
     transform_keys{ |x|  x[0] == '@' ? x[1..-1].to_sym : x.to_sym }
-    # only accept  #000:000,  raises an Error, if rid is not present
+    # Types::Rid -->  only accept  #000:000,  raises an Error, if rid is not present
     attribute :rid, Types::Rid
     # maybe there are edges
     attribute :in?, Types::Nominal::Any
     attribute :out?, Types::Nominal::Any
+    # any not defined property goes to values
+    attribute :values?, Types::Nominal::Hash
 
+    #                                                                                               #
+    ## ----------------------------------------- Class Methods------------------------------------ ##
+    #                                                                                               #
     class << self
 
       # this has to be implemented on class level
@@ -18,17 +23,60 @@ module Arcade
         self.name.snake_case
       end
 
-      def insert **attributes
-        db.execute { "insert into #{database_name} CONTENT #{attributes.to_json}" }.first
+      def create_type name
+        e = ancestors.each
+        superclass = e.next  # the actual class
+        the_class =  superclass
+        loop do
+          if ['Document','Vertex', 'Edge'].include? the_class.demodulize
+            extends =  (the_class != superclass) ? "EXTENDS #{superclass.to_s.snake_case} " : ""
+            db.execute { "create  #{the_class.demodulize} TYPE  #{name} #{extends} " }
+            break
+          end
+          the_class = e.next  # the actual class
+        end
+      end
+      def properties
+
       end
 
-      alias create insert
+      ## ----------------------------------------- insert       ---------------------------------- ##
+      #
+      #  Adds a record to the database
+      #
+      #  returns the rid
 
+      def insert **attributes
+        db.create database_name, **attributes
+#        db.execute { "insert into #{database_name} CONTENT #{attributes.to_json}" }.first
+      end
+
+      ## ----------------------------------------- insert       ---------------------------------- ##
+      #
+      #  Adds a record to the database
+      #
+      #  returns the model dataset
+
+      def  create **attributes
+#        Api.begin_transaction db.database
+        rid = insert **attributes
+        db.get rid
+#        Api.commit db.database
+      rescue RuntimeError => e
+        db.logger.error "Dataset NOT created"
+        db.logger.error "Provided Attributes: #{attributes.inspect}"
+#        Api.rollback db.database
+      rescue  Dry::Struct::Error => e
+        db.delete rid
+        db.logger.error "#{rid} :: Validation failed, record deleted."
+        db.logger.error e.message
+ #       Api.rollback db.database
+      end
 
       def count **args
         command = "count(*)"
       #  db.query( " select #{command} from #{database_name}" ).first[command] rescue 0
-        query( **( { projection:  'COUNT(*)'  }.merge args  ) ).execute(reduce: true){|x|  x["COUNT(*)"]}
+        query( **( { projection:  'COUNT(*)'  }.merge args  ) ).execute(reduce: true){|x|  x[:"COUNT(*)"]}
       end
 
       def all
@@ -36,12 +84,14 @@ module Arcade
       end
 
       def first **args
-        query( **( { order: "@rid" , limit: 1  }.merge args ) ).execute(reduce: true)
+        m = query( **( { order: "@rid" , limit: 1  }.merge args ) ).execute(reduce: true)
+        allocate_record **m if m.is_a? Hash
       end
 
 
       def last **args
-            query( **( { order: {"@rid" => 'desc'} , limit: 1  }.merge args ) ).execute(reduce: true)
+        m =  query( **( { order: {"@rid" => 'desc'} , limit: 1  }.merge args ) ).execute(reduce: true)
+        allocate_record **m if m.is_a? Hash
       end
 
       def where *args
@@ -61,7 +111,7 @@ module Arcade
       #
       def update **args
         if args.keys.include?(:set) && args.keys.include?(:where)
-            query( **( { kind: :update }.merge args ) ).execute.map{|r| r["$current"].load_rid }
+            query( **( { kind: :update }.merge args ) ).execute.map{|r| r[:"$current"].load_rid }
         else
           raise "at least set: and where: are required to perform this operation"
         end
@@ -74,7 +124,7 @@ module Arcade
       #
       def update! **args
         if args.keys.include?(:set) && args.keys.include?(:where)
-            query( **( { kind: :update! }.merge args ) ).execute.first["count"]
+            query( **( { kind: :update! }.merge args ) ).execute.first[:count]
         else
           raise "at least set: and where: are required to perform this operation"
         end
@@ -83,7 +133,7 @@ module Arcade
       # returns a list of updated records
       def upsert **args
         if args.keys.include?(:set) && args.keys.include?(:where)
-          result= query( **( { kind: :upsert }.merge args ) ).execute.map{|r| r["$current"].load_rid }
+          result= query( **( { kind: :upsert }.merge args ) ).execute.map{|r| r[:"$current"].load_rid }
         else
           raise "at least set: and where: are required to perform this operation"
         end
@@ -93,12 +143,50 @@ module Arcade
         Arcade::Query.new( **{ from: self }.merge(args) )
       end
 
+      def allocate_record **att
+        att[:rid] = att.fetch :"@rid"
+        att =  att.except :"@type", :"@cat", :"@rid"
+        new = self.new   att
+        v =  att.except  *new.attributes.keys
+       # new=  self.new new.attributes.merge( values: v ) unless v.empty?
+        new = new.new( values: v ) unless v.empty?
+        new # return the allocated record
+      end
+
+      private :allocate_record
     end
     #                                                                                   #
     ## ------------------------- Instance Methods ----------------------------------- -##
     #                                                                                   #
-      def update **args
-        rid.update **args
+
+    ## Attributes can be declared in the model file
+    ##
+    ## Those not covered there are stored in the `values` attribute
+    ##
+    ## invariant_attributes removes :rid, :in, :out, :created_at, :updated_at  and
+    #  includes :values-attributes to the list of attributes
+
+
+    def invariant_attributes
+     result= attributes.except :rid, :in, :out, :values, :created_at,  :updated_at
+     if  attributes.keys.include?(:values)
+       result.merge values
+     end
+    end
+
+    ## enables to display values keys like methods
+    ##
+    def method_missing method, *key
+        if attributes[:values] &.keys &.include?  method
+        return values.fetch(method)
+      end
+    end
+
+    def to_human
+
+    end
+    def update **args
+        rid.update **argsa
       end
       def == arg
         self.attributes == arg.attributes
