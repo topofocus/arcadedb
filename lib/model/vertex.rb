@@ -202,7 +202,7 @@ Format: < Classname: Edges, Attributes >
 
 		#Default presentation of Arcade::Base::Model-Objects
 
-		"<#{self.class.to_s.snake_case}[#{rid}]: " + in_and_out  + attributes.map do |attr, value|
+		"<#{self.class.to_s.snake_case}[#{rid}]: " + in_and_out  + invariant_attributes.map do |attr, value|
 			v= case value
 				 when Arcade::Base
 					 "< #{self.class.to_s.snake_case}: #{value.rid} >"

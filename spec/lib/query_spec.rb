@@ -133,8 +133,8 @@ RSpec.describe Arcade::Query do
 			it "subquery and subsequent unionall" do
 				# pending( "Try's to fetch data from #5:0, if there aren'd any, it fails")
 				q =  Arcade::Query.new
-				q.let   a:  Arcade::Query.new( from: '#5:0' ) 
-				q.let   b:  Arcade::Query.new( from: '#5:1' ) 
+				q.let   a:  Arcade::Query.new( from: '#5:0' )
+				q.let   b:  Arcade::Query.new( from: '#5:1' )
 				q.let  '$c= UNIONALL($a,$b) '
 				q.projection  'expand( $c )'
 				expect( q.to_s ).to eq 'select expand( $c ) let $a = (select from #5:0 ), $b = (select from #5:1 ), $c= UNIONALL($a,$b)  '
@@ -159,9 +159,9 @@ RSpec.describe Arcade::Query do
 		end
 		context " Traverse " do
 			Given( :traverse_query ) do
-				Arcade::Query.new from: TestQuery, 
-					where:{ a: 2 , c: 'ufz' }, 
-					kind: 'traverse'  
+				Arcade::Query.new from: TestQuery,
+					where:{ a: 2 , c: 'ufz' },
+					kind: 'traverse'
 			end
 
 			Then  {  expect(traverse_query.to_s).to eq "traverse from test_query where a = 2 and c = 'ufz' "  }
@@ -171,15 +171,15 @@ RSpec.describe Arcade::Query do
 
 
 		context "execute , update and upsert (Document)"  do
-			context "class based queries" do 
+			context "class based queries" do
 				before(:all) do
 					(1..200).each{|y| TestDocument.create c: y }
 				end
 				it "count" do
 					q = TestDocument.query projection:  'COUNT(*)'
 					expect(q.to_s).to eq "select COUNT(*) from test_document "
-					expect(q.execute{|x|  x["COUNT(*)"]}).to eq [200]
-					expect(q.execute(reduce: true){|x|  x["COUNT(*)"]}).to eq 200
+					expect(q.execute{|x|  x[:"COUNT(*)"]}).to eq [200]
+					expect(q.execute(reduce: true){|x|  x[:"COUNT(*)"]}).to eq 200
 				end
 				it{	expect( TestDocument.count( where: 'c <100' ) ).to eq 99 }
 
@@ -194,7 +194,7 @@ RSpec.describe Arcade::Query do
 				it "upsert"  do
 					q =  TestDocument.query(  kind: :upsert, set:{ c: 500}, where:' c = 500'  )
 					expect( q.to_s ).to eq "update test_document set c = 500 upsert return after $current where  c = 500"
-          p =  q.execute(reduce: true) {|y| y["$current"]}.load_rid
+          p =  q.execute(reduce: true) {|y| y[:"$current"]}.load_rid
 					expect(p).to be_a TestDocument
 					expect(p.c).to eq 500
           p2 =  TestDocument.upsert( set:{ c: 500}, where:' c = 500').first
@@ -210,7 +210,7 @@ RSpec.describe Arcade::Query do
 					q =  TestDocument.query(  kind: :update!, set:{ c: 500}, where:'c = 50'  )
 					expect( q.to_s ).to eq "update test_document set c = 500 where c = 50"
           puts q.to_s
-					p =  q.execute(reduce: true){|y| y["count"]}
+					p =  q.execute(reduce: true){|y| y[:count]}
 					expect(p).to be_a Integer
 				end
 				it { expect( TestDocument.update set: { u: 65 }, where:{ c: 70 } ). to eq TestDocument.where( c: 70  )}
@@ -244,7 +244,7 @@ RSpec.describe Arcade::Query do
 				it "store a value in a hash" do
 					r =  @the_record.update( d: { a: 'b' } )
           puts @the_record.refresh.inspect
-					expect(r.d).to eq "a" => 'b'
+					expect(r.d).to eq :a => 'b'
 #					updated_hash = @the_record.c.store :c,10
 #					expect(@the_record.reload!.h).to eq  a: 'b' , c: 10
 					#r = @the_record.update remove:{ d:1}

@@ -71,7 +71,7 @@ module Arcade
       def update **args
         r=   Arcade::Query.new( from: self , kind: :update, set: args).execute
         r= r.pop if r.is_a?( Array ) 
-        r["$current"].load_rid
+        r[:"$current"].load_rid
       end
 
       def to_human

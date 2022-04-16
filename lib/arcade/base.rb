@@ -85,13 +85,13 @@ module Arcade
 
       def first **args
         m = query( **( { order: "@rid" , limit: 1  }.merge args ) ).execute(reduce: true)
-        allocate_record **m if m.is_a? Hash
+       # allocate_record **m if m.is_a? Hash
       end
 
 
       def last **args
         m =  query( **( { order: {"@rid" => 'desc'} , limit: 1  }.merge args ) ).execute(reduce: true)
-        allocate_record **m if m.is_a? Hash
+       # allocate_record **m if m.is_a? Hash
       end
 
       def where *args
@@ -144,13 +144,13 @@ module Arcade
       end
 
       def allocate_record **att
-        att[:rid] = att.fetch :"@rid"
-        att =  att.except :"@type", :"@cat", :"@rid"
-        new = self.new   att
-        v =  att.except  *new.attributes.keys
-       # new=  self.new new.attributes.merge( values: v ) unless v.empty?
-        new = new.new( values: v ) unless v.empty?
-        new # return the allocated record
+        att[:rid] = att.fetch :"@rid"                                                   # store rid
+        att =  att.except :"@type", :"@cat", :"@rid"                                    # remove internal attribuutes
+        new = self.new   att                                                            # create a prototype
+        v =  att.except  *new.attributes.keys                                           # get attributes not included in prototype
+       # new=  self.new new.attributes.merge( values: v ) unless v.empty?               #
+        new = new.new( values: v ) unless v.empty?                                      # Include those attributes in values attribute
+        new                                                                             # return the allocated record
       end
 
       private :allocate_record
@@ -171,6 +171,8 @@ module Arcade
      result= attributes.except :rid, :in, :out, :values, :created_at,  :updated_at
      if  attributes.keys.include?(:values)
        result.merge values
+     else
+       attributes.except :rid, :in, :out
      end
     end
 
@@ -184,9 +186,25 @@ module Arcade
 
     def to_human
 
+
+		"<#{self.class.to_s.snake_case}[#{rid}]: " + invariant_attributes.map do |attr, value|
+			v= case value
+				 when Arcade::Base
+					 "< #{self.class.to_s.snake_case}: #{value.rid} >"
+				 when Array
+					 value.to_s
+#					 value.rrid #.to_human #.map(&:to_human).join("::")
+				 else
+					 value.from_db
+				 end
+			"%s : %s" % [ attr, v]  unless v.nil?
+		end.compact.sort.join(', ') + ">".gsub('"' , ' ')
     end
+
+    alias to_s to_human 
+
     def update **args
-        rid.update **argsa
+        rid.update **args
       end
       def == arg
         self.attributes == arg.attributes

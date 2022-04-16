@@ -38,7 +38,7 @@ module Arcade
     #
     def types
       #  uses API
-      t= Api.query(database){ "select from schema:types"   }
+      t= Api.query(database, "select from schema:types"   )
                    .map{ |x| x.transform_keys &:to_sym     }   #  symbolize keys
                    .map{ |y| y.delete_if{|_,b,| b.empty? } }   #  eliminate  empty entries
 
@@ -135,7 +135,7 @@ module Arcade
       Api.begin_transaction database
      response = Api.execute database, &block
      r= response.map do | r |
-        if r.key? "@rid"
+        if r.key? :@rid
          allocate_model r
         else
           r
@@ -155,7 +155,7 @@ module Arcade
     # detects database-records and  allocates them as model-objects
     #
     def query  query_object
-      response= Api.execute(database){ query_object.to_s }
+      response= Api.query(database, query_object.to_s)
       response.map do |r|
         if r.key? :"@rid"
           allocate_model r

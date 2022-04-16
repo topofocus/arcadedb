@@ -334,8 +334,7 @@ end # class << self
 
 		# returns nil if the query was not sucessfully executed
 		def execute(reduce: false)
-			#puts "Compose: #{compose}"
-      result = db.execute{ compose }
+      result = db.execute { compose }
 			return nil unless result.is_a?(Array)
 			result =  result.map{|x| yield x } if block_given?
 			return  result.first if reduce && result.size == 1
@@ -344,7 +343,7 @@ end # class << self
 		end
 :protected
 		def resolve_target
-			if @q[:database].is_a? OrientSupport::OrientQuery
+			if @q[:database].is_a? Arcadde::Query
 				@q[:database].resolve_target
 			else
 				@q[:database]

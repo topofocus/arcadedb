@@ -76,8 +76,8 @@ module Arcade
 
     # ------------------------------  query           ------------------------------------------------- #
     # same for idempotent queries
-    def self.query database
-      options = { body: provide_payload(yield)  }.merge( auth ).merge( json )
+    def self.query database, query
+      options = { body: provide_payload(query)  }.merge( auth ).merge( json )
       post_data   "query/#{database}" , options
     end
 
@@ -179,8 +179,11 @@ module Arcade
       @session_id
     end
 
-    def self. provide_payload( the_yield, action: :post ) 
-      the_yield =  { :query => the_yield } unless the_yield.is_a? Hash
+    def self. provide_payload( the_yield, action: :post )
+      unless the_yield.is_a? Hash
+        logger.info "Q: #{the_yield}"
+        the_yield =  { :query => the_yield }
+      end
       { language: 'sql' }.merge( 
                                 the_yield.map do | key,  value |
                                   case key
