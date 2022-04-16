@@ -29,8 +29,13 @@ module Arcade
         the_class =  superclass
         loop do
           if ['Document','Vertex', 'Edge'].include? the_class.demodulize
-            extends =  (the_class != superclass) ? "EXTENDS #{superclass.to_s.snake_case} " : ""
-            db.execute { "create  #{the_class.demodulize} TYPE  #{name} #{extends} " }
+#            extends =  (the_class != superclass) ? { "EXTENDS #{superclass.to_s.snake_case} " : ""
+#            db.execute { "create  #{the_class.demodulize} TYPE  #{name} #{extends} " }
+           if  the_class == superclass
+            db.create_type the_class.demodulize, name
+           else
+            db.create_type the_class.demodulize, name, extends:  superclass.to_s.snake_case
+          end
             break
           end
           the_class = e.next  # the actual class

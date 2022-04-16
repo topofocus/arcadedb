@@ -46,7 +46,7 @@ module Arcade
     # 
     def self.create_document database, type, **attributes
       payload = { "@type" => type }.merge( attributes ).to_json
-
+      logger.info "C: #{payload}"
       options = if session.nil?
                   { body: payload }.merge( auth ).merge( json )
                 else
@@ -65,8 +65,8 @@ module Arcade
     # Arcade::Api.execcute( "devel" ) { 'select from test  ' }
     #  =y [{"@rid"=>"#57:0", "@type"=>"test", "name"=>"Hugo"}, {"@rid"=>"#60:0", "@type"=>"test", "name"=>"Hubert"}]
     #
-    def self.execute database
-      pl = provide_payload(yield)
+    def self.execute database, query=nil
+      pl = query.nil? ? provide_payload(yield) : provide_payload(query)
       options =   { body: pl }.merge( auth ).merge( json )
       unless session.nil?
         options = options.merge( headers: { "arcadedb-session-id" => session })

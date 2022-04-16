@@ -1,4 +1,4 @@
 module Arcade
-  class Extra_Node < Node
+  class ExtraNode < Node
   end
 end

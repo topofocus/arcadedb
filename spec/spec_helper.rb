@@ -13,28 +13,13 @@ module My; end
 puts "---"
 puts "#{__dir__}/model"
 puts "---"
-
+## unfortunately, this does not work
 #loader =  Zeitwerk::Loader.new
 #loader.push_dir ("#{__dir__}/model")
 #loader.setup
-#require_relative "../spec/model/test_vertex"
-#require_relative "../spec/model/test_edge"
-#require_relative "../spec/model/test_document"
-#require_relative "../spec/model/test_query"
-#require_relative '../spec/model/my/names'
-#require_relative '../spec/model/my/surnames'
-#require_relative '../spec/model/my/v1'
-#require_relative '../spec/model/my/v2'
-#require_relative '../spec/model/my/v3'
-#require_relative '../spec/model/my/e1'
-#require_relative '../spec/model/my/e2'
-#require_relative '../spec/model/my/e3'
-#require_relative '../spec/model/my/e4'
-#require_relative '../spec/model/connects'
-#require_relative '../spec/model/base'
-#require_relative '../spec/model/node'
-#require_relative '../spec/model/extra_node'
+#- ..therefore the manual walkaround:
 require 'model_helper'
+
 read_yml = -> (key) do
 	YAML::load_file( File.expand_path('../spec.yml',__FILE__))[key]
 end
@@ -43,15 +28,15 @@ Arcade::Init.connect :test
 RSpec.configure do |config|
 	config.mock_with :rspec
 	config.color = true
-	# ermöglicht die Einschränkung der zu testenden Specs
-	# durch  >>it "irgendwas", :focus => true do <<
+	# enable running single tests
 	config.filter_run :focus => true
 	config.run_all_when_everything_filtered = true
+  ## because we are testing database-sequences:
 	config.order = 'defined'  # "random"
 end
 
+## enable testing of private methods
 RSpec.shared_context 'private', private: true do
-
     before :all do
           described_class.class_eval do
 	          @original_private_instance_methods = private_instance_methods

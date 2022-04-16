@@ -4,7 +4,7 @@ module Arcade
   #
   #  currently, only attributes of type String are supported
   #
-  #  {Database-instance}.database points to the connected aradedb-database
+  #  {Database-instance}.database points to the connected Aradedb-database
   #  DB.hi
   #
   ##
@@ -76,36 +76,42 @@ module Arcade
     # ------------ create type -----------
     #  returns an Array
     #  Example:  > create_type :vertex, :my_vertex
-    #           => [{"typeName"=>"my_vertex", "operation"=>"create vertex type"}] 
+    #           => [{"typeName"=>"my_vertex", "operation"=>"create vertex type"}]
     #
+    #  takes additional arguments:  extends: '<a supertype>'  (for inheritance)
+    #                               bucket:  <a list of  bucket-id's >
+    #                               buckets:  <how many bukets to assign>
+    #
+    #  additional arguments are just added to the command
     #
     # its aliased as `create_class`
     #
-    def create_type kind, type
+    def create_type kind, type, **args
+
       exe = -> do
-        case kind.to_s
+        case kind.to_s.downcase
         when /^v/
-          "create vertex type #{type}"
+          "create vertex type #{type} "
         when /^d/
-          "create document type #{type}"
+          "create document type #{type} "
         when /^e/
-          "create edge type #{type}"
-        end
+          "create edge type #{type} "
+        end.concat( args.map{|x,y| "#{x} #{y} "}.join)
       end
-      execute &exe
+      Api.execute database, &exe
     end
 
     alias create_class create_type
 
 
     # ------------ create  -----------
-    # returns an rid of the sucessufully  created vertex or document
+    # returns an rid of the successfully  created vertex or document
     #
     #  Parameter:  name of the vertex or document type
     #              Hash of attributes
     #
     #  Example:   > DB.create :my_vertex, a: 14, name: "Hugo"
-    #             => "#177:0" 
+    #             => "#177:0"
     #
     def create type, **params
       #  uses API
@@ -156,12 +162,16 @@ module Arcade
     #
     def query  query_object
       response= Api.query(database, query_object.to_s)
-      response.map do |r|
-        if r.key? :"@rid"
-          allocate_model r
-        else
-          r
+      if response.is_a?(Hash)
+        response.map do |r|
+          if r.key? :"@rid"
+            allocate_model r
+          else
+            r
+          end
         end
+      else
+        response
       end
     end
 

@@ -104,7 +104,8 @@ end
 
 help
 e=  ARGV.empty? ? :development :  ARGV.last.downcase.to_sym
-
+## load test model files
+require "#{__dir__}/../spec/model_helper"
 puts  "DB = Arcade::Database-instance"
 DB = Arcade::Init.connect e
 #require 'pry'
