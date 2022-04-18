@@ -104,7 +104,7 @@ Apart from assessing attributes by their method-name, adjacent edges and notes a
 ```ruby 
   new_vertex = ->(n) { Node.create( note_count: n )  }                      ## lambda to create a Node type record
   nucleus    =  BaseNode.create item: 'b'                                   ## create a start node
-  (1..10).each{ |n| nucleus.asign( via: Connects, vertex: new_vertex[n]) }  ## connect nodes via Connects-Edges
+  (1..10).each{ |n| nucleus.assign( via: Connects, vertex: new_vertex[n]) } ## connect nodes via Connects-Edges
 ```
 After creating a star-like structure, the environment can be explored 
 ```ruby 
