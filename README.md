@@ -88,12 +88,13 @@ $ Arcade::Api.get_record <database>,  rid      #  returns a hash
 ```
 
 
-`<query>` is  either a  string or   
-a hash  ` { :query => " ", `  
-			`:language => one of :sql, :cypher, :gmelion: :neo4j ,`   
-			`:params =>   a  hash of parameters,`   
-			`:limit => a number ,`  
-			`:serializer:  one of :graph, :record }`  
+`<query>` is  either a  string or   a hash: 
+```ruby { :query => " ",
+          :language => one of :sql, :cypher, :gmelin: :neo4 ,
+	  :params =>   a  hash of parameters,
+	  :limit => a number ,
+	 `:serializer:  one of :graph, :record }    
+```	   
 
 ## ORM Behavior
 
