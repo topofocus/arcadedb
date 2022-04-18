@@ -150,14 +150,19 @@ module Arcade
     #
     def execute   &block
       Api.begin_transaction database
-     response = Api.execute database, &block
-     r= response.map do | r |
-        if r.key? :@rid
-         allocate_model r
-        else
-          r
-       end
-     end
+      response = Api.execute database, &block
+      # puts response.inspect  # debugging
+      r= if  response.is_a? Hash
+           allocate_model res
+         else
+           response.map do | res |
+             if res.key? :"@rid"
+               allocate_model res
+             else
+               res
+             end
+           end
+         end
      Api.commit database
      r # return associated array of Arcade::Base-objects
     rescue  Dry::Struct::Error => e

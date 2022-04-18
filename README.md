@@ -89,11 +89,12 @@ $ Arcade::Api.get_record <database>,  rid      #  returns a hash
 
 
 `<query>` is  either a  string or   a hash: 
-```ruby { :query => " ",
-          :language => one of :sql, :cypher, :gmelin: :neo4 ,
-	  :params =>   a  hash of parameters,
-	  :limit => a number ,
-	 `:serializer:  one of :graph, :record }    
+```ruby 
+{  :queryi     => "<the query string> ",
+   :language   => one of :sql, :cypher, :gmelin: :neo4 ,
+	 :params     =>   a  hash of parameters,
+	 :limit      => a number ,
+	 :serializer =>  one of :graph, :record }    
 ```	   
 
 ## ORM Behavior
@@ -125,6 +126,34 @@ After creating a star-like structure, the environment can be explored
 Edges provide a `vertices`-method to load connected ones.  Both vertices and edges expose `in`, `out`,  `both`-methods to select connections further. 
 Specific edge-classes (types) are provided with the `via:` parameter,  as shown in `assign` above. 
 
+
+## Travese Facility
+
+To ease queries to the graph database, `Arcade::Query` supports traversal of nodes
+
+Create a Chain of Nodes:
+```ruby
+
+  def linear_elements start, count  #returns the edge created
+      new_vertex = ->(n) { Arcade::ExtraNode.create( note_count: n )  }
+          (2..count).each{ |n| start = start.assign vertex: new_vertex[n], via: Arcade::Connects  }
+  end
+   
+  start_node =  Arcade::ExtraNode.create( item: 'linear'  )
+  linear_elements start_node , 200
+```
+
+Select a range of nodes and perform a mathematical operation
+
+```ruby 
+  hundred_elements =  start_node.traverse :out, via: Arcade::Connects, depth: 100
+  median = Query.new from: hundred_elements,
+               projection: 'median(note_count)',
+                    where: '$depth>=50'
+  meian.to_s
+  -=> select median(note_count) from  ( traverse out(connects) from #52:0 while $depth < 100 )  where $depth>=50  
+   =>   {:"median(note_count)"=>75.5 }
+```
 ## Include in your own project
 
 Until a gem is released, first clone the project and set up your project environment
