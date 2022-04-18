@@ -31,7 +31,7 @@ def browse  db: Arcade::Api.databases.first , extended: false
     end
   end
 
-   list=  Arcade::Api.query(db){ "select from schema:types" }
+   list=  Arcade::Api.query db, "select from schema:types" 
    if list.is_a? Array
      Terminal::Table.new do |t|
        add_additional_separator =false 

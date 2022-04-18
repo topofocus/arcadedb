@@ -1,4 +1,4 @@
-#require 'active_support/inflector'
+#require ' active_support/inflector'
 
 module Arcade
 
@@ -10,6 +10,7 @@ module Arcade
 
 	class Query
     include Support::Sql
+    include Support::Model
 
 
 #
@@ -101,7 +102,7 @@ module Arcade
 				the_argument =  @q[:database]
 				case @q[:database]
 									when Arcade::Base   # a single record
-										the_argument.rrid
+										the_argument.rid
 									when self.class	      # result of a query
 										' ( '+ the_argument.compose + ' ) '
 									when Class
@@ -305,7 +306,7 @@ end # class << self
 		#  in_or_out:  :out --->  outE('edgeClass').in[where-condition]
 		#              :in  --->  inE('edgeClass').out[where-condition]
 
-		def nodes in_or_out = :out, via: nil, where: nil, expand: true
+		def nodes in_or_out = :out, via: nil, where: nil, expand:  false
 			 condition = where.present? ?  "[ #{generate_sql_list(where)} ]" : ""
 			 start =  if in_or_out  == :in
 									'inE'
@@ -334,16 +335,21 @@ end # class << self
 
 		# returns nil if the query was not sucessfully executed
 		def execute(reduce: false)
+#      unless projection.nil?    || projection.empty?
       result = db.execute { compose }
 			return nil unless result.is_a?(Array)
 			result =  result.map{|x| yield x } if block_given?
 			return  result.first if reduce && result.size == 1
+      ## case  select count(*) from  ...  --> [{ :count => n }]   projection is set
+      ## case update ... after $current   --> [{ :$current => n}] projection is not set, but result is an integer
+      #  separate key from  values and get model-files 
+      result =  result.first.values.map{|x| allocate_model x}  if  !@q[:projection].empty?  && result.first.is_a?(Hash)  &&  result.first.values.is_a?( Array )
 			## standard case: return Array
-			result.arcade_flatten
+			#result.arcade_flatten
 		end
 :protected
 		def resolve_target
-			if @q[:database].is_a? Arcadde::Query
+			if @q[:database].is_a? Arcade::Query
 				@q[:database].resolve_target
 			else
 				@q[:database]

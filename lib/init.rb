@@ -36,6 +36,9 @@ module Arcade
     def self.db
       Init.db
     end
+    # expose db  to instance methods as well
+    private  define_method :db, &method(:db)
+    private_class_method  :db
   end
   # Provides method  `db` to every Query-Object
   class Query

@@ -128,6 +128,10 @@ module Arcade
       def to_a
         [ self ]
       end
+
+      def rid?
+        false
+      end
     end
 
     module Hash 

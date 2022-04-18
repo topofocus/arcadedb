@@ -1,79 +1,81 @@
 require 'spec_helper'
-require 'model_helper'
-require 'connect_helper'
 require "rspec/given"
-#require 'rest_helper'
-#
+require 'database_helper'
 
 
 def linear_elements start, count  #returns the edge created
 
-	new_vertex = ->(n) {  ExtraNode.create( note_count: n)}
+	new_vertex = ->(n) { Arcade::ExtraNode.create( note_count: n) }
 #	e= Connects.create from: start, to: new_vertex[1]
 #	(2..count).each do |m|
 #		e= Connects.create from: e.first.in , to: new_vertex[m]
 #	end
-	(2..count).each{|n| start = start.assign vertex: new_vertex[n], via: CONNECTS }
+	(2..count).each{ |n| start = start.assign vertex: new_vertex[n], via: Arcade::Connects }
 end
 
-RSpec.describe "E" do
+RSpec.describe "Edges" do
   before( :all ) do
-    @db = connect database: 'temp'
+    clear_arcade
+    DB = Arcade::Database.new :test
 
-    V.create_class :base, :node
-		Node.create_class :extra_node 
-    c= E.create_class :connects
-    c.uniq_index
+    Arcade::Vertex.create_type :base_node
+    Arcade::Vertex.create_type :node
+		Arcade::Node.create_type :extra_node
+    Arcade::Edge.create_type :connects
+ #   c.uniq_index
   end
-after(:all){ @db.delete_database database: 'temp' }
 
 
 
-	context "Connect some vertices" do
-	  before(:all) do
-			b =	 Base.create( item: 'b' )
-			(1..10).map do |n| 
-				new_node =  Node.create( item: n)   
-				(1..10).map{|i|	CONNECTS.create from: new_node, to: ExtraNode.create( item: new_node.item**2), attributes:{ extra: true } }
-				CONNECTS.create from: b, to: new_node, attributes: {basic: true}
-			end
-		end
-		it "check structure" do
-		  expect( Base.count).to eq 1
-		  expect( Node.count).to eq 110
-  		expect( ExtraNode.count).to eq 100 
-		end
-		it  "has valid edges" do
-			expect(Base.where(item: 'b').first.out(/conn/)).to have(10).items 
-			(1..10).each do | n |
-				the_node =   Node.where( item: n ).first 
-				expect( the_node.in(/connects/).out ).to eq Base.where(item: 'b')
-				expect( the_node.out(CONNECTS)).to have(10).items 
-			end
-		end
+  context "Connect some vertices", focus: true do
+    before(:all) do
+      b =	 Arcade::BaseNode.create( item: 'b' )
+      (1..10).map do |n| 
+        new_node =  Arcade::Node.create( item: n)
+        (1..10).map{|i|	new_node.assign vertex: Arcade::ExtraNode.create( item: new_node.item * rand(99999)), via: Arcade::Connects, attributes: { extra: true  }}
+        Arcade::Connects.create from: b, to: new_node, basic: true
+      end
+    end
+    it "check structure"  do
+      expect( Arcade::BaseNode.count).to eq 1
+      expect( Arcade::Node.count).to eq 110
+      expect( Arcade::ExtraNode.count).to eq 100
+      expect( Arcade::Connects.count).to eq 110
+    end
+    it  "has valid edges" do
+      result =  Arcade::BaseNode.nodes(:out, where: { item: 'b' }).first
+      puts result.inspect
+      expect( result ).to have( 10 ).items
+      result.each{|y| expect( y.to be_a Arcade::Node )}
+      (1..10).each do | n |
+        the_node =   Arcade::Node.where( item: n ).first 
+        expect( the_node.in(/connects/).out ).to eq Arcade::BasiccNode.where(item: 'b')
+        expect( the_node.out(Arcade::Connects)).to have(10).items 
+      end
+    end
+  end
 
-		context " One to many connection"  do
-			before(:all){ @c =  Base.create( item: 'c' ) }
+  context " One to many connection"  do
 
-			it "create the structue" do
-				central_node =  Node.create item: 'center'
-				peripherie_nodes =  (1..20).map{ |y|  ExtraNode.create item: y }
-				CONNECTS.create from: central_node, to: peripherie_nodes
-				central_node.reload!
-				expect(CONNECTS.count).to be > 19
-				expect(central_node.out_connects.count).to be >19
-			end
-		end
+    it "create the structue" do
+      central_node =  Arcade::BaseNode.create( item: 'center' ) #
+      #central_node =  Arcade::Node.create item: 'center'
+      peripherie_nodes =  (1..20).map{ |y|  Arcade::ExtraNode.create item: y }
+      Arcade::Connects.create from: central_node, to: peripherie_nodes
+      expect(Arcade::Connects.count).to be > 19
+      expect(central_node.out_connects.count).to be >19
+    end
+  end
 
 
 		context "linear graph"  do
 
 			before(:all) do
-				start_node =  Base.create( item: 'l' ) 
+				start_node =  Arcade::BaseNode.create( item: 'l' ) 
 				linear_elements start_node , 200
 			end
 
-			Given( :start_point ){ Base.where(  item: 'l' ).last }
+			Given( :start_point ){ Arcade::BaseNode.where(  item: 'l' ).last }
 			context "traverse {n} elements" do
 				Given( :all_elements ) { start_point.traverse :out, via: /con/, depth: -1 }
 				Then {  expect( all_elements.size).to eq 200 }
@@ -97,7 +99,7 @@ after(:all){ @db.delete_database database: 'temp' }
 
 				context "and apply median to the set" do
 					Given( :median ) do 
-						OrientSupport::OrientQuery.new from: hundred_elements, 
+						Arcade::Query.new from: hundred_elements, 
 							projection: 'median(note_count)'  , 
 							where: '$depth>=50 '
 					end
@@ -110,13 +112,10 @@ after(:all){ @db.delete_database database: 'temp' }
 
 				context "use nodes" do
 					Given( :start ){ Node.where( note_count: 67).first }
-					Then { expect( start.nodes ).to be_a OrientSupport::Array }
-					Then { expect( start.nodes.first ).to be_a ExtraNode }
+					Then { expect( start.nodes ).to be_an Array }
+					Then { expect( start.nodes.first ).to be_a Arcade::ExtraNode }
 					Then { expect( start.nodes.count ).to eq 1 }
 				end
-
-			end
-			
 		end
 	end
 end

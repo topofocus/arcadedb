@@ -3,12 +3,12 @@ module Arcade
 
     extend Arcade::Support::Sql
     # schema schema.strict    #  -- throws an error if  specified keys are missing
-    transform_keys{ |x|  x[0] == '@' ? x[1..-1].to_sym : x.to_sym }
+#    transform_keys{ |x|  x[0] == '@' ? x[1..-1].to_sym : x.to_sym }
     # Types::Rid -->  only accept  #000:000,  raises an Error, if rid is not present
     attribute :rid, Types::Rid
-    # maybe there are edges
-    attribute :in?, Types::Nominal::Any
-    attribute :out?, Types::Nominal::Any
+    # maybe there are edges   ## removed in favour of instance methods
+#    attribute :in?, Types::Nominal::Any
+#    attribute :out?, Types::Nominal::Any
     # any not defined property goes to values
     attribute :values?, Types::Nominal::Hash
 
@@ -49,23 +49,28 @@ module Arcade
       #
       #  Adds a record to the database
       #
-      #  returns the rid
+      #  returns the inserted record
+      #
+      #  Bucket and Index are supported
+      #
+      #  fired Database-command
+      #  INSERT INTO  <type>  BUCKET<bucket> INDEX <index> [CONTENT {<attributes>}]
+      #        (not supported (jet): [RETURN <expression>] [FROM <query>] )
 
       def insert **attributes
-        db.create database_name, **attributes
-#        db.execute { "insert into #{database_name} CONTENT #{attributes.to_json}" }.first
+        db.insert type: database_name, **attributes
       end
 
-      ## ----------------------------------------- insert       ---------------------------------- ##
+      ## ----------------------------------------- create       ---------------------------------- ##
       #
       #  Adds a record to the database
       #
       #  returns the model dataset
+      #  ( depreciated )
 
       def  create **attributes
 #        Api.begin_transaction db.database
-        rid = insert **attributes
-        db.get rid
+         insert **attributes
 #        Api.commit db.database
       rescue RuntimeError => e
         db.logger.error "Dataset NOT created"
@@ -80,27 +85,24 @@ module Arcade
 
       def count **args
         command = "count(*)"
-      #  db.query( " select #{command} from #{database_name}" ).first[command] rescue 0
-        query( **( { projection:  'COUNT(*)'  }.merge args  ) ).execute(reduce: true){|x|  x[:"COUNT(*)"]}
+        query( **( { projection:  command  }.merge args  ) ).execute(reduce: true){|x|  x[command.to_sym]}
       end
 
       def all
-        db.query "select from #{database_name}"
+        query.execute
       end
 
       def first **args
-        m = query( **( { order: "@rid" , limit: 1  }.merge args ) ).execute(reduce: true)
-       # allocate_record **m if m.is_a? Hash
+         query( **( { order: "@rid" , limit: 1  }.merge args ) ).execute(reduce: true)
       end
 
 
       def last **args
-        m =  query( **( { order: {"@rid" => 'desc'} , limit: 1  }.merge args ) ).execute(reduce: true)
-       # allocate_record **m if m.is_a? Hash
+         query( **( { order: {"@rid" => 'desc'} , limit: 1  }.merge args ) ).execute(reduce: true)
       end
 
       def where *args
-            query( where: args ).execute
+         query( where: args ).execute
       end
 
       # update returns a list of updated records
@@ -122,7 +124,7 @@ module Arcade
         end
       end
 
-      # update! returns the count of affected recrds
+      # update! returns the count of affected records
       #
       #  required parameter:  set:
       #                     where:
@@ -149,8 +151,10 @@ module Arcade
       end
 
       def allocate_record **att
-        att[:rid] = att.fetch :"@rid"                                                   # store rid
-        att =  att.except :"@type", :"@cat", :"@rid"                                    # remove internal attribuutes
+        att[:rid] = att.delete :"@rid"   
+        att[:in] = att.delete(:"@in") #if att[:"@in"].rid?
+        att[:out] = att.delete(:"@out") #if att[:"@out"].rid?
+        att =  att.except :"@type", :"@cat", :"@rid", :"@in", :"@out"                   # remove internal attributes
         new = self.new   att                                                            # create a prototype
         v =  att.except  *new.attributes.keys                                           # get attributes not included in prototype
        # new=  self.new new.attributes.merge( values: v ) unless v.empty?               #
@@ -189,6 +193,14 @@ module Arcade
       end
     end
 
+      def query **args
+        Arcade::Query.new( **{ from: rid }.merge(args) )
+      end
+
+ 
+    def rid?
+      true
+    end
     def to_human
 
 

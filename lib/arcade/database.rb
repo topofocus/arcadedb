@@ -11,6 +11,7 @@ module Arcade
   class Database
     include ::Logging
     extend Dry::Core::ClassAttributes
+    include Support::Model                          #  provides  allocate_model
 
     defines :namespace
     defines :environment
@@ -118,13 +119,23 @@ module Arcade
       Api.create_document database, type,  **params
     end
 
+    def insert  **params
 
-    def get rid
-      if rid.rid?
-        allocate_model( Api.get_record( database, rid))
+      content_params = params.except( :type, :bucket, :index, :from, :return )
+      target_params = params.slice( :type, :bucket, :index )
+      if  target_params.empty?
+        logger.error "Could not insert: target mising (type:, bucket:, index:)"
+      elsif content_params.empty?
+        logger.error "Nothing to Insert"
       else
-        error "Get requires a rid input"
+        content =  "CONTENT #{ content_params.to_json }"
+        target =  target_params.map{|y,z|  y==:type ?  z : "#{y.to_s} #{ z } "}.join
+        Api.execute( database, "INSERT INTO #{target} #{content} ").map{|y| allocate_model y} &.first
       end
+    end
+
+    def get *rid
+        allocate_model( Api.get_record( database, *rid))
     end
 
     def delete rid
@@ -176,10 +187,11 @@ module Arcade
     end
 
     #  returns an array of rid's   (same logic as create)
-    def create_edge  edge_class, from:, to:
+    def create_edge  edge_class, from:, to:,  **attributes
 
+      content = attributes.empty? ?  "" : "CONTENT #{attributes.to_json}"
       cr = ->( f, t ) do
-        edges = execute { "create edge #{edge_class} from #{f} to #{t}" }
+        edges = Api.execute( database, "create edge #{edge_class} from #{f.rid} to #{t.rid} #{content}").map{|y| allocate_model(y) }
         if edges.is_a?(Array) 
           edges.first.rid
         else
@@ -190,8 +202,9 @@ module Arcade
       from =  [from] unless from.is_a? Array
       to =  [to] unless to.is_a? Array
 
-      from.map do | ff |
-          to.map { | tt | cr[ ff,tt ] if  tt.rid? } if ff.rid?
+      from.map do | from_record |
+        puts "from_record: #{from_record}"
+          to.map { | to_record | cr[ from_record, to_record ] if  to_record.rid? } if from_record.rid?
       end.flatten
 
     end
@@ -241,54 +254,6 @@ module Arcade
       end
     end  # def
 
-   private
-    def allocate_model response
-#      puts "Response #{response}"  # debugging
-
-      if response.is_a? Hash
-        rid =  response[:"@rid"]
-        n, type_name = response[:"@type"].camelcase_and_namespace
-        n = self.namespace if n.nil?
-        # choose the appropriate class
-        klass=  Dry::Core::ClassBuilder.new(  name: type_name, parent:  nil, namespace:  n).call
-        # create a new object of that  class with the appropriate attributes
-        #  alternative :  use hash.except( "@type", "@cat" )
-        new = klass.new  response.reject{|k,_| [:"@type", :"@cat"].include? k }
-        att =  response.except :"@type", :"@cat", :"@rid"
-        v =  att.except  *new.attributes.keys
-        new = new.new( values: v ) unless v.empty?
-        new
-      #else
-      #  raise "Dataset #{rid} is either not present or the database connection is broken"
-      end
-#    rescue  Dry::Struct::Error => e
-#      logger.error "Get #{rid} FAILED --> #{e}"
-#      raise
-#    rescue ArgumentError
-#      nil
-#    rescue  => e
-#      puts "Error: #{e.inspect}"
-#      logger.error "Get #{rid} FAILED -->  Model-Class not present"
-#        basic_type =  case response["@cat"]
-#                      when "d"
-#                        :Basicdocument
-#                      when "v"
-#                        :Basicvertex
-#                      when "e"
-#                        :Basicedge
-#                      end
-#        logger.error "Model #{response["@type"]} not defined \n                       Using #{basic_type} instead."
-#        klass=  Dry::Core::ClassBuilder.new(  name: basic_type,
-#                                            parent:  nil,
-#                                         namespace:  Arcade)  #  fix!
-#                                        .call
-#
-#        klass.new rid: response.delete( "@rid" ),
-#                   in: response.delete( "@in"  ),
-#                  out: response.delete( "@out" ),
-#               values: response.reject{ |k,_| ["@type", "@cat"].include? k }.transform_keys(&:to_sym)
-#
-    end
 
 
   end  # class

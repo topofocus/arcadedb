@@ -95,7 +95,34 @@ a hash  ` { :query => " ", `
 			`:limit => a number ,`  
 			`:serializer:  one of :graph, :record }`  
 
+## ORM Behavior
 
+Simple tasks are implemented on the model layer. 
+
+Apart from assessing attributes by their method-name, adjacent edges and notes are fetched through
+
+```ruby 
+  new_vertex = ->(n) { Node.create( note_count: n )  }                      ## lambda to create a Node type record
+  nucleus    =  BaseNode.create item: 'b'                                   ## create a start node
+  (1..10).each{ |n| nucleus.asign( via: Connects, vertex: new_vertex[n]) }  ## connect nodes via Connects-Edges
+```
+After creating a star-like structure, the environment can be explored 
+```ruby 
+  nucleus.edges.to_human
+  =>["<connects[#80:14] :.: #4:0->{}->#34:2>",                                  
+     "<connects[#79:13] :.: #4:0->{}->#31:1>",                                  
+     ( ... )
+     "<connects[#79:14] :.: #4:0->{}->#31:2>"] 
+
+   nucleus.nodes.to_human
+ => ["<node[#34:2]: item: 10>",                                                         
+     "<node[#31:1]: item: 1>",                                                          
+     ( ... )
+     "<node[#31:2]: item: 9>"]    
+```
+
+Edges provide a `vertices`-method to load connected ones.  Both vertices and edges expose `in`, `out`,  `both`-methods to select connections further. 
+Specific edge-classes (types) are provided with the `via:` parameter,  as shown in `assign` above. 
 
 ## Include in your own project
 

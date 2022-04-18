@@ -93,7 +93,11 @@ module Arcade
     def self.get_record database, *rid
       rid =  rid.join(':')
       rid = rid[1..-1] if rid[0]=="#"
+      if rid.rid?
       get_data  "document/#{database}/#{rid}"
+      else
+        error "Get requires a rid input"
+      end
     end
 
     # ------------------------------  property        ------------------------------------------------- #
