@@ -127,7 +127,7 @@ Edges provide a `vertices`-method to load connected ones.  Both vertices and edg
 Specific edge-classes (types) are provided with the `via:` parameter,  as shown in `assign` above. 
 
 
-## Travese Facility
+## Traverse Facility
 
 To ease queries to the graph database, `Arcade::Query` supports traversal of nodes
 
@@ -136,7 +136,7 @@ Create a Chain of Nodes:
 
   def linear_elements start, count  #returns the edge created
       new_vertex = ->(n) { Arcade::ExtraNode.create( note_count: n )  }
-          (2..count).each{ |n| start = start.assign vertex: new_vertex[n], via: Arcade::Connects  }
+      (2..count).each{ |n| start = start.assign vertex: new_vertex[n], via: Arcade::Connects  }
   end
    
   start_node =  Arcade::ExtraNode.create( item: 'linear'  )
