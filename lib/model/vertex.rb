@@ -121,14 +121,15 @@ module Arcade
 	#    select  from  ( traverse  outE('}#{via}').in  from #{vertex}  while $depth < #{depth}   ) 
 	#            where $depth >= #{start_at} 
 	#
-	# If » excecute: false « is specified, the traverse-statement is returned (as Orient-Query object)
+	# If » excecute: false « is specified, the traverse-statement is returned (as Arcade::Query object)
 	def traverse in_or_out = :out, via: nil,  depth: 1, execute: true, start_at: 0, where: nil
 
-			edges = detect_edges( in_or_out, via, expand: false)
+#			edges = detect_edges( in_or_out, via, expand: false)
 			the_query = query kind: 'traverse' 
+      the_query.projection  in_or_out.to_s + "(" + resolve_edge_name(via) + ")"
 			the_query.where where if where.present?
 			the_query.while "$depth < #{depth} " unless depth <=0
-			edges.each{ |ec| the_query.nodes in_or_out, via: ec, expand: false }
+#			edges.each{ |ec| the_query.nodes in_or_out, via: ec, expand: false }
 			outer_query = Query.new from: the_query, where: "$depth >= #{start_at}"
 			if execute 
 			   outer_query.execute

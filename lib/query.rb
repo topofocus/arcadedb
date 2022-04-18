@@ -343,7 +343,11 @@ end # class << self
       ## case  select count(*) from  ...  --> [{ :count => n }]   projection is set
       ## case update ... after $current   --> [{ :$current => n}] projection is not set, but result is an integer
       #  separate key from  values and get model-files 
-      result =  result.first.values.map{|x| allocate_model x}  if  !@q[:projection].empty?  && result.first.is_a?(Hash)  &&  result.first.values.is_a?( Array )
+      if  !@q[:projection].empty?  && result.first.is_a?(Hash)  &&  result.first.values.is_a?( Array )
+        result.first.values.map{|x| allocate_model x}  
+     else
+                result # .map{|y| allocate_model y }
+      end
 			## standard case: return Array
 			#result.arcade_flatten
 		end
