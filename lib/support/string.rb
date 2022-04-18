@@ -10,7 +10,12 @@ module Arcade
         if  self.count("_")  >= 1 || self.count('-') >=1
           delimiters = Regexp.union(['-', '_'])
           n,c= self.split(delimiters).then { |first, *rest| [first.tap {|s| s[0] = s[0].upcase}, rest.map(&:capitalize).join]  }
-          namespace_present =  Object.const_get(n)  rescue  false # Database.namespace
+          ## if base is the first part of the type-name, probably Arcade::Base is choosen a namespace. thats wrong
+          namespace_present = unless n == 'Base'
+                                Object.const_get(n)  rescue  false # Database.namespace
+                              else 
+                                false
+          end
           # if no namespace is found, leave it empty and return the capitalized string as class name
           namespace_present && !c.nil? ? [namespace_present,c] : [Database.namespace, n+c]
         else
@@ -71,7 +76,7 @@ module Arcade
       def update **args
         r=   Arcade::Query.new( from: self , kind: :update, set: args).execute
         r= r.pop if r.is_a?( Array ) 
-        r["$current"].load_rid
+        r[:"$current"].load_rid
       end
 
       def to_human

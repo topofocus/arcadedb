@@ -1,5 +1,5 @@
 module Arcade
-  
+
   # Error handling
   class Error < RuntimeError
   end
@@ -13,18 +13,11 @@ module Arcade
   class LoadError < LoadError
   end
 
-  class RestError < LoadError
+
+  class RollbackError < RuntimeError
   end
 
-  class TransmissionError < RuntimeError
-  end
 end # module  Arcade
-module Admin
-  class LoadError < LoadError
-  end
-  class RestError < LoadError
-  end
-end
 
 # Patching Object with universally accessible top level error method. 
 # The method is used throughout the lib instead of plainly raising exceptions. 
@@ -40,10 +33,8 @@ def error message, type=:standard, backtrace=nil
     Arcade::SymbolError.new message
   when :load
     Arcade::LoadError.new message
-  when :flex
-    Rest::RestError.new message
-  when :reader
-    Arcade::TransmissionError.new message
+  when :commit
+    Arcade::RollbackError.new message
   end
   e.set_backtrace(backtrace) if backtrace
   raise e

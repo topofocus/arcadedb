@@ -13,6 +13,7 @@ gem  'pg'
 group :development, :test do
 	gem "awesome_print"
   gem 'pastel'
+  gem 'zeitwerk'
   gem 'terminal-table'
 	gem "rspec"
 	gem 'rspec-legacy_formatters'

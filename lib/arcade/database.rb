@@ -4,13 +4,14 @@ module Arcade
   #
   #  currently, only attributes of type String are supported
   #
-  #  {Database-instance}.database points to the connected aradedb-database
+  #  {Database-instance}.database points to the connected Aradedb-database
   #  DB.hi
   #
   ##
   class Database
     include ::Logging
     extend Dry::Core::ClassAttributes
+    include Support::Model                          #  provides  allocate_model
 
     defines :namespace
     defines :environment
@@ -38,7 +39,7 @@ module Arcade
     #
     def types
       #  uses API
-      t= Api.query(database){ "select from schema:types"   }
+      t= Api.query(database, "select from schema:types"   )
                    .map{ |x| x.transform_keys &:to_sym     }   #  symbolize keys
                    .map{ |y| y.delete_if{|_,b,| b.empty? } }   #  eliminate  empty entries
 
@@ -76,47 +77,71 @@ module Arcade
     # ------------ create type -----------
     #  returns an Array
     #  Example:  > create_type :vertex, :my_vertex
-    #           => [{"typeName"=>"my_vertex", "operation"=>"create vertex type"}] 
+    #           => [{"typeName"=>"my_vertex", "operation"=>"create vertex type"}]
     #
+    #  takes additional arguments:  extends: '<a supertype>'  (for inheritance)
+    #                               bucket:  <a list of  bucket-id's >
+    #                               buckets:  <how many bukets to assign>
+    #
+    #  additional arguments are just added to the command
     #
     # its aliased as `create_class`
     #
-    def create_type kind, type
+    def create_type kind, type, **args
+
       exe = -> do
-        case kind.to_s
+        case kind.to_s.downcase
         when /^v/
-          "create vertex type #{type}"
+          "create vertex type #{type} "
         when /^d/
-          "create document type #{type}"
+          "create document type #{type} "
         when /^e/
-          "create edge type #{type}"
-        end
+          "create edge type #{type} "
+        end.concat( args.map{|x,y| "#{x} #{y} "}.join)
       end
-      execute &exe
+      Api.execute database, &exe
     end
 
     alias create_class create_type
 
 
     # ------------ create  -----------
-    # returns an rid of the sucessufully  created vertex or document
+    # returns an rid of the successfully  created vertex or document
     #
     #  Parameter:  name of the vertex or document type
     #              Hash of attributes
     #
     #  Example:   > DB.create :my_vertex, a: 14, name: "Hugo"
-    #             => "#177:0" 
+    #             => "#177:0"
     #
     def create type, **params
       #  uses API
       Api.create_document database, type,  **params
     end
 
+    def insert  **params
 
-    def get rid
-      allocate_model( Api.get_record( database, rid) )
+      content_params = params.except( :type, :bucket, :index, :from, :return )
+      target_params = params.slice( :type, :bucket, :index )
+      if  target_params.empty?
+        logger.error "Could not insert: target mising (type:, bucket:, index:)"
+      elsif content_params.empty?
+        logger.error "Nothing to Insert"
+      else
+        content =  "CONTENT #{ content_params.to_json }"
+        target =  target_params.map{|y,z|  y==:type ?  z : "#{y.to_s} #{ z } "}.join
+        Api.execute( database, "INSERT INTO #{target} #{content} ").map{|y| allocate_model y} &.first
+      end
     end
 
+    def get *rid
+        allocate_model( Api.get_record( database, *rid))
+    end
+
+    def delete rid
+      r =  Api.execute( database ){ "delete from #{rid}" }
+      success =  r == [{ :count => 1 }]
+    end
 
     # execute a command  which modifies the database
     #
@@ -127,7 +152,7 @@ module Arcade
       Api.begin_transaction database
      response = Api.execute database, &block
      r= response.map do | r |
-        if r.key? "@rid"
+        if r.key? :@rid
          allocate_model r
         else
           r
@@ -147,21 +172,26 @@ module Arcade
     # detects database-records and  allocates them as model-objects
     #
     def query  query_object
-      response= Api.execute(database){ query_object.to_s }
-      response.map do |r|
-        if r.key? "@rid"
-          allocate_model r
-        else
-          r
+      response= Api.query(database, query_object.to_s)
+      if response.is_a?(Hash)
+        response.map do |r|
+          if r.key? :"@rid"
+            allocate_model r
+          else
+            r
+          end
         end
+      else
+        response
       end
     end
 
     #  returns an array of rid's   (same logic as create)
-    def create_edge  edge_class, from:, to:
+    def create_edge  edge_class, from:, to:,  **attributes
 
+      content = attributes.empty? ?  "" : "CONTENT #{attributes.to_json}"
       cr = ->( f, t ) do
-        edges = execute { "create edge #{edge_class} from #{f} to #{t}" }
+        edges = Api.execute( database, "create edge #{edge_class} from #{f.rid} to #{t.rid} #{content}").map{|y| allocate_model(y) }
         if edges.is_a?(Array) 
           edges.first.rid
         else
@@ -172,8 +202,9 @@ module Arcade
       from =  [from] unless from.is_a? Array
       to =  [to] unless to.is_a? Array
 
-      from.map do | ff |
-          to.map { | tt | cr[ ff,tt ] if  tt.rid? } if ff.rid?
+      from.map do | from_record |
+        puts "from_record: #{from_record}"
+          to.map { | to_record | cr[ from_record, to_record ] if  to_record.rid? } if from_record.rid?
       end.flatten
 
     end
@@ -223,50 +254,6 @@ module Arcade
       end
     end  # def
 
-   private
-    def allocate_model response
-     # puts "Response #{response}"
-
-      if response.is_a? Hash
-        rid =  response["@rid"]
-        n, type_name = response["@type"].camelcase_and_namespace
-        n = self.namespace if n.nil?
-        # choose the appropriate class
-        klass=  Dry::Core::ClassBuilder.new(  name: type_name, parent:  nil, namespace:  n).call
-        # create a new object of that  class with the appropriate attributes
-        #  alternative :  use hash.except( "@type", "@cat" )
-        klass.new  response.reject{|k,_| ["@type", "@cat"].include? k }
-      else
-        raise "Dataset #{rid} is either not present or the database connection is broken"
-      end
-#    rescue  Dry::Struct::Error => e
-#      logger.error "Get #{rid} FAILED --> #{e}"
-#      raise
-#    rescue ArgumentError
-#      nil
-#    rescue  => e
-#      puts "Error: #{e.inspect}"
-#      logger.error "Get #{rid} FAILED -->  Model-Class not present"
-#        basic_type =  case response["@cat"]
-#                      when "d"
-#                        :Basicdocument
-#                      when "v"
-#                        :Basicvertex
-#                      when "e"
-#                        :Basicedge
-#                      end
-#        logger.error "Model #{response["@type"]} not defined \n                       Using #{basic_type} instead."
-#        klass=  Dry::Core::ClassBuilder.new(  name: basic_type,
-#                                            parent:  nil,
-#                                         namespace:  Arcade)  #  fix!
-#                                        .call
-#
-#        klass.new rid: response.delete( "@rid" ),
-#                   in: response.delete( "@in"  ),
-#                  out: response.delete( "@out" ),
-#               values: response.reject{ |k,_| ["@type", "@cat"].include? k }.transform_keys(&:to_sym)
-#
-    end
 
 
   end  # class

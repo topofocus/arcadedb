@@ -7,7 +7,9 @@ def clear_arcade
   Arcade::Api.drop_database Arcade::Config.database[:test] 
   end
   Arcade::Api.create_database Arcade::Config.database[:test]
+  Arcade::Api.create_database Arcade::Config.database[:test]
 end
+
 
 RSpec.describe Arcade::Api do
   context "Arade returns present databases" do
@@ -27,23 +29,32 @@ RSpec.describe Arcade::Api do
       r= Arcade::Api.execute( Arcade::Config.database[:test]) { "create document type test_document" } 
       expect( r.size ).to eq 1
       expect( r.first ).to be_a Hash
-      expect( r.first.keys ).to eq ["typeName", "operation"]
-      expect( r.first["typeName"] ).to eq "test_document"
-      expect( r.first["operation"] ).to eq "create document type"
+      expect( r.first.keys ).to eq [:typeName, :operation]
+      expect( r.first[:typeName] ).to eq "test_document"
+      expect( r.first[:operation] ).to eq "create document type"
     end
 
-    it "The document type is present" do
+    it "The document type is present", focus: true do
       # fetch list of types
-      r= Arcade::Api.execute( Arcade::Config.database[:test]){  'select from schema:types' }
-      #=> [{"indexes"=>[], "parentTypes"=>[], "name"=>"test_document", "type"=>"document", "properties"=>[]}]
+     r= Arcade::Api.execute( Arcade::Config.database[:test]){  'select from schema:types' }.first
+      #=> {"indexes"=>[], "parentTypes"=>[], "name"=>"test_document", "type"=>"document", "properties"=>[]}
 
-      expect(r).to be_an Array
-      expect(r.first).to be_a  Hash
-      expect(r.first["name"]).to eq 'test_document'
-      expect(r.first["type"]).to eq 'document'
-      expect(r.first["properties"]).to be_empty
+      expect( r ).to be_a  Hash
+      expect( r[:name] ).to eq 'test_document'
+      expect( r[:type] ).to eq 'document'
+      expect( r[:properties] ).to be_empty
     end
-    it "Insert a dataset" do
+
+    it "Add a property and an Index" , focus: true  do
+      Arcade::Api.execute( Arcade::Config.database[:test]) { "create document type my_names" }
+      expect(  Arcade::Api.property( Arcade::Config.database[:test] , 'my_names',
+                                     name: :string, age: :integer)).to  be_truthy
+      expect(  Arcade::Api.index( Arcade::Config.database[:test] , 'my_names',
+                                     :age, :unique)).to be_truthy
+   #   expect(  Arcade::Api.property( Arcade::Config.database[:test] , 'my_names',
+   #                                 name: :string, age: :integer)).to be_truthy
+    end
+    it "Insert a dataset"  do
       r= Arcade::Api.create_document  Arcade::Config.database[:test], 'test_document' ,  name: "Gugo",  bes: "Über", age: 54.3
       expect(r).to eq "#1:0"   # returns the rid
 
@@ -51,13 +62,13 @@ RSpec.describe Arcade::Api do
 
       expect(r).to be_an Hash
       ## includes system attributes
-      expect(r.keys).to include("@rid", "@type", "@cat" )
+      expect(r.keys).to include(:"@rid", :"@type", :"@cat" )
       # rid is proper formated
-      expect(r["@rid"]).to  match /\A[#]{,1}[0-9]{1,}:[0-9]{1,}\z/
+      expect(r[:"@rid"]).to  match /\A[#]{,1}[0-9]{1,}:[0-9]{1,}\z/
       # includes  fields from »create document call« and proper values
-      expect(r.keys).to include( "name", "bes", "age" )
-      expect(r["age"]).to eq 54.3
-      expect(r["bes"]).to eq "Über"
+      expect(r.keys).to include( :name, :bes, :age )
+      expect(r[:age]).to eq 54.3
+      expect(r[:bes]).to eq "Über"
       #   {"bes"=>"Über", "@rid"=>"#1:0", "@type"=>"test_document", "name"=>"Gugo", "@cat"=>"d", "age"=>54.3}
     end
   end
@@ -72,9 +83,9 @@ RSpec.describe Arcade::Api do
 
       expect(r).to be_an Array
       expect(r.last).to be_a  Hash
-      expect(r.last["name"]).to eq 'test_vertex'
-      expect(r.last["type"]).to eq 'vertex'
-      expect(r.last["properties"]).to be_empty
+      expect(r.last[:name]).to eq 'test_vertex'
+      expect(r.last[:type]).to eq 'vertex'
+      expect(r.last[:properties]).to be_empty
     end
     it "Insert a dataset" do
       rid= Arcade::Api.create_document  Arcade::Config.database[:test], 'test_vertex',  name: "Gugo",  bes: "Über", age: 54.3
@@ -85,14 +96,14 @@ RSpec.describe Arcade::Api do
       puts "vertex: #{r}"
       expect(r).to be_an Hash
       ## includes system attributes
-      expect(r.keys).to include("@rid", "@type", "@cat" )
-      expect(r.keys).to include("@in", "@out" )
+      expect(r.keys).to include(:"@rid",:"@type", :"@cat" )
+      expect(r.keys).to include(:"@in", :"@out" )
       # rid is proper formated
-      expect(r["@rid"]).to  match /\A[#]{,1}[0-9]{1,}:[0-9]{1,}\z/
+      expect(r[:"@rid"]).to  match /\A[#]{,1}[0-9]{1,}:[0-9]{1,}\z/
       # includes  fields from »create document call« and proper values
-      expect(r.keys).to include( "name", "bes", "age" )
-      expect(r["age"]).to eq 54.3
-      expect(r["bes"]).to eq "Über"
+      expect(r.keys).to include( :name, :bes, :age )
+      expect(r[:age]).to eq 54.3
+      expect(r[:bes]).to eq "Über"
       #  {"@out"=>0, "bes"=>"Über", "@rid"=>"#9:0", "@in"=>0, "@type"=>"test_vertex", "name"=>"Gugo", "@cat"=>"v", "age"=>54.3}
     end
   end
@@ -109,9 +120,9 @@ RSpec.describe Arcade::Api do
 
       expect(r).to be_an Array
       expect(r[1]).to be_a  Hash
-      expect(r[1]["name"]).to eq 'test_edge'
-      expect(r[1]["type"]).to eq 'edge'
-      expect(r[1]["properties"]).to be_empty
+      expect(r[1][:name]).to eq 'test_edge'
+      expect(r[1][:type]).to eq 'edge'
+      expect(r[1][:properties]).to be_empty
     end
     it "Insert an edge" do
       rid1= Arcade::Api.create_document  Arcade::Config.database[:test], 'test_vertex',  name: "parent", age: 54.3
@@ -121,10 +132,10 @@ RSpec.describe Arcade::Api do
       r =  edge.first
       expect(r).to be_an Hash
       ## includes system attributes
-      expect(r.keys).to include("@rid", "@type", "@cat" )
-      expect(r.keys).to include("@in", "@out" )
+      expect(r.keys).to include(:"@rid", :"@type", :"@cat" )
+      expect(r.keys).to include(:"@in", :"@out" )
       # rid is proper formated
-      expect(r["@rid"]).to  match /\A[#]{,1}[0-9]{1,}:[0-9]{1,}\z/
+      expect(r[:"@rid"]).to  match /\A[#]{,1}[0-9]{1,}:[0-9]{1,}\z/
       # includes  fields from »create document call« and proper values
     end
   end
