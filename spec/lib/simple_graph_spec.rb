@@ -13,10 +13,10 @@ RSpec.describe "Edges" do
     clear_arcade
     DB = Arcade::Database.new :test
 
-    Arcade::Vertex.create_type :base_node
-    Arcade::Vertex.create_type :node
-    Arcade::Node.create_type :extra_node
-    Arcade::Edge.create_type :connects
+    Arcade::Vertex.create_type Arcade::BaseNode
+    Arcade::Vertex.create_type Arcade::Node
+    Arcade::Node.create_type Arcade::ExtraNode
+    Arcade::Edge.create_type  Arcade::Connects
     #   c.uniq_index
   end
 
@@ -24,7 +24,7 @@ RSpec.describe "Edges" do
 
   context " One to many connection"  do
     before(:all) do
-      b =	 Arcade::ExtraNode.create( item: 'nucleus' )
+      b =	 Arcade::ExtraNode.create( extraitem: 'nucleus' )
       (1..10).map do |n| 
         new_node =  Arcade::Node.create( item: n)
         (1..10).map{|i|	new_node.assign vertex: Arcade::Node.create( item: new_node.item * rand(99999)), via: Arcade::Connects, attributes: { extra: true  }}
@@ -42,11 +42,11 @@ RSpec.describe "Edges" do
     context "linear graph"  do
 
       before(:all) do
-        start_node =  Arcade::ExtraNode.create( item: 'linear' )
+        start_node =  Arcade::ExtraNode.create( extraitem: 'linear' )
         linear_elements start_node , 200
       end
 
-      Given( :start_point ){ Arcade::Node.where(  item: 'linear' ).first }
+      Given( :start_point ){ Arcade::ExtraNode.where(  extraitem: 'linear' ).first }
       context "traverse {n} elements" do
         Given( :all_elements ) { start_point.traverse :out, via: Arcade::Connects, depth: -1 }
         Then {  expect( all_elements.size).to eq 200 }
@@ -71,7 +71,7 @@ RSpec.describe "Edges" do
             projection: 'median(note_count)'  ,
             where: '$depth>=50 '
         end
-        Then { median.to_s == "select median(note_count) from  ( traverse out(connects) from #52:0 while $depth < 100   )  where $depth>=50  " }
+        Then { median.to_s == "select median(note_count) from  ( traverse out(connects) from #{start_point.rid} while $depth < 100   )  where $depth>=50  " }
 
         Given( :median_q ){ median.execute(reduce: true) }  # result: {:"median(note_count)"=>75.5
         Then {  median_q.keys == [:"median(note_count)"] }

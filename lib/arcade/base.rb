@@ -12,6 +12,7 @@ module Arcade
     # any not defined property goes to values
     attribute :values?, Types::Nominal::Hash
 
+
     #                                                                                               #
     ## ----------------------------------------- Class Methods------------------------------------ ##
     #                                                                                               #
@@ -23,23 +24,29 @@ module Arcade
         self.name.snake_case
       end
 
-      def create_type name
+      def create_type  type_class
         e = ancestors.each
         superclass = e.next  # the actual class
         the_class =  superclass
         loop do
           if ['Document','Vertex', 'Edge'].include? the_class.demodulize
-#            extends =  (the_class != superclass) ? { "EXTENDS #{superclass.to_s.snake_case} " : ""
-#            db.execute { "create  #{the_class.demodulize} TYPE  #{name} #{extends} " }
-           if  the_class == superclass
-            db.create_type the_class.demodulize, name
-           else
-            db.create_type the_class.demodulize, name, extends:  superclass.to_s.snake_case
-          end
-            break
+            if  the_class == superclass
+              db.create_type the_class.demodulize, type_class.to_s.snake_case
+            else
+              db.create_type the_class.demodulize, type_class.to_s.snake_case, extends:  superclass.to_s.snake_case
+            end
+            break  # stop itaration
           end
           the_class = e.next  # the actual class
         end
+        custom_setup = type_class.db_init rescue ""
+        custom_setup.each_line do |  command |
+          the_command =  command[0 .. -2]  #  remove '\n'
+          next if the_command == ''
+        #  db.logger.info "Custom Setup:: #{the_command}"
+          db.execute { the_command }
+        end unless custom_setup.nil?
+
       end
       def properties
 
