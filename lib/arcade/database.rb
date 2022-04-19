@@ -154,7 +154,7 @@ module Arcade
       # puts response.inspect  # debugging
       r= if  response.is_a? Hash
            allocate_model res
-         else
+         elsif response.is_a? Array
            response.map do | res |
              if res.key? :"@rid"
                allocate_model res
@@ -162,6 +162,8 @@ module Arcade
                res
              end
            end
+         else
+           response
          end
      Api.commit database
      r # return associated array of Arcade::Base-objects

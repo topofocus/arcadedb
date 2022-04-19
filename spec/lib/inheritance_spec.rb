@@ -19,16 +19,16 @@ RSpec.describe Arcade::Document do
   before(:all) do
     clear_arcade
     DB = Arcade::Database.new :test
-    DB.create_type :vertex, :basic_node
-    Arcade::Vertex.create_type  :node
-    Arcade::Node.create_type :extra_node
-    Arcade::Edge.create_type :connects
+    Arcade::Vertex.create_type  Arcade::BaseNode
+    Arcade::Vertex.create_type Arcade::Node
+    Arcade::Node.create_type  Arcade::ExtraNode
+    Arcade::Edge.create_type Arcade::Connects
   end
 
 
   context "check environment" do
     subject { DB.hierarchy }
-    its(:first) { is_expected.to eq ['basic_node'] }
+    its(:first) { is_expected.to eq ['base_node'] }
     ## Detect Inheritance 
     its(:last)  { is_expected.to eq ['node', 'extra_node'] }
   end
