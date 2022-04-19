@@ -4,7 +4,7 @@ require 'database_helper'
 RSpec.describe Arcade::Database do
   before(:all) do
     clear_arcade
-    DB = Arcade::Database.new :test
+    DB = Arcade::Database.new Arcade::Test
   end
 
   context "It memoises the database" do

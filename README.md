@@ -45,6 +45,16 @@ Person.delete all: true || where: age: 56 , ...
 Model-Classes have to be declared in the model directory. Namespaces are supported. 
 Model-attributes are taken from [Dry-types](https://dry-rb.org/gems/dry-types/1.2/built-in-types/).
 
+Database [Properties](https://docs.arcadedb.com/#SQL-Create-Property) and [Indexes](https://docs.arcadedb.com/#SQL-Create-Index) are declared in the model file. [Example](https://github.com/topofocus/arcadedb/blob/main/spec/model/node.rb)
+If the model based type-initialisation is used
+the commands are processed after creating the database-type.
+```ruby
+Vertex.create_type My::Names                # create tyoe for class Names < Arcade::Vertex 
+My::Names.create_type My::TranslatedNames   # create type for class TranslatedNames < Names
+Edge.create_type Connects                   # create type for class Connects < Arcade::Edge
+```
+
+
 A **Query Preprocessor** is implemented. Its adapted from ActiveOrient. The [documentation](https://github.com/topofocus/active-orient/wiki/OrientQuery)
 is still valid,  however the class has changed to `Arcade::Query`. 
 
@@ -90,7 +100,7 @@ $ Arcade::Api.get_record <database>,  rid      #  returns a hash
 
 `<query>` is  either a  string or   a hash: 
 ```ruby 
-{  :queryi     => "<the query string> ",
+{  :query      => "<the query string> ",
    :language   => one of :sql, :cypher, :gmelin: :neo4 ,
 	 :params     =>   a  hash of parameters,
 	 :limit      => a number ,
@@ -99,7 +109,23 @@ $ Arcade::Api.get_record <database>,  rid      #  returns a hash
 
 ## ORM Behavior
 
-Simple tasks are implemented on the model layer. 
+Simple tasks are implemented on the model layer. a
+
+### Ensure that a Record exists
+
+The `upsert` command either updates or creates a database record.   
+
+```ruby
+  User.upsert name: 'Hugo'
+  # or
+  User.upsert set: { age: 46 }, where: { name: 'Hugo' }
+```
+either creates the record (and returns it) or returns the existing database entry. Obviously, the addressed attribute (where condition) 
+must have a proper index. 
+
+The `upsert` statement provides a smart method to ensure the presence of an unique starting point. 
+
+### Assign Nodes to a Vertex 
 
 Apart from assessing attributes by their method-name, adjacent edges and notes are fetched through
 
@@ -127,7 +153,7 @@ Edges provide a `vertices`-method to load connected ones.  Both vertices and edg
 Specific edge-classes (types) are provided with the `via:` parameter,  as shown in `assign` above. 
 
 
-## Traverse Facility
+### Traverse Facility
 
 To ease queries to the graph database, `Arcade::Query` supports traversal of nodes
 

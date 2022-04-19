@@ -78,6 +78,7 @@ module Arcade
 				[ "CREATE VERTEX", target, set ].compact.join(' ')
 			#	[ kind, target, set,  return_statement ,where,  limit, misc ].compact.join(' ')
 			elsif kind.to_sym == :upsert
+        set(  generate_sql_list( @q[:where] ){ @fill || 'and' } ) if set.nil?
 				return_statement = "return after " + ( @q[:aliases].empty? ?  "$current" : @q[:aliases].first.to_s)
 				[ "update", target, set,"upsert",  return_statement , where, limit, misc  ].compact.join(' ')
 				#[ kind,  where, return_statement ].compact.join(' ')

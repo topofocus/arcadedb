@@ -146,11 +146,16 @@ module Arcade
 
       # returns a list of updated records
       def upsert **args
-        if args.keys.include?(:set) && args.keys.include?(:where)
-          result= query( **( { kind: :upsert }.merge args ) ).execute.map{|r| r[:"$current"].load_rid }
-        else
-          raise "at least set: and where: are required to perform this operation"
-        end
+        set_statement = args.delete :set
+        where_statement = args[:where] || args
+        statement = if set_statement
+                      { set: set_statement, where: where_statement }
+                    else
+                      { where: where_statement }
+                    end
+        result= query( **( { kind: :upsert  }.merge statement ) ).execute.map do | answer|
+            answer[:"$current"] &.load_rid
+        end.compact
       end
 
       def query **args
