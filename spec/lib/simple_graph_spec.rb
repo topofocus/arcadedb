@@ -13,10 +13,10 @@ RSpec.describe "Edges" do
     clear_arcade
     DB = Arcade::Database.new :test
 
-    Arcade::Vertex.create_type Arcade::BaseNode
-    Arcade::Vertex.create_type Arcade::Node
-    Arcade::Node.create_type Arcade::ExtraNode
-    Arcade::Edge.create_type  Arcade::Connects
+    Arcade::BaseNode.create_type
+    Arcade::Node.create_type
+    Arcade::ExtraNode.create_type
+    Arcade::Connects.create_type
     #   c.uniq_index
   end
 

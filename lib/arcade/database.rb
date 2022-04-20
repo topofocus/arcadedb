@@ -45,6 +45,13 @@ module Arcade
 
     end
 
+    def indexes
+      DB.types.find{|x| x.key? :indexes }[:indexes]
+    end
+
+    def properties
+
+    end
 
     # ------------ hierarchy -------------
     #  returns an Array of types

@@ -9,8 +9,8 @@ RSpec.describe Arcade::Query do
   before( :all ) do
     clear_arcade
     DB= Arcade::Database.new :test
-    Arcade::Vertex.create_type Arcade::TestQuery
-    Arcade::Document.create_type Arcade::TestDocument
+    Arcade::TestQuery.create_type
+    Arcade::TestDocument.create_type
 #    @db.create_class 'Openinterest'
 #    @db.create_class "match_query"
   end # before

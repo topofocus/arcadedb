@@ -16,11 +16,11 @@ RSpec.describe Arcade::Document do
   before(:all) do
     clear_arcade
     DB = Arcade::Database.new :test
-    Arcade::Document.create_type Arcade::TestDocument
+    Arcade::TestDocument.create_type
   end
 
 
-  context "CRUD" do
+  context "CRUD" do     ##  unfinised
     it  "create a document" do
       document =  Arcade::TestDocument.create name: 'Hugo', age: 40
       expect( document ).to be_a Arcade::TestDocument
@@ -30,18 +30,18 @@ RSpec.describe Arcade::Document do
       expect( Arcade::TestDocument.count ).to eq 1
     end
 
-    it "try to create a document with constrains" do  # Index on name: NOTUNIQUE!!
+    it "try to create a document with constrains" do  
       document =  Arcade::TestDocument.create name: 'Hugo', age: '40'
 
-      expect( Arcade::TestDocument.count ).to eq 2
+      expect( Arcade::TestDocument.count ).to eq 1
     end
 
     it "Use schemaless properties" do
-      document =  Arcade::TestDocument.create name: 'Pugo', age: 60,  city: 'London'
-      expect( Arcade::TestDocument.count ).to eq 3
+      document =  Arcade::TestDocument.create name: 'Hugo', age: 60,  city: 'London'
+      expect( Arcade::TestDocument.count ).to eq 2
       expect( document.city ).to be_a String
       expect( document.values ).to include  city: 'London' 
-      expect( document.name ).to eq "Pugo"
+      expect( document.name ).to eq "Hugo"
       expect( document.age ).to eq 60
 
 
