@@ -162,6 +162,8 @@ module Arcade
       r= if  response.is_a? Hash
            allocate_model res
          elsif response.is_a? Array
+           # remove empty results
+           response.delete_if{|y| y.empty?}
            response.map do | res |
              if res.key? :"@rid"
                allocate_model res

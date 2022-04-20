@@ -99,7 +99,7 @@ module Arcade
       def count **args
         command = "count(*)"
         query( **( { projection:  command  }.merge args  ) ).execute(reduce: true){|x|  x[command.to_sym]}
-      end
+end
 
       def all
         query.execute
@@ -215,7 +215,13 @@ module Arcade
         Arcade::Query.new( **{ from: rid }.merge(args) )
       end
 
- 
+      # to JSON  controlls the serialisation of Arcade::Base Objects for the HTTP-JSON API
+      #
+      # ensure, that only the rid is transmitted to the database
+      #
+      def to_json *args
+          rid
+      end
     def rid?
       true
     end
