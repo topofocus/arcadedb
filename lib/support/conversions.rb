@@ -93,6 +93,10 @@ module Arcade
       def to_or
         self
       end
+
+      def rid?
+        false
+      end
     end
 
     module  Time
@@ -130,7 +134,7 @@ module Arcade
       end
 
       def rid?
-        false
+       nil
       end
     end
 

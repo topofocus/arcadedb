@@ -343,9 +343,9 @@ end # class << self
 			return  result.first if reduce && result.size == 1
       ## case  select count(*) from  ...  --> [{ :count => n }]   projection is set
       ## case update ... after $current   --> [{ :$current => n}] projection is not set, but result is an integer
-      #  separate key from  values and get model-files 
+      #  separate key from  values and get model-files
       if  !@q[:projection].empty?  && result.first.is_a?(Hash)  &&  result.first.values.is_a?( Array )
-        result.first.values.map{|x| allocate_model x}  
+        result.first.values.map{|x| allocate_model x}
      else
                 result # .map{|y| allocate_model y }
       end

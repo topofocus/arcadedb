@@ -24,22 +24,28 @@ module Arcade
         self.name.snake_case
       end
 
-      def create_type  type_class
+      def create_type
+        parent_present = ->(cl){ db.hierarchy.flatten.include? cl }
         e = ancestors.each
-        superclass = e.next  # the actual class
-        the_class =  superclass
+        myselfclass = e.next  # start with the actual class(self)
+        superclass = the_class  = e.next
         loop do
           if ['Document','Vertex', 'Edge'].include? the_class.demodulize
-            if  the_class == superclass
-              db.create_type the_class.demodulize, type_class.to_s.snake_case
+            if  the_class == superclass  # no inheritance
+              ## we have to use demodulise as the_class actually is Arcade::Vertex, ...
+              db.create_type the_class.demodulize, to_s.snake_case
             else
-              db.create_type the_class.demodulize, type_class.to_s.snake_case, extends:  superclass.to_s.snake_case
+              extended = superclass.to_s.snake_case
+              if !parent_present[extended]
+                superclass.create_type
+              end
+              db.create_type the_class.demodulize, to_s.snake_case, extends:  extended
             end
-            break  # stop itaration
+            break  # stop iteration
           end
-          the_class = e.next  # the actual class
+          the_class = e.next  # iterate through the enumerator
         end
-        custom_setup = type_class.db_init rescue ""
+        custom_setup = db_init rescue ""
         custom_setup.each_line do |  command |
           the_command =  command[0 .. -2]  #  remove '\n'
           next if the_command == ''
@@ -93,7 +99,7 @@ module Arcade
       def count **args
         command = "count(*)"
         query( **( { projection:  command  }.merge args  ) ).execute(reduce: true){|x|  x[command.to_sym]}
-      end
+end
 
       def all
         query.execute
@@ -209,7 +215,13 @@ module Arcade
         Arcade::Query.new( **{ from: rid }.merge(args) )
       end
 
- 
+      # to JSON  controlls the serialisation of Arcade::Base Objects for the HTTP-JSON API
+      #
+      # ensure, that only the rid is transmitted to the database
+      #
+      def to_json *args
+          rid
+      end
     def rid?
       true
     end

@@ -9,16 +9,13 @@ require 'zeitwerk'
 
 require 'arcade'
 require 'postgres_helper'
+## todo: is this necessary?
 module My; end
-puts "---"
-puts "#{__dir__}/model"
-puts "---"
-## unfortunately, this does not work
-#loader =  Zeitwerk::Loader.new
-#loader.push_dir ("#{__dir__}/model")
-#loader.setup
-#- ..therefore the manual walkaround:
-require 'model_helper'
+##
+# Include model files
+loader =  Zeitwerk::Loader.new
+loader.push_dir ("#{__dir__}/model")
+loader.setup
 
 read_yml = -> (key) do
 	YAML::load_file( File.expand_path('../spec.yml',__FILE__))[key]

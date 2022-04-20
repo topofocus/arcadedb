@@ -32,6 +32,16 @@ module Arcade
        n.gsub(/([^\^])([A-Z])/,'\1_\2').downcase
       end
 
+  # borowed  from ActiveSupport::Inflector
+      def underscore
+        word = self.dup
+        word.gsub!(/::/, '/')
+        word.gsub!(/([A-Z]+)([A-Z][a-z])/,'\1_\2')
+        word.gsub!(/([a-z\d])([A-Z])/,'\1_\2')
+        word.tr!("-", "_")
+        word.downcase!
+        word
+      end
       def capitalize_first_letter
         self.sub(/^(.)/) { $1.capitalize }
       end
