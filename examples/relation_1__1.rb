@@ -1,17 +1,15 @@
 ##
-## This example realises a unidirectional Graph using
-## the document database primitve #and a self referencing 1:1 relation.
+## This example realises an unidirectional Graph using
+## a document database primitve and a self referencing 1:1 relation.
 #
-## Modelfiles are ocated in spec/model.
+## Modelfiles are located in spec/model.
 ## The exampmle runs in the test environment.
 ##
 require 'bundler/setup'
-require 'terminal-table'
-require 'zeitwerk'
-require 'pastel'
+require 'zeitwerk'       
 require 'arcade'
 
-include Arcade
+include Arcade                  # Arcade Namespace is optional
 ## require modelfiles
 loader =  Zeitwerk::Loader.new
 loader.push_dir ("#{__dir__}/../spec/model")
@@ -19,19 +17,19 @@ loader.setup
 
 ## clear test database
 
-databases =  Arcade::Api.databases
-if  databases.include?(Arcade::Config.database[:test])
-  Arcade::Api.drop_database Arcade::Config.database[:test]
+databases =  Api.databases
+if  databases.include?(Config.database[:test])
+  Api.drop_database Config.database[:test]
 end
-Arcade::Api.create_database Arcade::Config.database[:test]
+Api.create_database Config.database[:test]
 
 ## Universal Database handle
-DB = Arcade::Init.connect 'test'
+DB = Init.connect 'test'
 
 ## ------------------------------------------------------ End Setup ------------------------------------- ##
 ##
 ## We are realising  a self referencing  relation
-##  name -->   childre
+##  name -->   child
 #
 #  database schema
 #  CREATE DOCUMENT TYPE ex_names
@@ -40,10 +38,10 @@ DB = Arcade::Init.connect 'test'
 #  CREATE INDEX `Example[names]` ON ex_names ( name ) UNIQUE
 
 
-
+# Namespace for Data-Objects is `Ex`
 Ex::Names.create_type                                 # initialize the database
                                                       # spec/models/ex/names.rb
-                                                      # Put same names into the database
+                                                      # Put some names into the database
 puts "-------------------- insert data ---------------------------------"
 table = %w( Guthorn Fulkerson Sniezek Tomasulo Portwine Keala Revelli Jacks Gorby Alcaoa ).map do | name |
   Ex::Names.insert name: name, age: rand(99)
