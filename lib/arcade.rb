@@ -11,12 +11,12 @@ require "dry/core/class_attributes"
 module Types
   include Dry.Types()
 end
-require 'pg'
+require 'pg'          #  ruby postgres driver
 #require 'mini_sql'
 #require 'sequel'
 #require 'httparty'
 require 'yaml'
-require 'typhoeus'
+require 'typhoeus'    #  curl library
 require_relative '../lib/errors'
 require_relative '../lib/support/object'
 require_relative '../lib/support/string'

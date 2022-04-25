@@ -49,9 +49,7 @@ Database [Properties](https://docs.arcadedb.com/#SQL-Create-Property) and [Index
 If the model based type-initialisation is used
 the commands are processed after creating the database-type.
 ```ruby
-Vertex.create_type My::Names                # create tyoe for class Names < Arcade::Vertex 
-My::Names.create_type My::TranslatedNames   # create type for class TranslatedNames < Names
-Edge.create_type Connects                   # create type for class Connects < Arcade::Edge
+My::Names.create_type                          # create tyoe for class Names < Arcade::Vertex 
 ```
 
 
@@ -67,16 +65,33 @@ The database-handle is always present through `Arcade::Init.db`
 ```ruby
 DB =  Arcade::Init.db
 
-$ DB.get <rid>                                  # returns a Aracde:Base object
+$ DB.get <rid> || nn, mm                        # returns a Aracde:Base object
+                                                # rid is either "#11:10:" or two numbers
 $ DB.query querystring                          # returns either an Array of results (as  Hash) 
-$ DB.execute { querystring }                    # or a Collection of Arcade::Base objects
-
-$ DB.create_type {document | vertex} , <name>   # Creates a new Type ( Arcade::Base Class)
+$ DB.execute { querystring }                    # 
 $ DB.create <name>, attribute: value ....       # Creates a new <Document | Vertex> and returns the rid
+                                                # Operation is performed as Database-Transaction and is rolled back on error
+$ DB.insert <name>, attribute: value ....       # Inserts a new <Document | Vertex> and returns the rid
 $ DB.create_edge <name>, from: <rid> or [rid, rid, ..] , to: <rid> or [rid, rid, ..]
 
 DB.query " Select from person where age > 40 "
 DB.execute { " Update person set name='Hubert' return after $current where age = 36 " }
+```
+
+**Convert database input to Arcade::Base Models**
+
+Either  `DB.query` or  `DB.execute` return the raw JSON-input from the database. It can always converted to model-objects by chaining
+`allocatet_model`.
+
+```ruby
+$ DB.query "select from my_names limit 1"
+# which is identical to
+$ My::Names.query( limit: 1).query
+ => [{:@out=>0, :@rid=>"#225:6", :@in=>0, :@type=>"my_names", :@cat=>"v", :name=>"Zaber"}] 
+# then
+$ My::Names.query( limit: 1).query.allocate_model.to_human
+ => ["<my_names[#225:6]: name: Zaber>" ]
+ # replaces the hash with a My::Names Object 
 ```
 
 The **third Layer** implements the direct interaction with the database API. 
@@ -130,7 +145,7 @@ The `upsert` statement provides a smart method to ensure the presence of an uniq
 Apart from assessing attributes by their method-name, adjacent edges and notes are fetched through
 
 ```ruby 
-  new_vertex = ->(n) { Node.create( note_count: n )  }                      ## lambda to create a Node type record
+  new_vertex = ->(n) { Node.insert( note_count: n )  }                      ## lambda to create a Node type record
   nucleus    =  BaseNode.create item: 'b'                                   ## create a start node
   (1..10).each{ |n| nucleus.assign( via: Connects, vertex: new_vertex[n]) } ## connect nodes via Connects-Edges
 ```

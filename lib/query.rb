@@ -74,8 +74,8 @@ module Arcade
 				[ 'update', target, set, remove, return_statement , where, limit ].compact.join(' ')
 			elsif kind.to_sym == :update!
 				[ 'update', target, set,  where, limit, misc ].compact.join(' ')
-			elsif kind.to_sym == :create
-				[ "CREATE VERTEX", target, set ].compact.join(' ')
+#			elsif kind.to_sym == :create                                             # relict of orientdb
+#				[ "CREATE VERTEX", target, set ].compact.join(' ')
 			#	[ kind, target, set,  return_statement ,where,  limit, misc ].compact.join(' ')
 			elsif kind.to_sym == :upsert
         set(  generate_sql_list( @q[:where] ){ @fill || 'and' } ) if set.nil?
@@ -334,21 +334,29 @@ end # class << self
 		end
 
 
+    def query
+       db.query compose
+    end
+
 		# returns nil if the query was not sucessfully executed
-		def execute(reduce: false)
+		def execute(reduce: false, autoload: true )
 #      unless projection.nil?    || projection.empty?
       result = db.execute { compose }
 			return nil unless result.is_a?(Array)
-			result =  result.map{|x| yield x } if block_given?
-			return  result.first if reduce && result.size == 1
+			block_given?  ? result.map{|x| yield x }  : result
+#			return  result.first if reduce && result.size == 1
       ## case  select count(*) from  ...  --> [{ :count => n }]   projection is set
       ## case update ... after $current   --> [{ :$current => n}] projection is not set, but result is an integer
       #  separate key from  values and get model-files
-      if  !@q[:projection].empty?  && result.first.is_a?(Hash)  &&  result.first.values.is_a?( Array )
-        result.first.values.map{|x| allocate_model x}
-     else
-                result # .map{|y| allocate_model y }
-      end
+#      if  !@q[:projection].empty?  && result.first.is_a?(Hash)  &&  result.first.values.is_a?( Array ) 
+#        if reduce
+#          result.first.values.map{|x| allocate_model x, autoload}
+#        else
+#          result.map{|_,m| allocate_model m, autoload }
+#        end
+#     eloe
+ #      result.map{|y| allocate_model y, autoload }
+ #     end
 			## standard case: return Array
 			#result.arcade_flatten
 		end

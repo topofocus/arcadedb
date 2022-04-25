@@ -51,8 +51,6 @@ RSpec.describe Arcade::Api do
                                      name: :string, age: :integer)).to  be_truthy
       expect(  Arcade::Api.index( Arcade::Config.database[:test] , 'my_names',
                                      :age, :unique)).to be_truthy
-   #   expect(  Arcade::Api.property( Arcade::Config.database[:test] , 'my_names',
-   #                                 name: :string, age: :integer)).to be_truthy
     end
     it "Insert a dataset"  do
       r= Arcade::Api.create_document  Arcade::Config.database[:test], 'test_document' ,  name: "Gugo",  bes: "Über", age: 54.3

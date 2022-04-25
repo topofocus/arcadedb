@@ -73,13 +73,13 @@ RSpec.describe "Edges" do
         end
         Then { median.to_s == "select median(note_count) from  ( traverse out(connects) from #{start_point.rid} while $depth < 100   )  where $depth>=50  " }
 
-        Given( :median_q ){ median.execute(reduce: true) }  # result: {:"median(note_count)"=>75.5
+        Given( :median_q ){ median.execute.first }  # result: {:"median(note_count)"=>75.5
         Then {  median_q.keys == [:"median(note_count)"] }
         Then {  expect( median_q.values).to eq [75.5] }
       end
 
       context "use nodes" do
-        Given( :start ){ Arcade::Node.where( note_count: 67).first }
+        Given( :start ){ Arcade::Node.where( note_count: 67).first}
         Then { expect( start.nodes ).to be_an Array }
         Then { expect( start.nodes.first ).to be_a Arcade::ExtraNode }
         Then { expect( start.nodes.count ).to eq 2 }

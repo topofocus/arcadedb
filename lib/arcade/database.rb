@@ -137,12 +137,13 @@ module Arcade
       else
         content =  "CONTENT #{ content_params.to_json }"
         target =  target_params.map{|y,z|  y==:type ?  z : "#{y.to_s} #{ z } "}.join
-        Api.execute( database, "INSERT INTO #{target} #{content} ").map{|y| allocate_model y} &.first
+        Api.execute( database, "INSERT INTO #{target} #{content} ").allocate_model &.first
       end
     end
 
     def get *rid
-        allocate_model( Api.get_record( database, *rid))
+      autocomplete = block_given? ? yield :  true
+      _allocate_model( Api.get_record( database, *rid))
     end
 
     def delete rid
@@ -156,28 +157,28 @@ module Arcade
     # If an Error occurs, its rolled back
     #
     def execute   &block
-      Api.begin_transaction database
+    #  Api.begin_transaction database
       response = Api.execute database, &block
       # puts response.inspect  # debugging
       r= if  response.is_a? Hash
-           allocate_model res
-         elsif response.is_a? Array
+           _allocate_model res
+#         elsif response.is_a? Array
            # remove empty results
-           response.delete_if{|y| y.empty?}
-           response.map do | res |
-             if res.key? :"@rid"
-               allocate_model res
-             else
-               res
-             end
-           end
+#           response.delete_if{|y| y.empty?}
+          # response.map do | res |
+          #   if res.key? :"@rid"
+          #     allocate_model res
+          #   else
+          #     res
+          #   end
+          # end
          else
            response
          end
-     Api.commit database
+   #  Api.commit database
      r # return associated array of Arcade::Base-objects
     rescue  Dry::Struct::Error => e
-      Api.rollback database
+   #   Api.rollback database
       logger.error "Execution  FAILED --> #{e.exception}"
       []  #  return empty result
     end
@@ -189,17 +190,18 @@ module Arcade
     #
     def query  query_object
       response= Api.query(database, query_object.to_s)
-      if response.is_a?(Hash)
-        response.map do |r|
-          if r.key? :"@rid"
-            allocate_model r
-          else
-            r
-          end
-        end
-      else
-        response
-      end
+      block_given? ? yield(response) : response
+   #   if response.is_a?(Hash)
+   #     response.map do |r|
+   #       if r.key? :"@rid"
+   #         allocate_model r
+   #       else
+   #         r
+   #       end
+   #     end
+   #   else
+   #     response
+   #   end
     end
 
     #  returns an array of rid's   (same logic as create)
@@ -207,8 +209,8 @@ module Arcade
 
       content = attributes.empty? ?  "" : "CONTENT #{attributes.to_json}"
       cr = ->( f, t ) do
-        edges = Api.execute( database, "create edge #{edge_class} from #{f.rid} to #{t.rid} #{content}").map{|y| allocate_model(y) }
-        if edges.is_a?(Array) 
+        edges = Api.execute( database, "create edge #{edge_class} from #{f.rid} to #{t.rid} #{content}").allocate_model
+        if edges.is_a?(Array)
           edges.first.rid
         else
           logger.error "Could not create Edge  #{edge_class} from #{f} to #{t}"
@@ -219,7 +221,6 @@ module Arcade
       to =  [to] unless to.is_a? Array
 
       from.map do | from_record |
-        puts "from_record: #{from_record}"
           to.map { | to_record | cr[ from_record, to_record ] if  to_record.rid? } if from_record.rid?
       end.flatten
 
@@ -228,7 +229,7 @@ module Arcade
 
     # query all:  select @rid, *  from {database}
 
-#  not used 
+#  not used
  #  def get_schema
  #    query( "select from schema:types" ).map do |a|
  #      puts "a: #{a}"

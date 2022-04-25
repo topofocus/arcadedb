@@ -4,16 +4,18 @@ module Arcade
     attribute :in, Types::Rid
     attribute :out, Types::Rid
 
+    #attribute :in?, Types::Nominal::Any
+    #attribute :out?, Types::Nominal::Any
     def self.create  from:, to:, **attr
         db.create_edge  database_name, from: from, to: to, **attr
     end
 
     ## gets the adjacent Vertex
     def inV
-     db.get(attributes[:in])
+      attributes[:in].load_rid
     end
     def outV
-     db.get(attributes[:out])
+      attributes[:out].load_rid
     end
     def vertices in_or_out = nil
       case in_or_out
