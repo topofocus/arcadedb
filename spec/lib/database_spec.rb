@@ -4,7 +4,9 @@ require 'database_helper'
 RSpec.describe Arcade::Database do
   before(:all) do
     clear_arcade
-    DB = Arcade::Database.new Arcade::Test
+    DB = Arcade::Database.new Arcade::Config.database[:test]
+    DB.create_type :document, 'test_document'
+    DB.create_type :vertex, :test_vertex
   end
 
   context "It memoises the database" do
@@ -13,9 +15,6 @@ RSpec.describe Arcade::Database do
   end
 
   context "Create a document type " do
-    before(:all) do
-      r= DB.create_type :document, 'test_document'
-    end
 
     it "the document type is present" do
       r= DB.hierarchy(type: :document).flatten
@@ -38,9 +37,6 @@ RSpec.describe Arcade::Database do
     end
   end
   context "Create a vertex type " do
-    before(:all) do
-      r= DB.create_type :vertex, :test_vertex
-    end
 
     it "the  vertex type is present" do
       r= DB.hierarchy( type: :vertex ).flatten
@@ -71,10 +67,11 @@ RSpec.describe Arcade::Database do
     end
   end
 
-  context "Querying the database load Arcade::Base-Objects" do
+  context "Querying the database load Arcade::Base-Objects"   do
     before( :all ){ @rid=  DB.create :test_vertex, name: "parent", age: 54}
     it "retreives the correct model" do
-      r =  DB.query " select from test_vertex"
+      r =  DB.query(" select from test_vertex").allocate_model
+      puts "R: #{r}"
       expect( r ).to be_an Array
       r.each do | record |
         expect( record ).to be_an Arcade::TestVertex
@@ -107,8 +104,8 @@ RSpec.describe Arcade::Database do
         # rid is proper formatted
         expect(the_e.rid ).to  match /\A[#]{,1}[0-9]{1,}:[0-9]{1,}\z/
         # even a  basic-edge has proper in- and out-attributes
-        expect( the_e.in ).to eq rid2     # to    translates to :in
-        expect( the_e.out ).to eq rid1    # from  translates to :out
+        expect( the_e.in.rid ).to eq rid2.rid     # to    translates to :in
+        expect( the_e.out.rid ).to eq rid1.rid    # from  translates to :out
       end
     end
 
@@ -124,7 +121,7 @@ RSpec.describe Arcade::Database do
       end
 
       ### follow all out-links from rid1 , then apply a filter and sort the output
-      edges =  DB.query " select from ( traverse out() from #{rid1} ) where name = 'child'  order by age"
+      edges =  DB.query(" select from ( traverse out() from #{rid1} ) where name = 'child'  order by age").allocate_model
       expect( edges.size ).to eq count
       expect( edges.first.age ).to eq 1
       expect( edges.last.age ).to eq count

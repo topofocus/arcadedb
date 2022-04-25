@@ -19,7 +19,8 @@ module Arcade
     setting :pg,      default:  :pg,       reader: true , constructor:  ->( v ) { yml(v)}
     setting :admin,   default:  :admin,    reader: true , constructor:  ->( v ) { yml(v)}
     setting :logger,  default:  :logger,   reader: true , constructor:  ->( v ) { yml(v)}
-    setting :namespace, default:  :namespace,   reader: true , constructor:  ->( v ) { yml(v)}
+    setting :namespace, default:  :namespace, reader: true , constructor:  ->( v ) { yml(v)}
+    setting :autoload, default:  :autoload,   reader: true , constructor:  ->( v ) { yml(v)}
 
 
     private

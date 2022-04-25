@@ -43,13 +43,21 @@ module Arcade
         self.compact!
         self ## return object
       end
-    end
 
+      def select_result condition
+        select{|x| x[condition.to_sym]}.map &:values
+      end
+
+    def allocate_model autoload=false
+      map{ |x| _allocate_model(x, autoload) }
+    end
+    end
   end
 end
 
 class Array
   include Arcade::Support::Array
+  include Arcade::Support::Model  #  mixin allocate_model
 
   @@accepted_methods = []
   ## dummy for refining

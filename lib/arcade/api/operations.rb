@@ -141,7 +141,7 @@ module Arcade
       unique_requested = "notunique" if  properties.delete("notunique" )
       automatic = true if
       properties << name  if properties.empty?
-      success = execute(database) {" create index  if not exists `#{type.to_s}[#{name.to_s}]` on #{type} ( #{properties.join(',')} ) #{unique_requested}" } &.first
+      success = execute(database) {" create index  `#{type.to_s}[#{name.to_s}]` on #{type} ( #{properties.join(',')} ) #{unique_requested}" } &.first
      # puts "success: #{success}"
       success && success.keys == [ :totalIndexed, :name, :operation ] &&   success[:operation] == 'create index' 
 

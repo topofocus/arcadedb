@@ -3,7 +3,7 @@ module Arcade
 
     extend Arcade::Support::Sql
     # schema schema.strict    #  -- throws an error if  specified keys are missing
-#    transform_keys{ |x|  x[0] == '@' ? x[1..-1].to_sym : x.to_sym }
+    transform_keys{ |x|  x[0] == '@' ? x[1..-1].to_sym : x.to_sym }
     # Types::Rid -->  only accept  #000:000,  raises an Error, if rid is not present
     attribute :rid, Types::Rid
     # maybe there are edges   ## removed in favour of instance methods
@@ -82,40 +82,87 @@ module Arcade
       #  ( depreciated )
 
       def  create **attributes
-#        Api.begin_transaction db.database
-         insert **attributes
-#        Api.commit db.database
+        Api.begin_transaction db.database
+        record = insert **attributes
+        Api.commit db.database
+        record
       rescue RuntimeError => e
         db.logger.error "Dataset NOT created"
         db.logger.error "Provided Attributes: #{attributes.inspect}"
-#        Api.rollback db.database
+        Api.rollback db.database
       rescue  Dry::Struct::Error => e
         db.delete rid
         db.logger.error "#{rid} :: Validation failed, record deleted."
         db.logger.error e.message
- #       Api.rollback db.database
+        Api.rollback db.database
       end
 
-      def count **args
+      def count  **args
         command = "count(*)"
-        query( **( { projection:  command  }.merge args  ) ).execute(reduce: true){|x|  x[command.to_sym]}
-end
-
-      def all
-        query.execute
+        query( **( { projection:  command  }.merge args  ) ).query.first[command.to_sym] rescue 0
       end
 
-      def first **args
-         query( **( { order: "@rid" , limit: 1  }.merge args ) ).execute(reduce: true)
+      # Lists all records of a type
+      #
+      # Accepts any parameter supported by Arcade::Query
+      #
+      # Model.all false    --> suppresses the autoload mechanism
+      #
+      # Example
+      #
+      # My::Names.all order: 'name', autoload: false
+      #
+      def all  a= true, autoload: true, **args
+        autoload =  false if a != autoload
+        query(**args).query.allocate_model( autoload )
+      end
+
+      # Lists the first record of a type or a query
+      #
+      # Accepts any parameter supported by Arcade::Query
+      #
+      # Model.first false    --> suppresses the autoload mechanism
+      #
+      # Example
+      #
+      # My::Names.first where: 'age < 50', autoload: false
+      #
+      def first a= true, autoload: true, **args
+        autoload =  false if a != autoload
+        query( **( { order: "@rid"  , limit: 1  }.merge args ) ).query.allocate_model( autoload ).first
       end
 
 
-      def last **args
-         query( **( { order: {"@rid" => 'desc'} , limit: 1  }.merge args ) ).execute(reduce: true)
+      # Lists the last record of a type or a query
+      #
+      # Accepts any parameter supported by Arcade::Query
+      #
+      # Model.last false    --> suppresses the autoload mechanism
+      #
+      # Example
+      #
+      # My::Names.last where: 'age > 50', autoload: false
+      #
+      def last  a= true, autoload: true, **args
+        autoload =  false if a != autoload
+        query( **( { order: {"@rid" => 'desc'} , limit: 1  }.merge args ) ).query.allocate_model( autoload ).first
       end
 
-      def where *args
-         query( where: args ).execute
+      # Selects records of a type or a query
+      #
+      # Accepts **only** parameters to restrict the query (apart from autoload).
+      #
+      # Use `Model.query where: args``to use the full range of supported parameters
+      #
+      # Model.where false    --> suppresses the autoload mechanism
+      #
+      # Example
+      #
+      # My::Names.last where: 'age > 50', autoload: false
+      #
+      def where a= true, autoload: true, **args
+        autoload =  false if a != autoload
+         query( where: args ).query.allocate_model( autoload )
       end
 
       # update returns a list of updated records
@@ -131,7 +178,7 @@ end
       #
       def update **args
         if args.keys.include?(:set) && args.keys.include?(:where)
-            query( **( { kind: :update }.merge args ) ).execute.map{|r| r[:"$current"].load_rid }
+            query( **( { kind: :update }.merge args ) ).execute{|r| r[:"$current"].load_rid }
         else
           raise "at least set: and where: are required to perform this operation"
         end
@@ -144,7 +191,7 @@ end
       #
       def update! **args
         if args.keys.include?(:set) && args.keys.include?(:where)
-            query( **( { kind: :update! }.merge args ) ).execute.first[:count]
+          query( **( { kind: :update! }.merge args ) ).execute{|y| y[:count] } &.first
         else
           raise "at least set: and where: are required to perform this operation"
         end
@@ -159,28 +206,19 @@ end
                     else
                       { where: where_statement }
                     end
-        result= query( **( { kind: :upsert  }.merge statement ) ).execute.map do | answer|
-            answer[:"$current"] &.load_rid
-        end.compact
+        result= query( **( { kind: :upsert  }.merge statement ) ).execute do | answer|
+puts           answer.class
+puts answer
+           z=  answer[:"$current"] &.load_rid(false)   #  do not autoload modelfiles
+           error "Upsert failed", :load  unless z.is_a?  Arcade::Base
+           z  #  return record
+        end
       end
 
       def query **args
         Arcade::Query.new( **{ from: self }.merge(args) )
       end
 
-      def allocate_record **att
-        att[:rid] = att.delete :"@rid"   
-        att[:in] = att.delete(:"@in") #if att[:"@in"].rid?
-        att[:out] = att.delete(:"@out") #if att[:"@out"].rid?
-        att =  att.except :"@type", :"@cat", :"@rid", :"@in", :"@out"                   # remove internal attributes
-        new = self.new   att                                                            # create a prototype
-        v =  att.except  *new.attributes.keys                                           # get attributes not included in prototype
-       # new=  self.new new.attributes.merge( values: v ) unless v.empty?               #
-        new = new.new( values: v ) unless v.empty?                                      # Include those attributes in values attribute
-        new                                                                             # return the allocated record
-      end
-
-      private :allocate_record
     end
     #                                                                                   #
     ## ------------------------- Instance Methods ----------------------------------- -##
@@ -195,33 +233,33 @@ end
 
 
     def invariant_attributes
-     result= attributes.except :rid, :in, :out, :values, :created_at,  :updated_at
-     if  attributes.keys.include?(:values)
-       result.merge values
-     else
-       attributes.except :rid, :in, :out
-     end
+      result= attributes.except :rid, :in, :out, :values, :created_at,  :updated_at
+      if  attributes.keys.include?(:values)
+        result.merge values
+      else
+        result
+      end
     end
 
     ## enables to display values keys like methods
     ##
     def method_missing method, *key
-        if attributes[:values] &.keys &.include?  method
+      if attributes[:values] &.keys &.include?  method
         return values.fetch(method)
       end
     end
 
-      def query **args
-        Arcade::Query.new( **{ from: rid }.merge(args) )
-      end
+    def query **args
+      Arcade::Query.new( **{ from: rid }.merge(args) )
+    end
 
-      # to JSON  controlls the serialisation of Arcade::Base Objects for the HTTP-JSON API
-      #
-      # ensure, that only the rid is transmitted to the database
-      #
-      def to_json *args
-          rid
-      end
+    # to JSON  controlls the serialisation of Arcade::Base Objects for the HTTP-JSON API
+    #
+    # ensure, that only the rid is transmitted to the database
+    #
+    def to_json *args
+      rid
+    end
     def rid?
       true
     end
@@ -242,17 +280,19 @@ end
 		end.compact.sort.join(', ') + ">".gsub('"' , ' ')
     end
 
-    alias to_s to_human 
+    alias to_s to_human
 
     def update **args
-        rid.update **args
-      end
-      def == arg
-        self.attributes == arg.attributes
-      end
+      Arcade::Query.new( from: rid , kind: :update, set: args).execute
+      refresh
+    end
 
-      def refresh
-        rid.load_rid
-      end
+    def == arg
+      self.attributes == arg.attributes
+    end
+
+    def refresh
+      rid.load_rid
+    end
   end
 end

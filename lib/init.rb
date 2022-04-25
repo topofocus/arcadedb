@@ -14,7 +14,7 @@ module Arcade
   #
   class Init
     extend Dry::Core::ClassAttributes
-    defines :db
+    defines :db    # database handle
 
     def self.connect e= :development
 
@@ -26,8 +26,8 @@ module Arcade
                :development
              end
       #      set the class attribute
-      db Database.new(env)
 
+      db Database.new(env)
     end
   end
 

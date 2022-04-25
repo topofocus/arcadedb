@@ -179,14 +179,13 @@ RSpec.describe Arcade::Query do
 					q = TestDocument.query projection:  'COUNT(*)'
 					expect(q.to_s).to eq "select COUNT(*) from test_document "
 					expect(q.execute{|x|  x[:"COUNT(*)"]}).to eq [200]
-					expect(q.execute(reduce: true){|x|  x[:"COUNT(*)"]}).to eq 200
 				end
 				it{	expect( TestDocument.count( where: 'c <100' ) ).to eq 99 }
 
 				it "first and last" do
 					q =  TestDocument.query( order: "@rid", limit: 1)
 					expect( q.to_s ).to eq "select from test_document order by @rid limit  1"
-					expect(q.execute(reduce: true)).to eq TestDocument.where(c: 1).first
+          expect(q.query.allocate_model).to eq [ TestDocument.first( where: { c: 1 }) ]
 				end
 				it { expect( TestDocument.first ). to eq TestDocument.where( c: 1  ).first }
 				it { expect( TestDocument.last ). to eq TestDocument.where( c: 200  ).first }
@@ -194,7 +193,7 @@ RSpec.describe Arcade::Query do
 				it "upsert"  do
 					q =  TestDocument.query(  kind: :upsert, set:{ c: 500}, where:' c = 500'  )
 					expect( q.to_s ).to eq "update test_document set c = 500 upsert return after $current where  c = 500"
-          p =  q.execute(reduce: true) {|y| y[:"$current"]}.load_rid
+          p =  q.execute{|y| y[:"$current"]}.first.load_rid
 					expect(p).to be_a TestDocument
 					expect(p.c).to eq 500
           p2 =  TestDocument.upsert( set:{ c: 500}, where:' c = 500').first
@@ -210,7 +209,7 @@ RSpec.describe Arcade::Query do
 					q =  TestDocument.query(  kind: :update!, set:{ c: 500}, where:'c = 50'  )
 					expect( q.to_s ).to eq "update test_document set c = 500 where c = 50"
           puts q.to_s
-					p =  q.execute(reduce: true){|y| y[:count]}
+          p =  q.execute(reduce: true){|y| y[:count]}.first
 					expect(p).to be_a Integer
 				end
 				it { expect( TestDocument.update set: { u: 65 }, where:{ c: 70 } ). to eq TestDocument.where( c: 70  )}

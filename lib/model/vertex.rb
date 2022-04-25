@@ -3,6 +3,8 @@ module Arcade
 
 #    include Arcade::Support::Sql
     
+    attribute :in?, Types::Nominal::Any
+    attribute :out?, Types::Nominal::Any
     #                                                                                               #
     ## ----------------------------------------- Class Methods------------------------------------ ##
     #                                                                                               #
@@ -54,7 +56,7 @@ module Arcade
         search_query =  Query.new from: self, **args
         nodes_query  =  Query.new from: search_query, projection: io
         puts "nodes: #{nodes_query.to_s} "
-        nodes_query.execute
+        nodes_query.execute.allocate_model
     end
 
 
@@ -65,7 +67,7 @@ module Arcade
     def nodes in_or_out = :both, depth= 1, via: nil , execute: true
       io =  in_or_out.to_s+ "(" + resolve_edge_name(via) + ")"
        if execute
-       query( projection: io ).execute.first
+         query( projection: io ).execute &.first &.values &.allocate_model &.flatten
        else
          query(projection: io )
        end
@@ -132,7 +134,7 @@ module Arcade
 #			edges.each{ |ec| the_query.nodes in_or_out, via: ec, expand: false }
 			outer_query = Query.new from: the_query, where: "$depth >= #{start_at}"
 			if execute 
-			   outer_query.execute
+        outer_query.execute.allocate_model
 				else
 		#			the_query.from self  #  complete the query by assigning self 
 					the_query            #  returns the OrientQuery  -traverse object

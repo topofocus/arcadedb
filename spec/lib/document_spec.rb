@@ -81,7 +81,7 @@ RSpec.describe Arcade::Document do
       d =  Arcade::TestDocument.update! set:{ name: 'Zwerg', age: 60, item: 7}, where: { name: 'Zwerg' }
       puts d.inspect
       expect( d ).to be_a Integer
-      expect( d ).to eq 1
+      expect( d ).to eq 2
     end
    it "add a record through inheritance" do
       document =  Arcade::DepTestDoc.create name: 'HugoTester', age: 140, item: 1

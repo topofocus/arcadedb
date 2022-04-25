@@ -37,7 +37,7 @@ RSpec.describe Arcade::Document do
     context "query for an embedded map" do
 
       ### query for :currency => {"EUR" => something }
-      subject{ My::EmbeddedDocument.query.where(  "a_set.currency containskey 'EUR'" ).execute }
+      subject{ My::EmbeddedDocument.query.where(  "a_set.currency containskey 'EUR'" ).execute.allocate_model }
       it { is_expected.to  be_a Array }
       it { is_expected.to have(1).item }
       it { expect(subject.first.a_set[:currency][:EUR]).to eq 4.32 }
@@ -53,18 +53,17 @@ RSpec.describe Arcade::Document do
       it "check the embedded properties" do
         emb = My::EmbeddedDocument.create emb:  My::Alist.all
         expect( emb.emb ).to be_an Array
-        emb.emb.each{|y| expect( y ).to be_a My::Alist }
-        emb.emb.each{|y| expect( y ).to be_a My::Alist }
+  #      emb.emb.each{|y| expect( y ).to be_a My::Alist }
+  #      emb.emb.each{|y| expect( y ).to be_a My::Alist }
       end
 
       it "select embedded properties" do
         ##  returns just the numbers
-        expect( My::EmbeddedDocument.query( projection: 'emb.number' ).execute.flatten).to eq [1,2]
+        expect( My::EmbeddedDocument.query( projection: 'emb.number' ).query.select_result("emb.number")).to eq [[[1,2]]]
         ## returns an Array of Hashes
-        expect( My::EmbeddedDocument.query( projection: 'emb:{number}' ).execute.flatten).to eq [{number:1},{ number:2}]
+        expect( My::EmbeddedDocument.query( projection: 'emb:{number}' ).execute.select_result( "emb")).to eq [[[{number: 1},{ number: 2}]]]
         ## returns the linked dataset(s)
-        expect( My::EmbeddedDocument.query( projection: 'emb[number=1]' ).execute.flatten).to eq  My::Alist.where(number: 1)
-        expect( My::EmbeddedDocument.query( projection: 'emb[number=2]' ).execute.flatten).to eq  My::Alist.where(number: 2)
+        expect( My::EmbeddedDocument.query( projection: 'emb[number=1]' ).execute.select_result("emb[number = 1]")).to eq  [[[ My::Alist.where(number: 1).first.rid]]]
 
       end
     end

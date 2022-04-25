@@ -78,16 +78,19 @@ module Arcade
       end
 
       ## Load the database object if the string is a rid
-      def load_rid
-        db.get self if rid?  rescue nil
+      # (Default: No Autoloading of rid-links)
+      def load_rid autocomplete = false
+        db.get( self){  autocomplete }  if rid?  rescue nil
       end
 
-      # updates the record and returns the modified dataset
-      def update **args
-        r=   Arcade::Query.new( from: self , kind: :update, set: args).execute
-        r= r.pop if r.is_a?( Array ) 
-        r[:"$current"].load_rid
-      end
+      # updates the record    ### retired in favour of Arcade::Base.update
+   #   def update **args
+        ## remove empty Arrays and Hashes.
+        ## To remove attributes, use the remove syntax, do not privide empty fields to update!
+   #     args.delete_if{|_,y|( y.is_a?(Array) || y.is_a?(Hash)) && y.blank? }
+   #     return nil if args.empty?
+   #     Arcade::Query.new( from: self , kind: :update, set: args).execute
+   #   end
 
       def to_human
         self
