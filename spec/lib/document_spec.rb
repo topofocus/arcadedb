@@ -1,18 +1,11 @@
 require 'spec_helper'
 require 'database_helper'
 ###
-# The model directory  `spec/model` contains some sample files
+# The model directory  `spec/model` contains sample files
 # #
-# vertex -> BasicNode 
-# vertex -> Node  -> ExtraNode
-# edge -> CONNECTS
+##  arcade/test_document.rb
+##  arcade/dep_test_dec.rb
 #
-#
-# In projects, define the model files and include them  via zeitwerk
-#
-#    loader = Zeitwerk::Loader.new
-#    loader.push_dir("#{__dir__}/model")
-#    loader.setup
 #
 #
 RSpec.describe Arcade::Document do

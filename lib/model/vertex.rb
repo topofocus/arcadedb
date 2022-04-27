@@ -81,18 +81,30 @@ module Arcade
 
 
     # get Vertices through in by edges of type via
-    def in count=1, via:nil
-      nodes :in,  count, via: via
+    def in count=0, via:nil
+      if count.zero?
+        @bufferedin ||= nodes :in,  1, via: via
+      else
+        nodes :in, count, via: via   # not cached
+      end
     end
 
     # get Vertices through out by edges of type via
-    def out count=1, via:nil
-      nodes :out, count,  via: via
+    def out count=0, via:nil
+      if count.zero?
+        @bufferedout ||= nodes :out, 1,  via: via
+      else
+        nodes :out, count, via: via   # not cached
+      end
     end
     #
     # get all Vertices connected by edges of type via
-    def both count=1, via:nil
-      nodes :both, count, via: via
+    def both count=0, via:nil
+      if count.zero?
+        @bufferedboth ||= nodes :both, 1, via: via
+      else
+        nodes :both, count, via: via   # not cached
+      end
     end
 
 
@@ -146,6 +158,8 @@ module Arcade
 =begin
 Assigns another Vertex via an EdgeClass. If specified, puts attributes on the edge.
 
+Returns the asigned vertex
+
 Wrapper for
   Edge.create in: self, out: a_vertex, attributes: { some_attributes on the edge }
 
@@ -160,7 +174,7 @@ or
 
     via.create from: self, to: vertex, set: attributes
 
-		vertex
+		vertex  # return the assigned vertex
   rescue ArgumentError => e
     puts e.message
     nil
@@ -177,10 +191,13 @@ Format: < Classname: Edges, Attributes >
 =end
 	def to_human
 
+    in_and_out = -> { "{#{attributes[:in]}->}{->#{attributes[:out] }}}, " }
 
 		#Default presentation of Arcade::Base::Model-Objects
 
-		"<#{self.class.to_s.snake_case}[#{rid}]: "  + invariant_attributes.map do |attr, value|
+		"<#{self.class.to_s.snake_case}[#{rid}]: "  +
+      in_and_out[] +
+      invariant_attributes.map do |attr, value|
 			v= case value
 				 when  Class
 					 "< #{self.class.to_s.snake_case}: #{value.rid} >"
@@ -193,6 +210,7 @@ Format: < Classname: Edges, Attributes >
 			"%s: %s" % [ attr, v]  unless v.nil?
 		end.compact.sort.join(', ') + ">".gsub('"' , ' ')
 	end
+
 
 #
 #		def edge_name.present? name
@@ -224,6 +242,13 @@ Format: < Classname: Edges, Attributes >
                     end
     end
 
+
+    def refresh
+      # force reloading of edges and nodes
+      # edges are not cached (now)
+      @bufferedin, @bufferedouti, @bufferedboth = nil
+      super
+    end
     # expose class method to instances (as private)
     private  define_method :resolve_edge_name, &method(:resolve_edge_name)
     private_class_method  :resolve_edge_name

@@ -271,7 +271,7 @@ puts answer
 				 when Arcade::Base
 					 "< #{self.class.to_s.snake_case}: #{value.rid} >"
 				 when Array
-					 value.to_s
+           value.map{|x| x.to_s}
 #					 value.rrid #.to_human #.map(&:to_human).join("::")
 				 else
 					 value.from_db

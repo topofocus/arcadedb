@@ -4,6 +4,9 @@ module Arcade
     attribute :in, Types::Rid
     attribute :out, Types::Rid
 
+    # Add Contrains to the edge
+    # CREATE INDEX Watched_out_in ON <edge type«  (`@out`, `@in`) UNIQUE
+    #
     #attribute :in?, Types::Nominal::Any
     #attribute :out?, Types::Nominal::Any
     def self.create  from:, to:, **attr

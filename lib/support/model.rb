@@ -3,7 +3,7 @@ module Arcade
     module Model
 
 
-      def _allocate_model response=nil, autoload = Config.autoload
+      def _allocate_model response=nil, auto = Config.autoload
       #puts "Response #{response}"  # debugging
 
       if response.is_a? Hash
@@ -16,7 +16,7 @@ module Arcade
         n, type_name = type.camelcase_and_namespace
         n = self.namespace if n.nil?
         # autoconvert rid's in attributes to model-records  (exclude edges!)
-        if autoload && !cat =='e'
+        if auto && !(cat.to_s =='e')
           response.transform_values! do  |x|
             case x
             when String
@@ -24,7 +24,7 @@ module Arcade
             when Array
               x.map{ | y | y.rid? ?  y.load_rid(false) : y }   # do not autoload further records, prevents from recursive locking
             when Hash
-              x.transform_values{ | z | z.rid? ?  z.load_rid(false) :z }
+              x.transform_values!{ | z | z.rid? ?  z.load_rid(false) :z }
             else
               x
             end

@@ -141,9 +141,72 @@ module Arcade
       end
     end
 
+    # ------------------------------  get        ------------------------------------------------------ #
+    # Get fetches the record associated with the rid given as parameter.
+    #
+    # The rid is accepted as
+    #   DB.get "#123:123",   DB.get "123:123"  or DB.get 123, 123
+    #
+    #  Links are autoloaded  (can be suppressed by the optional Block (false))
+    #
+    # puts DB.get( 19,0 )
+    # <my_document[#19:0]: emb : ["<my_alist[#33:0]: name : record 1, number : 1>", "<my_alist[#34:0]: name : record 2, number : 2>"]>
+    # puts DB.get( 19,0 ){ false  }
+    # <my_document[#19:0]: emb : ["#33:0", "#34:0"]>
+    #
+    #
     def get *rid
       autocomplete = block_given? ? yield :  true
-      _allocate_model( Api.get_record( database, *rid))
+      rid =  rid.join(':')
+      rid = rid[1..-1] if rid[0]=="#"
+      if rid.rid?
+        Api.query( database, "select from #{rid}" ).allocate_model(autocomplete).first
+      else
+        error "Get requires a rid input"
+      end
+    end
+
+    # ------------------------------  property        ------------------------------------------------- #
+    # Adds properties to the type
+    #
+    #  call via
+    #  Api.property <database>, <type>, name1: a_format , name2: a_format
+    #
+    #  Format is one of
+    #   Boolean, Integer, Short, Long, Float, Double, String
+    #   Datetime, Binary, Byte, Decimal, Link
+    #   Embedded, EmbeddedList, EmbeddedMap
+    #
+    #   In case of an Error,  anything is rolled back and nil is returned
+    #
+    def self.property database, type, **args
+
+      begin_transaction database
+      success = args.map do | name, format |
+        r= execute(database) {" create property #{type.to_s}.#{name.to_s} #{format.to_s} " } &.first
+        if r.nil?
+          false
+        else
+          r.keys == [ :propertyName, :typeName, :operation ] && r[:operation] == 'create property'
+        end
+      end.uniq
+      if success == [true]
+        commit database
+        true
+      else
+        rollback database
+      end
+
+
+    end
+
+    # ------------------------------ index            ------------------------------------------------- #
+    def self.index database, type,  name ,  *properties
+      properties = properties.map( &:to_s )
+      unique_requested = "unique" if properties.delete("unique")  
+      unique_requested = "notunique" if  properties.delete("notunique" )
+      automatic = true if
+      properties << name  if properties.empty?
     end
 
     def delete rid
