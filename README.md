@@ -22,6 +22,9 @@ For Access through the HTTP-API `:admin`-entries are used.
 
 To start an interactive console, a small script is provided in the bin-directory.
 
+## Examples
+
+The `example` directory contains documented sample files for typical usecases
 ```
 $ cd bin && ./console.rb 
 ```
