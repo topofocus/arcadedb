@@ -21,13 +21,14 @@ For Access through the HTTP-API `:admin`-entries are used.
 ## Console
 
 To start an interactive console, a small script is provided in the bin-directory.
+```
+$ cd bin && ./console.rb  t   ( or "d" or "p" for Test, Development and Production environment)
+```
 
 ## Examples
 
 The `example` directory contains documented sample files for typical usecases
-```
-$ cd bin && ./console.rb 
-```
+
 ## Implementation
 
 The adapter uses a 3 layer concept. 
