@@ -131,8 +131,7 @@ loader.setup
        end
        Arcade::Api.create_database Arcade::Config.database[:test]
 
-       ## Universal Database handle
-       DB = Arcade::Init.connect 'test'
+      
        print "\n === REBUILD  finished=== \n"
 	## check wether the database tables exist. Then delete Database-Class and preallocated ruby-Object
        print " creating Book and  Keyword as Vertex; HasContent as Edge \n"
