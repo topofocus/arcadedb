@@ -45,7 +45,7 @@ module Arcade
       end
 
       def select_result condition
-        select{|x| x[condition.to_sym]}.map( &:values).flatten.allocate_model
+        map{|x| x[condition.to_sym]}.flatten.allocate_model
       end
 
     def allocate_model autoload=false

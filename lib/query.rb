@@ -309,21 +309,16 @@ end # class << self
 
 		def nodes in_or_out = :out, via: nil, where: nil, expand:  false
 			 condition = where.present? ?  "[ #{generate_sql_list(where)} ]" : ""
+       via = resolve_edge_name(via) unless via.nil?
+
 			 start =  if in_or_out  == :in
-									'inE'
+									'in'
 								elsif in_or_out ==  :out
-									'outE'
+									'out'
 								else
 									"both"
 								end
-			 the_end =  if in_or_out == :in
-										'.out'
-									elsif in_or_out == :out
-										'.in'
-									else
-										''
-									end
-			 argument = " #{start}(#{[via].flatten.map(&:to_or).join(',') if via.present?})#{the_end}#{condition} "
+			 argument = " #{start}(#{via})#{condition} "
 
 			 if expand.present?
 				 send :expand, argument

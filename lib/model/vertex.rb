@@ -2,6 +2,7 @@ module Arcade
   class Vertex  < Base
 
 #    include Arcade::Support::Sql
+    include Arcade::Support::Model
     
     attribute :in?, Types::Nominal::Any
     attribute :out?, Types::Nominal::Any
@@ -231,26 +232,26 @@ Format: < Classname: Edges, Attributes >
 #    end
     #
     ## helper method
-    def self.resolve_edge_name edge_name
-      case  edge_name
-                    when nil
-                      ""
-                    when Class
-                      edge_name.database_name
-                    when String
-                     edge_name 
-                    end
-    end
-
+#    def self.resolve_edge_name edge_name
+#      case  edge_name
+#                    when nil
+#                      ""
+#                    when Class
+#                      edge_name.database_name
+#                    when String
+#                     edge_name 
+#                    end
+#    end
+#
 
     def refresh
       # force reloading of edges and nodes
       # edges are not cached (now)
-      @bufferedin, @bufferedouti, @bufferedboth = nil
+      @bufferedin, @bufferedout, @bufferedboth = nil
       super
     end
     # expose class method to instances (as private)
-    private  define_method :resolve_edge_name, &method(:resolve_edge_name)
-    private_class_method  :resolve_edge_name
+#    private  define_method :resolve_edge_name, &method(:resolve_edge_name)
+#    private_class_method  :resolve_edge_name
 end
 end

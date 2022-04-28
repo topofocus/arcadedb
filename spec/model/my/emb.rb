@@ -1,10 +1,26 @@
 
 module My
-  class  V1 < Arcade::Vertex
-    attribute :node?, Types::Integer
-    attribute :a?, Types::String
-   attribute :b?, Types::Nominal::Integer
-   attribute :c?, Types::Array
-   attribute :d?, Types::Hash
+  class  Emb < Arcade::Vertex
+    attribute :a_string?, Types::String
+   attribute :b_int?, Types::Nominal::Integer
+   attribute :c_array?, Types::Array
+   attribute :d_hash?, Types::Hash
+   
+
+
+   def self.db_init
+      File.read(__FILE__).gsub(/.*__END__/m, '')
+    end
   end
 end
+## The code below is executed on the database after the database-type is created
+## Use the output of `ModelClass.database_name` as DB type  name
+## 
+#CREATE INDEX `Emb[]` ON my_embedded_document ( a_label ) UNIQUE
+__END__
+CREATE PROPERTY my_emb.a_string STRING
+CREATE PROPERTY my_emb.b_int    Integer
+CREATE PROPERTY my_emb.a_array LIST
+CREATE PROPERTY my_emb.a_hash  MAP
+
+

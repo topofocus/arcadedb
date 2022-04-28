@@ -82,8 +82,8 @@ puts
 puts "%10s  %7s %10s %30s " % ["Parent", "Age", "Child", "sorted by Child"]
 puts "- " * 50
 Ex::Human.parents( order: 'name' ).each  do |parent|                          # note: order: 'name' is included
-                                                                              # in the query, but has no effect 
-  puts "%10s  %7d %10s  " % [parent.name, 2022 - parent.birth, parent.out.first.name] 
+                                                                              # in the query
+  puts "%10s  %7d %10s  " % [parent.name, 2022 - parent.birth, parent.out.first.name]
 end
 
 puts "--------------------------- child and parent  -----------------------------------------------------"
@@ -91,7 +91,7 @@ puts
 puts "%10s  %7s %10s %30s " % ["Child", "Age", "Parent", "sorted by Parent"]
 puts "- " * 50
 Ex::Human.children( order: 'name' ).each  do |child|
-  puts "%10s  %7d %10s  " % [child.name, 2022 - child.birth, child.in.first.name] 
+  puts "%10s  %7d %10s  " % [child.name, 2022 - child.birth, child.in.first.name]
 end
 
 puts "--------------------------- Add  child to a parent  -----------------------------------------------"
