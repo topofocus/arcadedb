@@ -131,19 +131,18 @@ loader.setup
        end
        Arcade::Api.create_database Arcade::Config.database[:test]
 
-       ## Universal Database handle
-       DB = Arcade::Init.connect 'test'
-			 print "\n === REBUILD  finished=== \n"
-			 ## check wether the database tables exist. Then delete Database-Class and preallocated ruby-Object
-			 print " creating Book and  Keyword as Vertex; HasContent as Edge \n"
-			 Ex::Book.create_type
+      
+       print "\n === REBUILD  finished=== \n"
+	## check wether the database tables exist. Then delete Database-Class and preallocated ruby-Object
+       print " creating Book and  Keyword as Vertex; HasContent as Edge \n"
+       Ex::Book.create_type
        Ex::Keyword.create_type
        Ex::HasContent.create_type
-			 print "\n === PROPERTY === \n"
+       print "\n === PROPERTY === \n"
 
 	 # search_items =  ARGV.empty? ? ['China', 'aus', 'Flaute'] : ARGV
 
-	 read_samples
-	 display_books_with *search_items
+       read_samples
+       display_books_with *search_items
 
  end
