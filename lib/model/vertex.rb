@@ -173,7 +173,7 @@ or
 
   def assign vertex: , via:   , attributes: {}
 
-    via.create from: self, to: vertex, set: attributes
+    via.create from: self, to: vertex,  **attributes
 
 		vertex  # return the assigned vertex
   rescue ArgumentError => e

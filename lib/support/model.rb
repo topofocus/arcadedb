@@ -2,18 +2,19 @@ module Arcade
   module Support
     module Model
 
-    def resolve_edge_name edge_name
-      case  edge_name
-                    when nil
-                      ""
-                    when Class
-                      edge_name.database_name
-                    when String
-                     edge_name 
-                    end
-    end
+      def resolve_edge_name edge_name
+        case  edge_name
+        when nil
+          ""
+        when Class
+          edge_name.database_name
+        when String
+          edge_name 
+        end
+      end
 
 
+    #  used by array#allocate_model
       def _allocate_model response=nil, auto = Config.autoload
       #puts "Response #{response}"  # debugging
 

@@ -44,13 +44,24 @@ module Arcade
         self ## return object
       end
 
+
+      # chainable model-extaction  method
+      #
+      # Used to get the results of a query where a projection is specified
+      # q =  DB.query(" select <projection> from ...")  -->  [<projection> => [ { result (hash) } , ... ]]
+      # q.select_result( <projection> )                 -->  An array or plain results  or
+      #                                                 -->  an array of Arcade::Base-objects
+      #
+
       def select_result condition
         map{|x| x[condition.to_sym]}.flatten.allocate_model
       end
 
-    def allocate_model autoload=false
-      map{ |x| _allocate_model(x, autoload) }
-    end
+      # convert query results into  Arcade::Base-objects
+
+      def allocate_model autoload=false
+        map{ |x| _allocate_model(x, autoload) }
+      end
     end
   end
 end
