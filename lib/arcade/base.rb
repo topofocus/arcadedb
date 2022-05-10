@@ -215,6 +215,7 @@ puts answer
         end
       end
 
+
       def query **args
         Arcade::Query.new( **{ from: self }.merge(args) )
       end
@@ -287,6 +288,10 @@ puts answer
       refresh
     end
 
+    def delete
+      response = db.execute { "delete from #{rid}" }
+      true if response == [{ count: 1 }]
+    end
     def == arg
       self.attributes == arg.attributes
     end

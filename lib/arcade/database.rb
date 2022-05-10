@@ -17,7 +17,7 @@ module Arcade
     defines :environment
 
     def initialize  environment=:development
-      self.class.configure_logger( Config.logger ) if logger.nil?
+      self.class.configure_logger( Config.logger ) 
       @connection =  connect environment
       if self.class.environment.nil?    # class attribute is set on the first call
                                         # further instances of Database share the same environment
@@ -318,13 +318,13 @@ module Arcade
       if [:production, :development, :test].include? environment
 
         #  connect through the ruby  postgres driver
-        c= PG::Connection.new  dbname: Config.database[environment],
-          user: Config.username[environment],
-          password: Config.password[environment],
-          host:  Config.pg[:host],
-          port:  Config.pg[:port]
-
-      end
+#       c= PG::Connection.new  dbname: Config.database[environment],
+#         user: Config.username[environment],
+#         password: Config.password[environment],
+#         host:  Config.pg[:host],
+#         port:  Config.pg[:port]
+#
+     end
     rescue PG::ConnectionBad => e
       if e.to_s  =~  /Credentials/
         logger.error  "NOT CONNECTED ! Either Database is not present or credentials (#{ Config.username[environment]} / #{Config.password[environment]}) are wrong"

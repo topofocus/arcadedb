@@ -78,7 +78,7 @@ g =  p.green.on_black.detach
   puts "-"*80
   puts " Namespace is: Arcade ! "
   puts ""
-  puts c[" Available ArcadeDB-Statements                                                  "]
+  puts c[" Essential ArcadeDB-Statements                                                  "]
   puts " ----------------------------"
   puts g[" Api.databases "]+"                  # returns an Array of known databases "
   puts g[" Api.create_database <a string> "] + " # returns true if successfull   "
@@ -92,7 +92,7 @@ g =  p.green.on_black.detach
   puts " submit queries"
   puts " ----------------------------"
   puts g[" Api.execute( <database> ) { <query> } "]+" #submit query as block"
-  puts g[" Api.query( <database> )   { <query> } "]
+  puts g[" Api.query <database> , <query>  "]
   puts ""
   puts " -----------------------------"
   puts " Display the database-structure"
