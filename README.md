@@ -34,10 +34,28 @@ The `example` directory contains documented sample files for typical usecases
 The adapter uses a 3 layer concept. 
 
 Top-Layer : `Arcade::Base`-Model-Objects. 
-They operate similar to ActiveRecord Model Objects.
+They operate similar to ActiveRecord Model Objects but are based on [Dry-Struct](https://dry-rb.org/gems/dry-struct/1.0/).
 
 ```ruby
-# Assuming, a Database-Type Person is present
+# Example model file  /model/demo/user.rb
+module Demo
+  class Person < Arcade::Vertex
+    attribute :name, Types::Nominal::String
+    timestamps true
+  end
+end
+__END__
+  CREATE PROPERTY demo_user.name STRING
+  CREATE INDEX `Person[name]` on demo_user( name  ) UNIQUE
+```
+
+Only the `name` attribute is declared. Timestamps (created & updated attributes) are included, too
+
+`Demo::User.create_type`  creates the type and executes the database-commands after __END__.   
+
+Other properties are schemaless. 
+
+```ruby
 Person.create name: "Hubert" age: 35
 Person.update set: { age: 36 }, where: { name: 'Hubert' }
 persons = Person.where "age > 40"
@@ -46,16 +64,6 @@ persons.first.update age: 37
 Person.all
 Person.delete all: true || where: age: 56 , ...
 ```
-Model-Classes have to be declared in the model directory. Namespaces are supported. 
-Model-attributes are taken from [Dry-types](https://dry-rb.org/gems/dry-types/1.2/built-in-types/).
-
-Database [Properties](https://docs.arcadedb.com/#SQL-Create-Property) and [Indexes](https://docs.arcadedb.com/#SQL-Create-Index) are declared in the model file. [Example](https://github.com/topofocus/arcadedb/blob/main/spec/model/node.rb)
-If the model based type-initialisation is used
-the commands are processed after creating the database-type.
-```ruby
-My::Names.create_type                          # create tyoe for class Names < Arcade::Vertex 
-```
-
 
 A **Query Preprocessor** is implemented. Its adapted from ActiveOrient. The [documentation](https://github.com/topofocus/active-orient/wiki/OrientQuery)
 is still valid,  however the class has changed to `Arcade::Query`. 

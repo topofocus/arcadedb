@@ -11,7 +11,7 @@ require "dry/core/class_attributes"
 module Types
   include Dry.Types()
 end
-require 'pg'          #  ruby postgres driver
+#require 'pg'          #  ruby postgres driver
 #require 'mini_sql'
 #require 'sequel'
 #require 'httparty'
@@ -33,3 +33,5 @@ require_relative '../lib/init'
 require_relative "../lib/models"
 require_relative '../lib/query'
 require_relative '../lib/match'
+require_relative '../lib/railtie'  if defined? Rails::Railtie
+

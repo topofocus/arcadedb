@@ -78,6 +78,8 @@ module Arcade
         @stamps
       end
 
+
+
       ## ----------------------------------------- insert       ---------------------------------- ##
       #
       #  Adds a record to the database
@@ -240,6 +242,19 @@ module Arcade
 
       def query **args
         Arcade::Query.new( **{ from: self }.merge(args) )
+      end
+
+      # immutable support
+      # to make a database type immutable add
+      #  `not_permitted :update, :upsert, :delete`
+      # to the model-specification
+      #
+      def not_permitted *m
+        m.each do | def_m |
+          define_method(  def_m ) do | v = nil |
+          error "operation not permitted", :immutable
+        end
+        end
       end
 
     end
