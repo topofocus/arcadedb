@@ -108,5 +108,9 @@ String.include Arcade::Support::String
 module Types
     include Dry.Types()
 
+    # include in attribute definitions 
       Rid = String.constrained( format:  /\A[#]{1}[0-9]{1,}:[0-9]{1,}\z/ )
+      Blockchain =  String.constrained( format: /(algo|eth|btc)/ )  #  add other blockchain symbols here
+      Email = String.constrained( format: /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z]+)*\.[a-z]+\z/i )
+
 end

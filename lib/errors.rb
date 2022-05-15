@@ -13,6 +13,9 @@ module Arcade
   class LoadError < LoadError
   end
 
+  class ImmutableError < RuntimeError
+
+  end
 
   class RollbackError < RuntimeError
   end
@@ -33,6 +36,8 @@ def error message, type=:standard, backtrace=nil
     Arcade::SymbolError.new message
   when :load
     Arcade::LoadError.new message
+  when :immutable
+    Arcade::ImmutableError.new message
   when :commit
     Arcade::RollbackError.new message
   end

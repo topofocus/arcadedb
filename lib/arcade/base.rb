@@ -45,6 +45,10 @@ module Arcade
           end
           the_class = e.next  # iterate through the enumerator
         end
+        # todo
+        # include `created`` and `updated` properties to the aradedb-database schema if timestamps are set
+        # (it works without declaring them explicitly, its thus omitted for now )
+        # Integration is easy: just execute two commands
         custom_setup = db_init rescue ""
         custom_setup.each_line do |  command |
           the_command =  command[0 .. -2]  #  remove '\n'
@@ -56,6 +60,22 @@ module Arcade
       end
       def properties
 
+      end
+
+
+      # add timestamp attributes to the model
+      #
+      # updated is optional
+      #
+      # timestamps are included in create and update statements
+      #
+      def timestamps set=nil
+        if set && @stamps.nil?
+          @stamps = true
+          attribute :created, Types::JSON::DateTime
+          attribute :updated?, Types::JSON::DateTime
+        end
+        @stamps
       end
 
       ## ----------------------------------------- insert       ---------------------------------- ##
@@ -83,6 +103,7 @@ module Arcade
 
       def  create **attributes
         Api.begin_transaction db.database
+        attributes.merge!( created: DateTime.now ) if timestamps
         record = insert **attributes
         Api.commit db.database
         record
@@ -178,7 +199,8 @@ module Arcade
       #
       def update **args
         if args.keys.include?(:set) && args.keys.include?(:where)
-            query( **( { kind: :update }.merge args ) ).execute{|r| r[:"$current"].load_rid }
+          args.merge!( updated: DateTime.now ) if timestamps
+          query( **( { kind: :update }.merge args ) ).execute{|r| r[:"$current"].load_rid }
         else
           raise "at least set: and where: are required to perform this operation"
         end
@@ -191,6 +213,7 @@ module Arcade
       #
       def update! **args
         if args.keys.include?(:set) && args.keys.include?(:where)
+          args.merge!( updated: DateTime.now ) if timestamps
           query( **( { kind: :update! }.merge args ) ).execute{|y| y[:count] } &.first
         else
           raise "at least set: and where: are required to perform this operation"
@@ -200,6 +223,7 @@ module Arcade
       # returns a list of updated records
       def upsert **args
         set_statement = args.delete :set
+        args.merge!( updated: DateTime.now ) if timestamps
         where_statement = args[:where] || args
         statement = if set_statement
                       { set: set_statement, where: where_statement }
@@ -207,8 +231,6 @@ module Arcade
                       { where: where_statement }
                     end
         result= query( **( { kind: :upsert  }.merge statement ) ).execute do | answer|
-puts           answer.class
-puts answer
            z=  answer[:"$current"] &.load_rid(false)   #  do not autoload modelfiles
            error "Upsert failed", :load  unless z.is_a?  Arcade::Base
            z  #  return record
