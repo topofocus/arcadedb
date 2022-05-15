@@ -68,7 +68,7 @@ module Arcade
     def nodes in_or_out = :both, depth= 1, via: nil , execute: true
       io =  in_or_out.to_s+ "(" + resolve_edge_name(via) + ")"
        if execute
-         query( projection: io ).execute &.first &.values &.allocate_model &.flatten
+         query( projection: io ).execute &.select_result( io )
        else
          query(projection: io )
        end
