@@ -114,10 +114,9 @@ module Arcade
         db.logger.error "Provided Attributes: #{attributes.inspect}"
         Api.rollback db.database
       rescue  Dry::Struct::Error => e
-        db.delete rid
+        Api.rollback db.database
         db.logger.error "#{rid} :: Validation failed, record deleted."
         db.logger.error e.message
-        Api.rollback db.database
       end
 
       def count  **args
@@ -330,7 +329,8 @@ module Arcade
       true if response == [{ count: 1 }]
     end
     def == arg
-      self.attributes == arg.attributes
+     # self.attributes == arg.attributes
+      self.rid == arg.rid
     end
 
     def refresh
