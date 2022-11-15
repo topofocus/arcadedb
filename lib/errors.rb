@@ -20,6 +20,20 @@ module Arcade
   class RollbackError < RuntimeError
   end
 
+  class QueryError < RuntimeError
+  end
+
+  # used by Dry::Validation,  not covered by "error"
+  class InvalidParamsError < StandardError
+    attr_reader :object
+    # @param [Hash] object that contains details about params errors.
+    # # @param [String] message of the error.
+    def initialize(object, message)
+      @object = object
+      super(message)
+    end
+  end
+
 end # module  Arcade
 
 # Patching Object with universally accessible top level error method. 
@@ -40,6 +54,8 @@ def error message, type=:standard, backtrace=nil
     Arcade::ImmutableError.new message
   when :commit
     Arcade::RollbackError.new message
+  when :query
+    Arcade::QueryError.new message
   end
   e.set_backtrace(backtrace) if backtrace
   raise e

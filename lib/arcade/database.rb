@@ -220,7 +220,7 @@ module Arcade
     # If an Error occurs, its rolled back
     #
     def execute   &block
-    #  Api.begin_transaction database
+      Api.begin_transaction database
       response = Api.execute database, &block
       # puts response.inspect  # debugging
       r= if  response.is_a? Hash
@@ -238,33 +238,20 @@ module Arcade
          else
            response
          end
-   #  Api.commit database
+     Api.commit database
      r # return associated array of Arcade::Base-objects
-    rescue  Dry::Struct::Error => e
-   #   Api.rollback database
+    rescue  Dry::Struct::Error, Arcade::QueryError => e
+      Api.rollback database
       logger.error "Execution  FAILED --> #{e.exception}"
       []  #  return empty result
     end
-
 
     # returns an array of results
     #
     # detects database-records and  allocates them as model-objects
     #
     def query  query_object
-      response= Api.query(database, query_object.to_s)
-      block_given? ? yield(response) : response
-   #   if response.is_a?(Hash)
-   #     response.map do |r|
-   #       if r.key? :"@rid"
-   #         allocate_model r
-   #       else
-   #         r
-   #       end
-   #     end
-   #   else
-   #     response
-   #   end
+      Api.query database, query_object.to_s
     end
 
     #  returns an array of rid's   (same logic as create)

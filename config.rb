@@ -29,13 +29,15 @@ module Arcade
     setting :admin,   default:  :admin,    reader: true , constructor:  ->( v ) { yml(v)}
     setting :logger,  default:  :logger,   reader: true , constructor:  ->( v ) { yml(v) == "rails" ?  Rails.logger : yml(v) }
     setting :namespace, default:  :namespace, reader: true , constructor:  ->( v ) { yml(v)}
-    setting :secret, reader: true,  default: 12, constructor:  ->( v ) { seed(v)}
      private
     # if a config dir exists, use it
+     #  first search ProjectRoot/arcade.yml, then ProjectRoot/config/arcade.yml and finally ProjekctRoot/config.yml
      def self.config_file
-       if @cd.nil?
-         (cd = ProjectRoot + "config.yml").exist? || (cd =  ProjectRoot + 'arcade.yml').exist? ||  ( cd = ProjectRoot + 'config' + 'arcade.yml' )
-         @cd = cd
+       if @cd.nil? 
+         ( cd = Pathname.new( ProjectRoot + '/arcade.yml')).exist? ||
+         ( cd = Pathname.new( ProjectRoot + '/config' + '/arcade.yml' )).exist? ||
+         ( cd = Pathname.new( ProjectRoot + "/config.yml"))
+        @cd = cd
        else
          @cd
        end
@@ -43,9 +45,6 @@ module Arcade
     def self.yml key=nil
       y= YAML::load_file( config_file )
       key.nil?  ?  y : y[key]
-    end
-    def self.seed(key= nil)
-      SecureRandom.hex(40)
     end
   end
 end

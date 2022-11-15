@@ -226,10 +226,10 @@ module Arcade
     def self.post_data command, options = auth
      # puts "Post DATA #{command} #{options}"   # debug
       result  = Typhoeus.post Arcade::Config.base_uri + command, options
-      analyse_result(result, command)
+      analyse_result(result, command )
     end
 
-    #  todo raise exceptions   instead of logging the error-message
+    # returns the json-response
     def self.analyse_result r, command
         if r.success?
           return nil  if r.response_code == 204  # no content
@@ -244,9 +244,10 @@ module Arcade
           []
         elsif r.response_code > 0
 #          logger.error  "Execution Failure – Code: #{ r.response_code } – #{r.status_message} "
-          body =  JSON.parse( r.response_body, symbolize_names: true  ) unless r.response_body.empty?
-          logger.error   body[:detail]  if body.is_a? Hash
-        end
+          error_message = JSON.parse( r.response_body, symbolize_names: true )[:detail]
+          # available fields:  :detail, :exception, error
+          error   error_message, :query
+          end
     end
     def self.auth
        @a ||= { httpauth: :basic,

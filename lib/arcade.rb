@@ -16,6 +16,7 @@ end
 #require 'sequel'
 #require 'httparty'
 require 'yaml'
+require 'securerandom'
 require 'typhoeus'    #  curl library
 require_relative '../lib/errors'
 require_relative '../lib/support/object'
