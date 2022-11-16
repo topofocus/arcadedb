@@ -184,6 +184,7 @@ module Arcade
       #
       def where a= true, autoload: true, **args
         autoload =  false if a != autoload
+         args = a if a.is_a?(String)
          query( where: args ).query.allocate_model( autoload )
       end
 
