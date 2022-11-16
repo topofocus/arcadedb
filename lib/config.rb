@@ -34,8 +34,10 @@ module Arcade
     # if a config dir exists, use it
      def self.config_file
        if @cd.nil?
-         (cd = ProjectRoot + "config.yml").exist? || (cd =  ProjectRoot + 'arcade.yml').exist? ||  ( cd = ProjectRoot + 'config' + 'arcade.yml' )
-         @cd = cd
+         ( cd = Pathname.new( ProjectRoot + '/arcade.yml' )).exist? ||
+         ( cd = Pathname.new( ProjectRoot + '/config' + '/arcade.yml' )).exist? ||
+         ( cd = Pathname.new( ProjectRoot + "/config.yml" ))
+          @cd = cd
        else
          @cd
        end
