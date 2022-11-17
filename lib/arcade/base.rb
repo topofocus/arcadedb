@@ -29,11 +29,16 @@ module Arcade
         e = ancestors.each
         myselfclass = e.next  # start with the actual class(self)
         superclass = the_class  = e.next
+        begin
         loop do
           if ['Document','Vertex', 'Edge'].include? the_class.demodulize
             if  the_class == superclass  # no inheritance
               ## we have to use demodulise as the_class actually is Arcade::Vertex, ...
-              db.create_type the_class.demodulize, to_s.snake_case
+              unless parent_present[ to_s.snake_case ]
+                db.create_type the_class.demodulize, to_s.snake_case
+              else
+                db.logger.warn "Type #{to_s.snake_case} is present, process skipped"
+              end
             else
               extended = superclass.to_s.snake_case
               if !parent_present[extended]
@@ -57,6 +62,9 @@ module Arcade
           db.execute { the_command }
         end unless custom_setup.nil?
 
+        rescue Arcade::RollbackError => e
+          db.logger.warn e
+        end
       end
       def properties
 
