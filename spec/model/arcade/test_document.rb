@@ -16,4 +16,4 @@ end
 __END__
 CREATE PROPERTY test_document.name STRING
 CREATE PROPERTY test_document.age INTEGER
-CREATE INDEX `TestDocument[name]` ON test_document (name, age) UNIQUE
+CREATE INDEX  ON test_document (name, age) UNIQUE

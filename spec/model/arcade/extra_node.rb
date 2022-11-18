@@ -11,4 +11,4 @@ end
 ## 
 __END__
 CREATE PROPERTY extra_node.extraitem STRING
-CREATE INDEX `ExtraNode[extraitem]` ON extra_node (extraitem) UNIQUE
+CREATE INDEX  ON extra_node (extraitem) UNIQUE

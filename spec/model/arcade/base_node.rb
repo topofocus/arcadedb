@@ -11,4 +11,4 @@ end
 ## 
 __END__
 CREATE PROPERTY base_node.item STRING
-CREATE INDEX `BaseNode[item]` ON base_node (item) UNIQUE
+CREATE INDEX  ON base_node (item) UNIQUE

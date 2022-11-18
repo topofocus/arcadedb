@@ -14,7 +14,6 @@ module Arcade
   end
 
   class ImmutableError < RuntimeError
-
   end
 
   class RollbackError < RuntimeError

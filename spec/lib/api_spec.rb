@@ -34,7 +34,7 @@ RSpec.describe Arcade::Api do
       expect( r.first[:operation] ).to eq "create document type"
     end
 
-    it "The document type is present", focus: true do
+    it "The document type is present" do
       # fetch list of types
      r= Arcade::Api.execute( Arcade::Config.database[:test]){  'select from schema:types' }.first
       #=> {"indexes"=>[], "parentTypes"=>[], "name"=>"test_document", "type"=>"document", "properties"=>[]}
@@ -45,7 +45,7 @@ RSpec.describe Arcade::Api do
       expect( r[:properties] ).to be_empty
     end
 
-    it "Add a property and an Index" , focus: true  do
+    it "Add a property and an Index"   do
       Arcade::Api.execute( Arcade::Config.database[:test]) { "create document type my_names" }
       expect(  Arcade::Api.property( Arcade::Config.database[:test] , 'my_names',
                                      name: :string, age: :integer)).to  be_truthy
@@ -68,6 +68,15 @@ RSpec.describe Arcade::Api do
       expect(r[:age]).to eq 54.3
       expect(r[:bes]).to eq "Über"
       #   {"bes"=>"Über", "@rid"=>"#1:0", "@type"=>"test_document", "name"=>"Gugo", "@cat"=>"d", "age"=>54.3}
+    end
+
+    it "drop type" do
+      Arcade::Api.execute( Arcade::Config.database[:test]) { "create document type drop_document" }
+      r= Arcade::Api.execute( Arcade::Config.database[:test]){  'select from schema:types' }.first
+      expect( r[:name] ).to eq 'drop_document'
+      Arcade::Api.execute( Arcade::Config.database[:test]){ "drop type drop_document if exists" }
+      r= Arcade::Api.execute( Arcade::Config.database[:test]){  'select from schema:types' }.first
+      expect( r[:name] ).not_to eq 'drop_document'
     end
   end
   context "create a vertex type " do
@@ -105,8 +114,8 @@ RSpec.describe Arcade::Api do
       #  {"@out"=>0, "bes"=>"Über", "@rid"=>"#9:0", "@in"=>0, "@type"=>"test_vertex", "name"=>"Gugo", "@cat"=>"v", "age"=>54.3}
     end
   end
-  context "create a edge type " do
-    before(:all){ Arcade::Api.execute( Arcade::Config.database[:test]) { "create edge type test_edge" } }
+  context "create a edge type "   do
+    before(:all){ Arcade::Api.execute( Arcade::Config.database[:test]) { "CREATE EDGE TYPE test_edge" } }
 
     it "The edge type is present" do
       # fetch list of types
@@ -114,13 +123,13 @@ RSpec.describe Arcade::Api do
       #[{"indexes"=>[], "parentTypes"=>[], "name"=>"test_document", "type"=>"document", "properties"=>[]},
       # {"indexes"=>[], "parentTypes"=>[], "name"=>"test_edge", "type"=>"edge", "properties"=>[]},
       # {"indexes"=>[], "parentTypes"=>[], "name"=>"test_vertex", "type"=>"vertex", "properties"=>[]}] 
+      r =  r.find{|y| y[:name] == 'test_edge'}
 
-
-      expect(r).to be_an Array
-      expect(r[1]).to be_a  Hash
-      expect(r[1][:name]).to eq 'test_edge'
-      expect(r[1][:type]).to eq 'edge'
-      expect(r[1][:properties]).to be_empty
+      expect(r).to be_a  Hash
+      expect(r[:name]).to eq 'test_edge'
+      expect(r[:type]).to eq 'edge'
+      expect(r[:properties]).to be_empty
+      expect(r[:indexes]).to be_empty
     end
     it "Insert an edge" do
       rid1= Arcade::Api.create_document  Arcade::Config.database[:test], 'test_vertex',  name: "parent", age: 54.3

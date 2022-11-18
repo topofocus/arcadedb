@@ -66,6 +66,12 @@ module Arcade
           db.logger.warn e
         end
       end
+
+
+      def drop_type
+        db.drop_type to_s.snake_case
+      end
+
       def properties
 
       end
@@ -117,10 +123,10 @@ module Arcade
         record = insert **attributes
         Api.commit db.database
         record
-      rescue RuntimeError => e
+      rescue QueryError => e
         db.logger.error "Dataset NOT created"
         db.logger.error "Provided Attributes: #{attributes.inspect}"
-        Api.rollback db.database
+       #  Api.rollback db.database   --->  raises "transactgion not begun" 
       rescue  Dry::Struct::Error => e
         Api.rollback db.database
         db.logger.error "#{rid} :: Validation failed, record deleted."
@@ -210,7 +216,9 @@ module Arcade
       def update **args
         if args.keys.include?(:set) && args.keys.include?(:where)
           args.merge!( updated: DateTime.now ) if timestamps
-          query( **( { kind: :update }.merge args ) ).execute{|r| r[:"$current"].load_rid }
+          query( **( { kind: :update }.merge args ) ).execute do |r|
+            r[:"$current"] &.allocate_model(false)  #  do not autoload modelfiles
+          end
         else
           raise "at least set: and where: are required to perform this operation"
         end
@@ -241,9 +249,9 @@ module Arcade
                       { where: where_statement }
                     end
         result= query( **( { kind: :upsert  }.merge statement ) ).execute do | answer|
-           z=  answer[:"$current"] &.load_rid(false)   #  do not autoload modelfiles
-           error "Upsert failed", :load  unless z.is_a?  Arcade::Base
-           z  #  return record
+          z=  answer[:"$current"] &.allocate_model(false)  #  do not autoload modelfiles
+          error "Upsert failed", :load  unless z.is_a?  Arcade::Base
+          z  #  return record
         end
       end
 

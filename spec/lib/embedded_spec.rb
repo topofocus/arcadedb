@@ -59,11 +59,11 @@ RSpec.describe Arcade::Document do
 
       it "select embedded properties" do
         ##  returns just the numbers
-        expect( My::EmbeddedDocument.query( projection: 'emb.number' ).query.select_result("emb.number")).to eq [[[1,2]]]
+        expect( My::EmbeddedDocument.query( projection: 'emb.number' ).query.select_result("emb.number")).to eq [nil,nil,1,2]
         ## returns an Array of Hashes
-        expect( My::EmbeddedDocument.query( projection: 'emb:{number}' ).execute.select_result( "emb")).to eq [[[{number: 1},{ number: 2}]]]
+        expect( My::EmbeddedDocument.query( projection: 'emb:{number}' ).execute.select_result( "emb")).to eq [nil,nil,{number: 1},{ number: 2}]
         ## returns the linked dataset(s)
-        expect( My::EmbeddedDocument.query( projection: 'emb[number=1]' ).execute.select_result("emb[number = 1]")).to eq  [[[ My::Alist.where(number: 1).first.rid]]]
+        expect( My::EmbeddedDocument.query( projection: 'emb[number=1]' ).execute.select_result("emb[number = 1]")).to eq  [nil,nil, My::Alist.where(number: 1).first.rid]
 
       end
     end

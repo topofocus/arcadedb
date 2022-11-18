@@ -177,7 +177,6 @@ module Arcade
           [orient_k, v.to_db]
         end.to_h
       end
-
       #
       def from_db
         # populate the hash by converting keys: stings to symbols, values: preprocess through :from_db
@@ -191,6 +190,14 @@ module Arcade
           [orient_k, v.from_db]
         end.to_h
       end
+
+      def allocate_model( autoload = Config.autoload )
+        puts "self: #{self.inspect}"
+        a = self.dup
+        _allocate_model( a , autoload )
+      end
+
+
 
       # converts a hash to a string appropiate to include in raw queries
       def to_or
@@ -240,7 +247,10 @@ Time.include Arcade::Support::Time
 Date.include Arcade::Support::Date
 DateTime.include Arcade::Support::DateTime
 String.include Arcade::Support::String2
-Hash.include Arcade::Support::Hash
+class Hash
+  include Arcade::Support::Model  #  mixin allocate_model
+  include Arcade::Support::Hash
+end
 
 class NilClass
 	def to_or

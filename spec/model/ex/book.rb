@@ -9,7 +9,7 @@ module  Ex
 end
 ## The code below is executed on the database after the database-type is created
 ## Use the output of `ModelClass.database_name` as DB type  name
-## 
+##
 __END__
 CREATE PROPERTY ex_book.title STRING
 CREATE PROPERTY ex_bool.married BOOLEAN

@@ -12,5 +12,5 @@ end
 ## 
 __END__
 CREATE PROPERTY node.item INTEGER
-CREATE INDEX `NodeItemidx` ON node (item)  NOTUNIQUE
+CREATE INDEX  ON node (item)  NOTUNIQUE
 

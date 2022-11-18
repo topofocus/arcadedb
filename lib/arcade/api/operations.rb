@@ -22,7 +22,6 @@ module Arcade
 
 =end
 
-    #include HTTParty
 
     def self.databases
       get_data 'databases'
@@ -30,6 +29,8 @@ module Arcade
 
     def self.create_database name
       post_data  "create/#{name}"
+    rescue QueryError
+#      puts "error"
     end
 
     def self.drop_database name
@@ -141,8 +142,11 @@ module Arcade
       unique_requested = "notunique" if  properties.delete("notunique" )
       automatic = true if
       properties << name  if properties.empty?
-      success = execute(database) {" create index  `#{type.to_s}[#{name.to_s}]` on #{type} ( #{properties.join(',')} ) #{unique_requested}" } &.first
-     # puts "success: #{success}"
+  #    puts " create index  #{type.to_s}[#{name.to_s}] on #{type} ( #{properties.join(',')} ) #{unique_requested}" 
+      #    VV 22.10: providing an index-name raises an  Error (  Encountered " "(" "( "" at line 1, column 44. Was expecting one of:     <EOF>      <SCHEMA> ...     <NULL_STRATEGY> ...     ";" ...     "," ...   )) )
+      #    named  indices droped for now
+      success = execute(database) {" create index   on #{type} ( #{properties.join(',')} ) #{unique_requested}" } &.first
+#      puts "success: #{success}"
       success && success.keys == [ :totalIndexed, :name, :operation ] &&   success[:operation] == 'create index' 
 
     end
@@ -246,7 +250,7 @@ module Arcade
 #          logger.error  "Execution Failure – Code: #{ r.response_code } – #{r.status_message} "
           error_message = JSON.parse( r.response_body, symbolize_names: true )[:detail]
           # available fields:  :detail, :exception, error
-          error   error_message, :query
+          raise Arcade::QueryError,  error_message
           end
     end
     def self.auth

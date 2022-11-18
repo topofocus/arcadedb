@@ -193,7 +193,7 @@ RSpec.describe Arcade::Query do
 				it "upsert"  do
 					q =  TestDocument.query(  kind: :upsert, set:{ c: 500}, where:' c = 500'  )
 					expect( q.to_s ).to eq "update test_document set c = 500 upsert return after $current where  c = 500"
-          p =  q.execute{|y| y[:"$current"]}.first.load_rid
+          p =  q.execute{|y| y[:"$current"]}.first.allocate_model(false)
 					expect(p).to be_a TestDocument
 					expect(p.c).to eq 500
           p2 =  TestDocument.upsert( set:{ c: 500}, where:' c = 500').first

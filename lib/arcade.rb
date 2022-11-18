@@ -7,6 +7,7 @@ require "dry/configurable"
 require "dry/struct"
 require "dry/core/class_builder"
 require "dry/core/class_attributes"
+require 'json'
 
 module Types
   include Dry.Types()

@@ -111,6 +111,12 @@ module Arcade
 
     alias create_class create_type
 
+    # ------------ drop type  -----------
+    #  delete any record prior to the attempt to drop a type.
+    #  The `unsafe` option is nit implemented.
+    def drop_type  type
+      Api.execute database, "drop type #{type} if exists"
+    end
 
     # ------------ create  -----------
     # returns an rid of the successfully  created vertex or document
