@@ -86,5 +86,13 @@ RSpec.describe Arcade::Document do
       expect( Arcade::TestDocument.count ).to eq 3
       expect( Arcade::DepTestDoc.count ).to eq 1    #  Inheritance works
     end
+
+   it "select a record " do
+      document =  Arcade::DepTestDoc.create name: 'BertaTester', age: 40, item: 6
+      expect(  Arcade::DepTestDoc.where( item: 6 ).first ).to eq document
+      expect(  Arcade::DepTestDoc.where( name: 'BertaTester' ).first ).to eq document
+      expect(  Arcade::DepTestDoc.where( "name like \"BertaTester\" ").first ).to eq document
+   end 
+
   end
 end

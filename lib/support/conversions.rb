@@ -192,9 +192,7 @@ module Arcade
       end
 
       def allocate_model( autoload = Config.autoload )
-        puts "self: #{self.inspect}"
-        a = self.dup
-        _allocate_model( a , autoload )
+        _allocate_model( self , autoload )
       end
 
 

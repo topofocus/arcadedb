@@ -1,7 +1,7 @@
 module My
   class  Names < Arcade::Vertex
-    attribute :name?, Types::String
-    attribute :age?, Types::Integer
+    attribute :name?, Types::Nominal::String
+    attribute :age?, Types::Nominal::Integer
    attribute :bez?, Types::Nominal::Any
   end
 end

@@ -1,5 +1,5 @@
 module My
-  class  E4 < E3
-#    attribute :node_count?, Types:Integer
+  class  E4 < E1
+#    attribute :node_count?, Types::Nominal::Integer
   end
 end

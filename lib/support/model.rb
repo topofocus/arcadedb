@@ -7,9 +7,9 @@ module Arcade
         when nil
           ""
         when Class
-          edge_name.database_name
+          "'" + edge_name.database_name + "'"
         when String
-          edge_name 
+          "'" + edge_name + "'"
         end
       end
 
