@@ -2,6 +2,8 @@
 
 Ruby Interface to a [Arcade Database](https://arcadedb.com/).
 
+It requires a running [ArcadeDB V 22.10.1](https://github.com/ArcadeData/arcadedb/releases/tag/22.10.1) Instance
+
 > This ist an alpha version. 
 
 The adapter implements the HTTP-JSON-Api of ArcadeDB.
