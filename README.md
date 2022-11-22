@@ -2,9 +2,8 @@
 
 Ruby Interface to a [Arcade Database](https://arcadedb.com/).
 
-It requires a running [ArcadeDB V 22.10.1](https://github.com/ArcadeData/arcadedb/releases/tag/22.10.1) Instance
 
-> This ist an alpha version. 
+> This ist an beta version. 
 
 The adapter implements the HTTP-JSON-Api of ArcadeDB.
 
@@ -14,22 +13,26 @@ The adapter implements the HTTP-JSON-Api of ArcadeDB.
 
 A running AracdeDB-Instance. [Quick-Start-Guide](https://docs.arcadedb.com/#Quick-Start-Docker).
 
+[ArcadeDB V 22.10.1](https://github.com/ArcadeData/arcadedb/releases/tag/22.10.1) is supported
+
 ## Config
 
-Edit the file `config.yml`  and  provide suitable databases for test, development and production environment.
-
-For Access through the HTTP-API `:admin`-entries are used. 
+Edit the file `arcade.yml`  and  provide suitable databases for test, development and production environment.
 
 ## Console
 
 To start an interactive console, a small script is provided in the bin-directory.
 ```
 $ cd bin && ./console.rb  t   ( or "d" or "p" for Test, Development and Production environment)
+
+**Database definitions  (model-files) of the test-suite are included!**
 ```
 
-## Examples
+## Examples  & Specs
 
 The `example` directory contains documented sample files for typical usecases
+
+The `spec`-files in the rspec-test-suite-section are worth reading, too. 
 
 ## Implementation
 
@@ -48,7 +51,7 @@ module Demo
 end
 __END__
   CREATE PROPERTY demo_user.name STRING
-  CREATE INDEX `Person[name]` on demo_user( name  ) UNIQUE
+  CREATE INDEX on demo_user( name  ) UNIQUE
 ```
 
 Only the `name` attribute is declared. Timestamps (created & updated attributes) are included, too
@@ -73,13 +76,13 @@ is still valid,  however the class has changed to `Arcade::Query`.
 The **second Layer** handles Database-Requests.  
 In the actual implementation, these requests are delegated to the HTTP/JSON-API.
 
-`Arcade::Init` uses the database specification of the `config.yml` file.   
+`Arcade::Init` uses the database specification of the `arcade.yml` file.   
 The database-handle is always present through `Arcade::Init.db`
 
 ```ruby
 DB =  Arcade::Init.db
 
-$ DB.get <rid> || nn, mm                        # returns a Aracde:Base object
+$ DB.get nn, mm                                 # returns a Aracde:Base object
                                                 # rid is either "#11:10:" or two numbers
 $ DB.query querystring                          # returns either an Array of results (as  Hash) 
 $ DB.execute { querystring }                    # 
@@ -108,12 +111,12 @@ $ My::Names.query( limit: 1).query.allocate_model.to_human
  # replaces the hash with a My::Names Object 
 ```
 
-The **third Layer** implements the direct interaction with the database API. 
+The **third Layer** implements a low level access to the database API. 
 
 ```ruby
 
 $ Arcade::Api.databases                        # returns an array of known databases
-$ Arcade::Api.create_database <a string>       # returns true if succesfull
+$ Arcade::Api.create_database <a string>       # returns true if successfull
 $ Arcade::Api.drop_database   <a string>       # returns true if successfull
 
 $ Arcade::Api.begin_transaction <database>
@@ -152,14 +155,14 @@ The `upsert` command either updates or creates a database record.
 either creates the record (and returns it) or returns the existing database entry. Obviously, the addressed attribute (where condition) 
 must have a proper index. 
 
-The `upsert` statement provides a smart method to ensure the presence of an unique starting point. 
+The `upsert` statement provides a smart method to ensure the presence of a defined starting point. 
 
 ### Assign Nodes to a Vertex 
 
-Apart from assessing attributes by their method-name, adjacent edges and notes are fetched through
+Apart from accessing attributes by their method-name, adjacent edges and notes are fetched through
 
 ```ruby 
-  new_vertex = ->(n) { Node.insert( note_count: n )  }                      ## lambda to create a Node type record
+  new_vertex = ->(n) { Node.create( note_count: n )  }                      ## lambda to create a Node type record
   nucleus    =  BaseNode.create item: 'b'                                   ## create a start node
   (1..10).each{ |n| nucleus.assign( via: Connects, vertex: new_vertex[n]) } ## connect nodes via Connects-Edges
 ```
@@ -205,7 +208,7 @@ Select a range of nodes and perform a mathematical operation
   median = Query.new from: hundred_elements,
                projection: 'median(note_count)',
                     where: '$depth>=50'
-  meian.to_s
+  median.to_s
   -=> select median(note_count) from  ( traverse out(connects) from #52:0 while $depth < 100 )  where $depth>=50  
    =>   {:"median(note_count)"=>75.5 }
 ```
