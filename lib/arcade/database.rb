@@ -107,6 +107,9 @@ module Arcade
         end.concat( args.map{|x,y| "#{x} #{y} "}.join)
       end
       Api.execute database, &exe
+
+    rescue Arcade::QueryError
+      Arcade::Database.logger.warn "Database type #{type} already present"
     end
 
     alias create_class create_type
@@ -166,7 +169,7 @@ module Arcade
       rid =  rid.join(':')
       rid = rid[1..-1] if rid[0]=="#"
       if rid.rid?
-        Api.query( database, "select from #{rid}" ).allocate_model(autocomplete).first
+        Api.query( database, "select from #{rid}" ).first.allocate_model(autocomplete)
       else
         error "Get requires a rid input"
       end
