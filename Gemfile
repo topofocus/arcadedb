@@ -6,7 +6,7 @@ source "https://rubygems.org"
 gemspec
 gem 'sdoc'
 gem  'dry-configurable'
-gem  'pg'
+# gem  'pg'
 #gem  'sequel'
 
 #gem  'mini_sql' #, path: '../mini_sql/'
@@ -15,6 +15,7 @@ group :development, :test do
   gem 'pastel'
   gem 'zeitwerk'
   gem 'terminal-table'
+  gem 'rubocop'
 	gem "rspec"
 	gem 'rspec-legacy_formatters'
 	gem 'rspec-its'

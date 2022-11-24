@@ -89,9 +89,9 @@ RSpec.describe Arcade::Document do
 
    it "select a record " do
       document =  Arcade::DepTestDoc.create name: 'BertaTester', age: 40, item: 6
-      expect(  Arcade::DepTestDoc.where( item: 6 ).first ).to eq document
-      expect(  Arcade::DepTestDoc.where( name: 'BertaTester' ).first ).to eq document
-      expect(  Arcade::DepTestDoc.where( "name like \"BertaTester\" ").first ).to eq document
+      expect(  Arcade::DepTestDoc.where( item: 6 ) ).to eq document
+      expect(  Arcade::DepTestDoc.where( name: 'BertaTester' ) ).to eq document
+      expect(  Arcade::DepTestDoc.where( "name like \"BertaTester\" ") ).to eq document
    end 
 
   end

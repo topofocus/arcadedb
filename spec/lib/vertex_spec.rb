@@ -51,7 +51,7 @@ RSpec.describe Arcade::Vertex do
     My::E2.create_type
     My::E3.create_type
   end
-	describe "CRUD" do
+	describe "CRUD", focus: true  do
 		Given( :the_vertex ){ My::V2.create a: "a", b: 2, c: [1,2,3] , d: {a: 'b'}}
 		context " create" do
       it { puts the_vertex.inspect }
@@ -69,10 +69,8 @@ RSpec.describe Arcade::Vertex do
 		context "delete" do
 			it "deletes the vertex" do
 				my_vertex =  My::V2.where a: 'c'
-				expect(my_vertex.size).to eq 1
-				rid= my_vertex.first.rid
-				expect{ my_vertex.first.delete }.to change{ My::V2.count }.by -1
-#        expect( ).to be_nil
+				expect(my_vertex).to be_a  My::V2
+				expect{ my_vertex.delete }.to change{ My::V2.count }.by -1
 			end
 		end
   end

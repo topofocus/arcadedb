@@ -49,10 +49,6 @@ module Arcade
       DB.types.find{|x| x.key? :indexes }[:indexes]
     end
 
-    def properties
-
-    end
-
     # ------------ hierarchy -------------
     #  returns an Array of types
     #
@@ -146,7 +142,7 @@ module Arcade
       else
         content =  "CONTENT #{ content_params.to_json }"
         target =  target_params.map{|y,z|  y==:type ?  z : "#{y.to_s} #{ z } "}.join
-        Api.execute( database, "INSERT INTO #{target} #{content} ").allocate_model &.first
+        Api.execute( database, "INSERT INTO #{target} #{content} ") &.first.allocate_model(false)
       end
     end
 
@@ -169,7 +165,7 @@ module Arcade
       rid =  rid.join(':')
       rid = rid[1..-1] if rid[0]=="#"
       if rid.rid?
-        Api.query( database, "select from #{rid}" ).first.allocate_model(autocomplete)
+        Api.query( database, "select from #{rid}" ) &.first.allocate_model(autocomplete)
       else
         error "Get requires a rid input"
       end
@@ -212,7 +208,7 @@ module Arcade
     # ------------------------------ index            ------------------------------------------------- #
     def self.index database, type,  name ,  *properties
       properties = properties.map( &:to_s )
-      unique_requested = "unique" if properties.delete("unique")  
+      unique_requested = "unique" if properties.delete("unique")
       unique_requested = "notunique" if  properties.delete("notunique" )
       automatic = true if
       properties << name  if properties.empty?
@@ -268,19 +264,17 @@ module Arcade
 
       content = attributes.empty? ?  "" : "CONTENT #{attributes.to_json}"
       cr = ->( f, t ) do
-        edges = Api.execute( database, "create edge #{edge_class} from #{f.rid} to #{t.rid} #{content}").allocate_model
-        if edges.is_a?(Array)
-          edges.first.rid
-        else
-          logger.error "Could not create Edge  #{edge_class} from #{f} to #{t}"
-          logger.error edges.to_s
-        end
+        edges = Api.execute( database, "create edge #{edge_class} from #{f.rid} to #{t.rid} #{content}").allocate_model(false) 
+        #else
+        #  logger.error "Could not create Edge  #{edge_class} from #{f} to #{t}"
+        ##  logger.error edges.to_s
+        #end
       end
       from =  [from] unless from.is_a? Array
       to =  [to] unless to.is_a? Array
 
       from.map do | from_record |
-          to.map { | to_record | cr[ from_record, to_record ] if  to_record.rid? } if from_record.rid?
+        to.map { | to_record | cr[ from_record, to_record ] if  to_record.rid? } if from_record.rid?
       end.flatten
 
     end
@@ -297,10 +291,10 @@ module Arcade
  #       namespace, type_name = a["type"].camelcase_and_namespace
  #       namespace= Arcade if namespace.nil?
  #      klass=  Dry::Core::ClassBuilder.new(  name: type_name,
- #                                          parent: nil, 
+ #                                          parent: nil,
  #                                          namespace:  namespace).call
  #    end
- #  rescue NameError 
+ #  rescue NameError
  #    logger.error "Dataset type #{e} not defined."
  #    raise
  #  end

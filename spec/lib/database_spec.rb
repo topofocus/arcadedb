@@ -96,21 +96,22 @@ RSpec.describe Arcade::Database do
 
       expect( edge ).to be_an Array
       edge.each do  |e|
-        the_e =  DB.get e
-        expect( the_e ).to be_an  Arcade::TestEdge
+        expect( e ).to be_an  Arcade::TestEdge
         ## includes system attributes
-        expect( the_e.attributes ).to include(:rid )
-        expect( the_e.attributes ).to include(:in, :out )
+        expect( e.attributes ).to include(:rid )
+        expect( e.attributes ).to include(:in, :out )
         # rid is proper formatted
-        expect(the_e.rid ).to  match /\A[#]{,1}[0-9]{1,}:[0-9]{1,}\z/
+        expect(e.rid ).to  match /\A[#]{,1}[0-9]{1,}:[0-9]{1,}\z/
         # even a  basic-edge has proper in- and out-attributes
-        expect( the_e.in.rid ).to eq rid2.rid     # to    translates to :in
-        expect( the_e.out.rid ).to eq rid1.rid    # from  translates to :out
+        expect( e.in.rid ).to eq rid2.rid     # to    translates to :in
+        expect( e.out.rid ).to eq rid1.rid    # from  translates to :out
       end
     end
 
     it " add some records and connect them via edges to a central vertex" do
       rid1=  DB.create 'test_vertex',  name: "parent", age: 54
+      previous_logger =  Arcade::Database.logger.level
+      Arcade::Database.logger.level = Logger::ERROR
       count = 50
       puts "      --> performing #{count} records "
       ( 1 .. count ).each do |i|
@@ -126,10 +127,13 @@ RSpec.describe Arcade::Database do
       expect( edges.first.age ).to eq 1
       expect( edges.last.age ).to eq count
       expect( edges.first.name ).to eq "child"
+      Arcade::Database.logger.level = previous_logger
 
     end
 
     it "build a chain of vertices aligned with edges and query it" do
+      previous_logger =  Arcade::Database.logger.level
+      Arcade::Database.logger.level = Logger::ERROR
       count = 100
       puts "      --> performing #{count} records "
       ## prepare database
@@ -139,6 +143,7 @@ RSpec.describe Arcade::Database do
         DB.create_edge "test_edge", from: start, to: next_vertex
         start = next_vertex
       end
+      Arcade::Database.logger.level = previous_logger
 
       ## primitive and ineffective query ( lacking an index, returning an array of Arcade::Base objects )
       primitive =  DB.query "select from test_vertex where name = 'chain' "

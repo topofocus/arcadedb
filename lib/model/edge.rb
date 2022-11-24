@@ -4,6 +4,10 @@ module Arcade
     attribute :in, Types::Rid
     attribute :out, Types::Rid
 
+    def accepted_methods
+      super + [ :vertices, :in, :out, :inV, :outV ]
+    end
+    #
     # Add Contrains to the edge
     # CREATE INDEX Watched_out_in ON <edge type«  (`@out`, `@in`) UNIQUE
     #
@@ -13,13 +17,13 @@ module Arcade
 
     ## gets the adjacent Vertex
     def inV
-      attributes[:in].load_rid
+      query( projection: "inV()").query.allocate_model( false ).first
     end
     def outV
-      attributes[:out].load_rid
+      query( projection: "outV()").query.allocate_model( false ).first
     end
     def vertices in_or_out = nil
-      case in_or_out
+  case in_or_out
       when :in
         inV
       when :out

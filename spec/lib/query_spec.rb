@@ -20,7 +20,11 @@ RSpec.describe Arcade::Query do
   Given( :query ){  Arcade::Query.new from: TestQuery }
   Then { expect(query).to be_a Arcade::Query }
 	Then{ expect( query.to_s).to eq "select from test_query " }
-
+ # -------------------------- where  -----------------------------
+  #    distinct
+  #    order
+  #    projections
+  #    limit
   context "Basic queries"  do
 		Given( :where_with_hash ) { query.where   a: 2 , c: 'ufz';  }
 		Then { expect( where_with_hash.to_s ).to match /where a = 2 and c = 'ufz'/ }
@@ -64,25 +68,29 @@ RSpec.describe Arcade::Query do
 	end
 
 
+ # -------------------------- update -----------------------------
+  #  class-based
+  #  rid-based
+  #  selection-based
 	context "update data" do
 		When( :update_with_class ) { query.where(  a: 2 ).set( c: 'ufz' ).kind( 'update!' ) }
-    Then  {  expect(update_with_class.to_s).to eq "update test_query set c = 'ufz' where a = 2"  }
+    Then { expect( update_with_class.to_s ).to eq "update test_query set c = 'ufz' where a = 2"  }
 		Given( :update_with_rid ) do
-					Arcade::Query.new target: "#33:0", 
-																				 where: { a: 2},	
-																				 set: { c: 'ufz' }, 
-																				 kind: 'update'  
+					Arcade::Query.new target: "#33:0",
+                            where: { a: 2},
+                            set: { c: 'ufz' },
+                            kind: 'update'
 		end
-    Then  {  expect(update_with_rid.to_s).to eq "update #33:0 set c = 'ufz' return after $current where a = 2"  }
+    Then { expect( update_with_rid.to_s ).to eq "update #33:0 set c = 'ufz' return after $current where a = 2"  }
 
 		Given( :update_of_an_array ) do
-					Arcade::Query.new target: "#33:0", 
-																				 where: { a: 2},	
-																				 set: { c: [ :a, 'b', 3 ] }, 
-																				 kind: 'update'  
+					Arcade::Query.new target: "#33:0",
+                           where: { a: 2},
+                           set: { c: [ :a, 'b', 3 ] },
+                           kind: 'update'
 		end
-    Then  {  expect(update_of_an_array.to_s).to eq  "update #33:0 set c = [':a:', 'b', 3] return after $current where a = 2"  }
-		Then {   expect( update_with_class.kind(:upsert).to_s ).to eq   "update test_query set c = 'ufz' upsert return after $current where a = 2"  }
+    Then { expect( update_of_an_array.to_s ).to eq  "update #33:0 set c = [':a:', 'b', 3] return after $current where a = 2"  }
+		Then { expect( update_with_class.kind(:upsert).to_s ).to eq   "update test_query set c = 'ufz' upsert return after $current where a = 2"  }
 		Given( :update_of_a_date ) do
 
 
@@ -102,19 +110,27 @@ RSpec.describe Arcade::Query do
 
 		end
 
-		context " old stuff,  still working" do 
+
+ # -------------------------- query-syntax -----------------------------
+    # subsequent initilaisation
+    # let block
+    # unionall
+    # subqueries
+    # traverse
+    #
+		context " old stuff,  still working" do
 			it "subsequent Initialisation"  do
 				q =  Arcade::Query.new
 				q.from  'test_query'
 				q.where   a: 2
 				q.where  'b > 3'
-				q.where   c: 'ufz' 
+				q.where   c: 'ufz'
 				expect(q.where).to eq "where a = 2 and b > 3 and c = 'ufz'"
 				q.distinct  'name'
-				q.order  name: :asc 
-				q.order  vorname: :asc 
+				q.order  name: :asc
+				q.order  vorname: :asc
 				expect(q.order).to eq "order by name asc, vorname asc"
-				q.projection   "eval( 'amount * 120 / 100 - discount' )"=> 'finalPrice' 
+				q.projection   "eval( 'amount * 120 / 100 - discount' )"=> 'finalPrice'
 				expect(q.projection).to eq "distinct name, eval( 'amount * 120 / 100 - discount' ) as finalPrice"
 				expect(q.compose). to eq "select distinct name, eval( 'amount * 120 / 100 - discount' ) as finalPrice from test_query where a = 2 and b > 3 and c = 'ufz' order by name asc, vorname asc"
 			end
@@ -164,16 +180,20 @@ RSpec.describe Arcade::Query do
 					kind: 'traverse'
 			end
 
-			Then  {  expect(traverse_query.to_s).to eq "traverse from test_query where a = 2 and c = 'ufz' "  }
+			Then { expect(traverse_query.to_s).to eq "traverse from test_query where a = 2 and c = 'ufz' "  }
 			When( :second_traverse_query ){ query.where( a: 2 , c: 'ufz' ).kind( 'traverse' ) }
-			Then  {  expect(second_traverse_query.to_s).to eq  traverse_query.to_s  }
+			Then { expect(second_traverse_query.to_s).to eq  traverse_query.to_s  }
 		end
 
 
+ # -------------------------- upate and insert -----------------------------
 		context "execute , update and upsert (Document)"  do
 			context "class based queries" do
 				before(:all) do
+          l =  Arcade::Database.logger.level
+          Arcade::Database.logger.level = Logger::ERROR
 					(1..200).each{|y| TestDocument.create c: y }
+          Arcade::Database.logger.level = l
 				end
 				it "count" do
 					q = TestDocument.query projection:  'COUNT(*)'
@@ -185,10 +205,10 @@ RSpec.describe Arcade::Query do
 				it "first and last" do
 					q =  TestDocument.query( order: "@rid", limit: 1)
 					expect( q.to_s ).to eq "select from test_document order by @rid limit  1"
-          expect(q.query.allocate_model).to eq [ TestDocument.first( where: { c: 1 }) ]
+          expect(q.query.allocate_model).to eq  TestDocument.first( where: { c: 1 })
 				end
-				it { expect( TestDocument.first ). to eq TestDocument.where( c: 1  ).first }
-				it { expect( TestDocument.last ). to eq TestDocument.where( c: 200  ).first }
+				it { expect( TestDocument.first ). to eq TestDocument.where( c: 1  ) }
+				it { expect( TestDocument.last ). to eq TestDocument.where( c: 200  ) }
 
 				it "upsert"  do
 					q =  TestDocument.query(  kind: :upsert, set:{ c: 500}, where:' c = 500'  )
@@ -200,10 +220,11 @@ RSpec.describe Arcade::Query do
           expect( p ).to eq p2
 				end
 
-				it { expect( TestDocument.upsert set:{ c:70  }, where:{ c: 70 } ). to eq TestDocument.where( c: 70  ) }
+				it { expect( TestDocument.upsert set:{ c:70  }, where:{ c: 70 } ). to eq [TestDocument.where( c: 70  )] }
 
 
 
+        ## always returns an array
 				it "update on class level" do
 
 					q =  TestDocument.query(  kind: :update!, set:{ c: 500}, where:'c = 50'  )
@@ -212,7 +233,7 @@ RSpec.describe Arcade::Query do
           p =  q.execute(reduce: true){|y| y[:count]}.first
 					expect(p).to be_a Integer
 				end
-				it { expect( TestDocument.update set: { u: 65 }, where:{ c: 70 } ). to eq TestDocument.where( c: 70  )}
+				it { expect( TestDocument.update set: { u: 65 }, where:{ c: 70 } ). to eq [TestDocument.where( c: 70  )]}
 				it { expect( TestDocument.update! set: { u: 66 }, where:{ c: 70 } ). to eq 1 }
 				it { expect( TestDocument.update! set: { u: 66 }, where: ["c < 70", "c > 60"]  ). to eq 9 }
 				it { expect( TestDocument.update! set: { u: 66 }, where:{ c: 700 } ). to be_zero }
@@ -231,14 +252,6 @@ RSpec.describe Arcade::Query do
 					expect(r.d).to eq [1,2,3]
 					expect( TestQuery.count ).to eq 1
 				end
-        # requires thet d is a list-property
-#				it " simple remove " do
-#					r = @the_record.update remove:{ d:1}
-#					puts r.inspect
-#					expect(r).to be_a TestQuery
-#					expect(r.c).to eq 1
-#					expect(r.d).to  eq [ 2,3 ]
-#				end
 
 				it "store a value in a hash" do
 					r =  @the_record.update( d: { a: 'b' } )

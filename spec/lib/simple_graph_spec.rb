@@ -24,12 +24,15 @@ RSpec.describe "Edges" do
 
   context " One to many connection"  do
     before(:all) do
+      previous_logger_level =  Arcade::Database.logger.level
+      Arcade::Database.logger.level = Logger::ERROR
       b =	 Arcade::ExtraNode.create( extraitem: 'nucleus' )
       (1..10).map do |n| 
         new_node =  Arcade::Node.create( item: n)
         (1..10).map{|i|	new_node.assign vertex: Arcade::Node.create( item: new_node.item * rand(99999)), via: Arcade::Connects, attributes: { extra: true  }}
         Arcade::Connects.create from: b, to: new_node, basic: true
       end
+      Arcade::Database.logger.level = previous_logger_level
     end
     it "check structure"  do
       expect( Arcade::ExtraNode.count).to eq 1
@@ -42,11 +45,15 @@ RSpec.describe "Edges" do
     context "linear graph"  do
 
       before(:all) do
+
+        previous_logger_level =  Arcade::Database.logger.level
+        Arcade::Database.logger.level = Logger::ERROR
         start_node =  Arcade::ExtraNode.create( extraitem: 'linear' )
         linear_elements start_node , 200
+        Arcade::Database.logger.level = previous_logger_level
       end
 
-      Given( :start_point ){ Arcade::ExtraNode.where(  extraitem: 'linear' ).first }
+      Given( :start_point ){ Arcade::ExtraNode.where(  extraitem: 'linear' ) }
       context "traverse {n} elements" do
         Given( :all_elements ) { start_point.traverse :out, via: Arcade::Connects, depth: -1 }
         Then {  expect( all_elements.size).to eq 200 }
@@ -66,12 +73,12 @@ RSpec.describe "Edges" do
       context ",apply median to the set" do
         Given( :hundred_elements ) { start_point.traverse :out, via: Arcade::Connects, depth: 100, execute: false }
         Then { expect(hundred_elements).to be_a Arcade::Query }
-        Given( :median ) do 
+        Given( :median ) do
           Arcade::Query.new from: hundred_elements,
             projection: 'median(note_count)'  ,
             where: '$depth>=50 '
         end
-        Then { median.to_s == "select median(note_count) from  ( traverse out(connects) from #{start_point.rid} while $depth < 100   )  where $depth>=50  " }
+        Then { median.to_s == "select median(note_count) from  ( traverse out('connects') from #{start_point.rid} while $depth < 100   )  where $depth>=50  " }
 
         Given( :median_q ){ median.execute.first }  # result: {:"median(note_count)"=>75.5
         Then {  median_q.keys == [:"median(note_count)"] }
@@ -79,7 +86,7 @@ RSpec.describe "Edges" do
       end
 
       context "use nodes" do
-        Given( :start ){ Arcade::Node.where( note_count: 67).first}
+        Given( :start ){ Arcade::Node.where( note_count: 67)}
         Then { expect( start.nodes ).to be_an Array }
         Then { expect( start.nodes.first ).to be_a Arcade::ExtraNode }
         Then { expect( start.nodes.count ).to eq 2 }

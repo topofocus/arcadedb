@@ -13,6 +13,9 @@ module Arcade
     attribute :values?, Types::Nominal::Hash
 
 
+    def accepted_methods
+      [ :rid, :to_human, :delete ]
+    end
     #                                                                                               #
     ## ----------------------------------------- Class Methods------------------------------------ ##
     #                                                                                               #
@@ -165,7 +168,7 @@ module Arcade
       #
       def first a= true, autoload: true, **args
         autoload =  false if a != autoload
-        query( **( { order: "@rid"  , limit: 1  }.merge args ) ).query.allocate_model( autoload ).first
+        query( **( { order: "@rid"  , limit: 1  }.merge args ) ).query.allocate_model( autoload )
       end
 
 
@@ -181,7 +184,7 @@ module Arcade
       #
       def last  a= true, autoload: true, **args
         autoload =  false if a != autoload
-        query( **( { order: {"@rid" => 'desc'} , limit: 1  }.merge args ) ).query.allocate_model( autoload ).first
+        query( **( { order: {"@rid" => 'desc'} , limit: 1  }.merge args ) ).query.allocate_model( autoload )
       end
 
       # Selects records of a type or a query
