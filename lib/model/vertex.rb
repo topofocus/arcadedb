@@ -162,7 +162,7 @@ module Arcade
 =begin
 Assigns another Vertex via an EdgeClass. If specified, puts attributes on the edge.
 
-Returns the asigned vertex
+Returns the reloaded assigned vertex
 
 Wrapper for
   Edge.create in: self, out: a_vertex, attributes: { some_attributes on the edge }
@@ -178,16 +178,16 @@ or
 
     via.create from: self, to: vertex,  **attributes
 
-		vertex  # return the assigned vertex
+    db.get vertex.rid  # return the assigned vertex
   rescue ArgumentError => e
     puts e.message
     nil
   end
 
 
- # def remove
- #   db.delete_vertex self
-#	end
+  def remove
+    db.execute{ "delete vertex #{rid}" }
+	end
 =begin
 Human readable representation of Vertices
 

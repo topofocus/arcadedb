@@ -15,12 +15,15 @@ module Arcade
         db.create_edge  database_name, from: from, to: to, **attr
     end
 
+    def delete
+      db.execute{  "delete edge #{ rid }" }
+    end
     ## gets the adjacent Vertex
     def inV
-      query( projection: "inV()").query.allocate_model( false ).first
+      query( projection: "inV()").query.select_result
     end
     def outV
-      query( projection: "outV()").query.allocate_model( false ).first
+      query( projection: "outV()").query.select_result
     end
     def vertices in_or_out = nil
   case in_or_out
@@ -39,5 +42,6 @@ module Arcade
     def to_human
       "<#{self.class.to_s.snake_case}[#{rid}] :.: #{ out }->#{invariant_attributes}->#{ attributes[:in] }>"
     end
+
   end
 end
