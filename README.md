@@ -13,7 +13,7 @@ The adapter implements the HTTP-JSON-Api of ArcadeDB.
 
 A running AracdeDB-Instance. [Quick-Start-Guide](https://docs.arcadedb.com/#Quick-Start-Docker).
 
-[ArcadeDB V 22.10.1](https://github.com/ArcadeData/arcadedb/releases/tag/22.10.1) is supported
+[ArcadeDB V 22.10.1](https://github.com/ArcadeData/arcadedb/releases/tag/22.10.1)ff is supported
 
 ## Config
 

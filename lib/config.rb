@@ -2,6 +2,9 @@ module Arcade
   class Config
     extend Dry::Configurable
     # central place to initialize constants
+    #
+    # ProjectRoot has to be a Pathname-Object
+    #
     #puts "expand: #{File.expand_path(__dir__)}"
     unless Arcade.const_defined?( :ProjectRoot )
       Arcade::ProjectRoot = if defined?( Rails.env )
@@ -9,7 +12,7 @@ module Arcade
                             else
                               STDERR.puts "Using default (arcadedb gem)  database credentials and settings"
       # logger is not present at this stage
-                              File.expand_path( "../../", __FILE__ )
+                              Pathname.new(  File.expand_path( "../../", __FILE__ ))
       end
     else
       STDERR.puts "Using provided database credentials and settings fron #{Arcade::ProjectRoot}"
@@ -27,16 +30,24 @@ module Arcade
             constructor:  ->(v) { "http://"+yml(:admin)[v]+':'+yml(:admin)[:port].to_s+"/api/v1/" })
     setting :pg,      default:  :pg,       reader: true , constructor:  ->(v) { yml(v) }
     setting :admin,   default:  :admin,    reader: true , constructor:  ->(v) { yml(v) }
-    setting :logger,  default:  :logger,   reader: true , constructor:  ->(v) { yml(v) == "rails" ?  Rails.logger : yml(v) }
+    setting :logger,  default:  :logger,   reader: true ,
+      constructor:  ->(v) do
+                            if defined?( Rails.env )
+                              Rails.logger
+                            elsif Object.const_defined?(:Bridgetown)
+                            else
+                              yml(v)
+                            end
+                          end
     setting :namespace, default:  :namespace, reader: true , constructor:  ->(v) { yml(v) }
     setting :secret, reader: true,  default: 12, constructor:  ->(v) { seed(v) }
      private
     # if a config dir exists, use it
      def self.config_file
        if @cd.nil?
-         ( cd = Pathname.new( ProjectRoot ) + 'arcade.yml' ).exist? ||
-         ( cd = Pathname.new( ProjectRoot ) + 'config' + 'arcade.yml' ).exist? ||
-         ( cd = Pathname.new( ProjectRoot ) + "config.yml" )
+         ( cd =  ProjectRoot + 'arcade.yml' ).exist? ||
+         ( cd =  ProjectRoot + 'config' + 'arcade.yml' ).exist? ||
+         ( cd =  ProjectRoot + "config.yml" )
           @cd = cd
        else
          @cd

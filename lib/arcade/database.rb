@@ -1,6 +1,6 @@
 module Arcade
   ##
-  # Implements the PG-Database-Adapter
+  # Implements the Database-Adapter
   #
   #  currently, only attributes of type String are supported
   #

@@ -1,0 +1,17 @@
+---
+:orientdb:
+ :server: localhost # 172.28.50.109 
+ :port: 2480
+ :logger: stdout           # 'file' or 'stdout'
+ :database: 
+   :development: GratefulDeadConcerts
+   :production: hcn_data
+   :test:  temp
+ :admin:
+   :user: root
+   :pass: root
+ :auth:
+   :user: root
+   :pass: root
+
+# hfx: 101
