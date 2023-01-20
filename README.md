@@ -74,7 +74,7 @@ A **Query Preprocessor** is implemented. Its adapted from ActiveOrient. The [doc
 is still valid,  however the class has changed to `Arcade::Query`. 
 
 The **second Layer** handles Database-Requests.  
-In the actual implementation, these requests are delegated to the HTTP/JSON-API.
+In its actual implementation, these requests are delegated to the HTTP/JSON-API.
 
 `Arcade::Init` uses the database specification of the `arcade.yml` file.   
 The database-handle is always present through `Arcade::Init.db`
