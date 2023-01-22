@@ -65,6 +65,7 @@ Person.create name: "Hubert" age: 35
 Person.update set: { age: 36 }, where: { name: 'Hubert' }
 persons = Person.where "age > 40"
 persons.first.update age: 37
+persons.first.update father: Person.create( name: 'Mike', age: 94 )
 
 Person.all
 Person.delete all: true || where: age: 56 , ...
