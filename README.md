@@ -61,7 +61,7 @@ Only the `name` attribute is declared. Timestamps (created & updated attributes)
 Other properties are schemaless. 
 
 ```ruby
-Person.create name: "Hubert" age: 35
+Person.create name: "Hubert", age: 35
 Person.update set: { age: 36 }, where: { name: 'Hubert' }
 persons = Person.where "age > 40"
 persons.first.update age: 37
