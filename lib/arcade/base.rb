@@ -320,6 +320,12 @@ module Arcade
     def rid?
       true
     end
+
+    # enables  usage of  Base-Objects in queries
+    def to_or
+      rid
+    end
+
     def to_human
 
 

@@ -53,6 +53,25 @@ RSpec.describe Arcade::Document do
       expect( the_document.name ).to be_a String
       expect( the_document.city ).to be_a String
     end
+
+
+    it "update a document" do 
+      the_document =  Arcade::TestDocument.last
+      expect( the_document.name ).to eq "Hugo"
+
+      updated_document = the_document.update name: "Gerhard"
+      expect( updated_document.name ).to eq "Gerhard"
+    end
+
+    it "update a document by creating another dataset" do 
+      the_document =  Arcade::TestDocument.last
+      expect( the_document.name ).to eq "Gerhard"
+
+      updated_document = the_document.update father:  Arcade::TestDocument.create( name: 'Mike', age: 94 )
+      expect( updated_document.father).to eq  Arcade::TestDocument.last.rid
+    end
+      
+
   end
   
 end

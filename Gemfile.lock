@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    arcadedb (0.3)
+    arcadedb (0.3.1)
       dry-core
       dry-schema
       dry-struct
@@ -45,7 +45,7 @@ GEM
       dry-core (~> 0.5, >= 0.5)
       dry-inflector (~> 0.1, >= 0.1.2)
       dry-logic (~> 1.0, >= 1.0.2)
-    ethon (0.15.0)
+    ethon (0.16.0)
       ffi (>= 1.15.0)
     ffi (1.15.5)
     formatador (1.1.0)
@@ -80,7 +80,6 @@ GEM
       ast (~> 2.4.1)
     pastel (0.8.0)
       tty-color (~> 0.5)
-    pg (1.3.5)
     pry (0.14.1)
       coderay (~> 1.1)
       method_source (~> 1.0)
@@ -152,7 +151,6 @@ DEPENDENCIES
   guard
   guard-rspec
   pastel
-  pg
   pry
   rake (~> 13.0)
   rb-inotify
