@@ -168,7 +168,7 @@ module Arcade
       #
       def first a= true, autoload: true, **args
         autoload =  false if a != autoload
-        query( **( { order: "@rid"  , limit: 1  }.merge args ) ).query.allocate_model( autoload )
+        query( **( { order: "@rid"  , limit: 1  }.merge args ) ).query.allocate_model( autoload ) &.first
       end
 
 
@@ -184,7 +184,7 @@ module Arcade
       #
       def last  a= true, autoload: true, **args
         autoload =  false if a != autoload
-        query( **( { order: {"@rid" => 'desc'} , limit: 1  }.merge args ) ).query.allocate_model( autoload )
+        query( **( { order: {"@rid" => 'desc'} , limit: 1  }.merge args ) ).query.allocate_model( autoload )&.first
       end
 
       # Selects records of a type or a query
@@ -202,7 +202,8 @@ module Arcade
       def where a= true, autoload: true, **args
         autoload =  false if a != autoload
          args = a if a.is_a?(String)
-         query( where: args ).query.allocate_model( autoload )
+         ##  the result is always an array
+         query( where: args ).query.allocate_model(autoload)
       end
 
       # update returns a list of updated records

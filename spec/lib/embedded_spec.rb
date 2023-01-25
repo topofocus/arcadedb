@@ -37,7 +37,7 @@ RSpec.describe Arcade::Document do
     context "query for an embedded map" do
 
       ### query for :currency => {"EUR" => something }
-      subject{ My::EmbeddedDocument.query.where(  "a_set.currency containskey 'EUR'" ).execute.allocate_model }
+      subject{ My::EmbeddedDocument.where(  "a_set.currency containskey 'EUR'" ) }
       it { is_expected.to  be_a Array }
       it { is_expected.to have(1).item }
       it { expect(subject.first.a_set[:currency][:EUR]).to eq 4.32 }

@@ -53,7 +53,7 @@ RSpec.describe "Edges" do
         Arcade::Database.logger.level = previous_logger_level
       end
 
-      Given( :start_point ){ Arcade::ExtraNode.where(  extraitem: 'linear' ) }
+      Given( :start_point ){ Arcade::ExtraNode.where(  extraitem: 'linear' ).first }
       context "traverse {n} elements" do
         Given( :all_elements ) { start_point.traverse :out, via: Arcade::Connects, depth: -1 }
         Then {  expect( all_elements.size).to eq 200 }
@@ -86,7 +86,7 @@ RSpec.describe "Edges" do
       end
 
       context "use nodes" do
-        Given( :start ){ Arcade::Node.where( note_count: 67)}
+        Given( :start ){ Arcade::Node.where( note_count: 67).first }
         Then { expect( start.nodes ).to be_an Array }
         Then { expect( start.nodes.first ).to be_a Arcade::ExtraNode }
         Then { expect( start.nodes.count ).to eq 2 }

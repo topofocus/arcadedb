@@ -7,7 +7,7 @@ module Arcade
   #  attribute :d?, Types::Hash
 
    def self.db_init
-      File.read(__FILE__).gsub(/.*__END__/m, '')
+      File.read(__FILE__).gsub(/.*__END__/n, '')
     end
   end
 end

@@ -51,6 +51,7 @@ module Arcade
         v =  response.except  *new.attributes.keys
         v.empty? ?  new  :  new.new( values: v.except( :"@in", :"@out" ) )
      elsif response.is_a? Array
+       puts "llocate_model..detected array"
        ## recursive behavior, just in case
        response.map{ | y | _allocate_model y }
      elsif response.rid?

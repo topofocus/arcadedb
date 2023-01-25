@@ -68,7 +68,7 @@ RSpec.describe Arcade::Vertex do
 		end
 		context "delete" do
 			it "deletes the vertex" do
-				my_vertex =  My::V2.where a: 'c'
+        my_vertex =  My::V2.where( a: 'c' ).first
 				expect(my_vertex).to be_a  My::V2
 				expect{ my_vertex.delete }.to change{ My::V2.count }.by -1
 			end

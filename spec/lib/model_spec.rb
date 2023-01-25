@@ -30,7 +30,7 @@ RSpec.describe Arcade::Document do
       expect( Arcade::TestDocument.count ).to eq 1
     end
 
-    it "try to create a document with constrains" do  
+    it "try to create a document with constrains" do
       document =  Arcade::TestDocument.create name: 'Hugo', age: '40'
 
       expect( Arcade::TestDocument.count ).to eq 1
@@ -40,7 +40,7 @@ RSpec.describe Arcade::Document do
       document =  Arcade::TestDocument.create name: 'Hugo', age: 60,  city: 'London'
       expect( Arcade::TestDocument.count ).to eq 2
       expect( document.city ).to be_a String
-      expect( document.values ).to include  city: 'London' 
+      expect( document.values ).to include  city: 'London'
       expect( document.name ).to eq "Hugo"
       expect( document.age ).to eq 60
 
@@ -54,8 +54,7 @@ RSpec.describe Arcade::Document do
       expect( the_document.city ).to be_a String
     end
 
-
-    it "update a document" do 
+    it "update a document" do
       the_document =  Arcade::TestDocument.last
       expect( the_document.name ).to eq "Hugo"
 
@@ -63,14 +62,13 @@ RSpec.describe Arcade::Document do
       expect( updated_document.name ).to eq "Gerhard"
     end
 
-    it "update a document by creating another dataset" do 
+    it "update a document by creating another dataset" do
       the_document =  Arcade::TestDocument.last
       expect( the_document.name ).to eq "Gerhard"
 
       updated_document = the_document.update father:  Arcade::TestDocument.create( name: 'Mike', age: 94 )
       expect( updated_document.father).to eq  Arcade::TestDocument.last.rid
     end
-      
 
   end
   

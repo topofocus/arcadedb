@@ -87,11 +87,11 @@ RSpec.describe Arcade::Document do
       expect( Arcade::DepTestDoc.count ).to eq 1    #  Inheritance works
     end
 
-   it "select a record " do
+   it "select a record " do   # where returns an Array, even if only one record is  selected
       document =  Arcade::DepTestDoc.create name: 'BertaTester', age: 40, item: 6
-      expect(  Arcade::DepTestDoc.where( item: 6 ) ).to eq document
-      expect(  Arcade::DepTestDoc.where( name: 'BertaTester' ) ).to eq document
-      expect(  Arcade::DepTestDoc.where( "name like \"BertaTester\" ") ).to eq document
+      expect(  Arcade::DepTestDoc.where( item: 6 )&.first ).to eq document
+      expect(  Arcade::DepTestDoc.where( name: 'BertaTester' ) &.first ).to eq document
+      expect(  Arcade::DepTestDoc.where( "name like \"BertaTester\" ") &.first ).to eq document
    end 
 
   end

@@ -62,15 +62,11 @@ module Arcade
       #  handles  [query: => [{ result }, {result} ], too
 
       def allocate_model autoload=false
-        if size==1 && first.is_a?( Hash )
-          if first.keys.include?( :@rid )
-            _allocate_model( first, false )
-          else
+        if size==1 && first.is_a?( Hash ) && !first.keys.include?( :@rid )
             # Load only the associated record, not the entire structure
             first.values.flatten.map{ |x| x.allocate_model(false) }
-          end
         else
-        map{ |x| _allocate_model(x, autoload) }
+          map{ |x| _allocate_model x, autoload }
         end
       end
     end
@@ -81,14 +77,14 @@ class Array
   include Arcade::Support::Array
   include Arcade::Support::Model  #  mixin allocate_model
 
-  #@@accepted_methods = []
+  @@accepted_methods = [:"_allocate_model"]
   ## dummy for refining
 
   # it is assumed that the first element of the array acts
   # as master . 
 	def method_missing method, *args, &b
 		return if [:to_hash, :to_str].include? method
-    if first.accepted_methods.include?( method ) || first.invariant_attributes.include?( method )
+    if @@accepted_methods.include?( method ) || first.invariant_attributes.include?( method )
       self.map{ |x| x.public_send method, *args, &b }
     else
       raise ArgumentError.new("Method #{method} does not exist in class #{first.class}")

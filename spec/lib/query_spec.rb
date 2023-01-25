@@ -205,10 +205,10 @@ RSpec.describe Arcade::Query do
 				it "first and last" do
 					q =  TestDocument.query( order: "@rid", limit: 1)
 					expect( q.to_s ).to eq "select from test_document order by @rid limit  1"
-          expect(q.query.allocate_model).to eq  TestDocument.first( where: { c: 1 })
+          expect(q.query.allocate_model).to eq  TestDocument.where( c: 1 )
 				end
-				it { expect( TestDocument.first ). to eq TestDocument.where( c: 1  ) }
-				it { expect( TestDocument.last ). to eq TestDocument.where( c: 200  ) }
+        it { expect( TestDocument.first ). to eq TestDocument.where( c: 1  ).first }
+        it { expect( TestDocument.last ). to eq TestDocument.where( c: 200  ).first }
 
 				it "upsert"  do
 					q =  TestDocument.query(  kind: :upsert, set:{ c: 500}, where:' c = 500'  )
@@ -220,7 +220,7 @@ RSpec.describe Arcade::Query do
           expect( p ).to eq p2
 				end
 
-				it { expect( TestDocument.upsert set:{ c:70  }, where:{ c: 70 } ). to eq [TestDocument.where( c: 70  )] }
+        it { expect( TestDocument.upsert set:{ c:70  }, where:{ c: 70 } ). to eq [TestDocument.where( c: 70  )].first }
 
 
 
@@ -233,7 +233,7 @@ RSpec.describe Arcade::Query do
           p =  q.execute(reduce: true){|y| y[:count]}.first
 					expect(p).to be_a Integer
 				end
-				it { expect( TestDocument.update set: { u: 65 }, where:{ c: 70 } ). to eq [TestDocument.where( c: 70  )]}
+				it { expect( TestDocument.update set: { u: 65 }, where:{ c: 70 } ). to eq TestDocument.where( c: 70  )}
 				it { expect( TestDocument.update! set: { u: 66 }, where:{ c: 70 } ). to eq 1 }
 				it { expect( TestDocument.update! set: { u: 66 }, where: ["c < 70", "c > 60"]  ). to eq 9 }
 				it { expect( TestDocument.update! set: { u: 66 }, where:{ c: 700 } ). to be_zero }
