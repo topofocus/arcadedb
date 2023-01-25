@@ -28,6 +28,7 @@ module Arcade
       constructor:  ->(v) { yml(:environment).map{|x,y|  [x , y["dbname"]] }.to_h }
     setting(:base_uri, default: :host ,    reader: true,
             constructor:  ->(v) { "http://"+yml(:admin)[v]+':'+yml(:admin)[:port].to_s+"/api/v1/" })
+    setting :autoload,      default: :autoload,       reader: true , constructor:  ->(v) { yml(v) }
     setting :pg,      default:  :pg,       reader: true , constructor:  ->(v) { yml(v) }
     setting :admin,   default:  :admin,    reader: true , constructor:  ->(v) { yml(v) }
     setting :logger,  default:  :logger,   reader: true ,
