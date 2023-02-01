@@ -6,7 +6,7 @@ module Arcade
 
 	QueryAttributes =  Struct.new( :kind,  :projection, :where, :let, :order, :while, :misc,
 																:class, :return,  :aliases, :database,
-																:set, :remove, :group, :skip, :limit, :unwind )
+																:set, :remove, :group, :skip, :limit, :unwind,  :map )
 
 	class Query
     include Support::Sql
@@ -69,18 +69,22 @@ module Arcade
 =end
 
 		def compose(destination: :batch)
+      puts "kk: #{kind}"
 			if kind.to_sym == :update
 				return_statement = "return after " + ( @q[:aliases].empty? ?  "$current" : @q[:aliases].first.to_s)
-				[ 'update', target, set, remove, return_statement , where, limit ].compact.join(' ')
+				[ 'update', target, set, remove, return_statement, where ].compact.join(' ')
+      elsif kind.to_sym == :"update_map"
+        puts "hier udp"
+        [ "update", target, map, where, misc ].compact.join(' ')
 			elsif kind.to_sym == :update!
-				[ 'update', target, set,  where, limit, misc ].compact.join(' ')
+				[ 'update', target, set, where, misc ].compact.join(' ')
 #			elsif kind.to_sym == :create                                             # relict of orientdb
 #				[ "CREATE VERTEX", target, set ].compact.join(' ')
 			#	[ kind, target, set,  return_statement ,where,  limit, misc ].compact.join(' ')
 			elsif kind.to_sym == :upsert
         set(  generate_sql_list( @q[:where] ){ @fill || 'and' } ) if set.nil?
 				return_statement = "return after " + ( @q[:aliases].empty? ?  "$current" : @q[:aliases].first.to_s)
-				[ "update", target, set,"upsert",  return_statement , where, limit, misc  ].compact.join(' ')
+				[ "update", target, set,"upsert", return_statement, where, limit, misc  ].compact.join(' ')
 				#[ kind,  where, return_statement ].compact.join(' ')
 			elsif destination == :rest
 				[ kind, projection, from, let, where, subquery,  misc, order, group_by, unwind, skip].compact.join(' ')
@@ -235,31 +239,41 @@ end # class << self
         end
       end
 
-		def let       value = nil
-			if value.present?
-				@q[:let] << value
-				self
-			elsif @q[:let].present?
-				"let " << @q[:let].map do |s|
-					case s
-					when String
-						s
-					when ::Hash
-						s.map do |x,y|
-							# if the symbol: value notation of Hash is used, add "$" to the key
-							x =  "$#{x.to_s}"  unless x.is_a?(String) && x[0] == "$"
-							"#{x} = #{ case y
-                            when self.class
-                              "(#{y.compose})"
-                            else
-                              y.to_db
-                            end }"
-						end
-					end
-				end.join(', ')
-			end
-		end
-#
+      # update_map  -  update an embedded map
+      def map  value=nil
+         if value.present?
+           @q[:map] = value
+           self
+         elsif @q[:map].present?
+           # only one pair is supported
+           "set #{@q[:map].keys.first} = #{@q[:map].values.first.to_or}"
+         end
+      end
+      def let       value = nil
+        if value.present?
+          @q[:let] << value
+          self
+        elsif @q[:let].present?
+          "let " << @q[:let].map do |s|
+            case s
+            when String
+              s
+            when ::Hash
+              s.map do |x,y|
+                # if the symbol: value notation of Hash is used, add "$" to the key
+                x =  "$#{x.to_s}"  unless x.is_a?(String) && x[0] == "$"
+                "#{x} = #{ case y
+                when self.class
+                  "(#{y.compose})"
+                else
+                  y.to_db
+                end }"
+              end
+            end
+          end.join(', ')
+        end
+      end
+      #
 		def projection value= nil  # :nodoc:
 			if value.present?
 				@q[:projection] << value

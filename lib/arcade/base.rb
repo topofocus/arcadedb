@@ -242,6 +242,12 @@ module Arcade
         end
       end
 
+      def update_map map, key, value, **args
+          args.merge!( updated: DateTime.now ) if timestamps
+          query( **( { kind: :update_map , map: { "#{map}.`#{key}`" => value } }.merge args ) ).execute{|y| y[:count] } &.first
+      end
+
+
       # returns a list of updated records
       def upsert **args
         set_statement = args.delete :set
@@ -351,6 +357,11 @@ module Arcade
       refresh
     end
 
+    # updates a map  property ,  actually adds the key-value pair to the property
+    def update_map map, key, value
+      db.execute { " update #{rid} set #{map}.`#{key}` = #{value.to_or}" }
+      refresh
+    end
     def delete
       response = db.execute { "delete from #{rid}" }
       true if response == [{ count: 1 }]

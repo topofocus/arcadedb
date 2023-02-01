@@ -37,12 +37,27 @@ RSpec.describe Arcade::Document do
     context "query for an embedded map" do
 
       ### query for :currency => {"EUR" => something }
-      subject{ My::EmbeddedDocument.where(  "a_set.currency containskey 'EUR'" ) }
+      subject{ My::EmbeddedDocument.where "a_set.currency containskey 'EUR'"  }
       it { is_expected.to  be_a Array }
       it { is_expected.to have(1).item }
       it { expect(subject.first.a_set[:currency][:EUR]).to eq 4.32 }
     end
 
+    context "update a map property" do
+      it  " do the update on a single dataset" do
+        ds =  My::EmbeddedDocument.insert( label: 'Test5', a_map: { "1.1.2008" => 'Rudolf' } )
+        dds= ds.update_map  :a_map,  "31.1.2023", "Testentry"
+        expect(  My::EmbeddedDocument.where "a_map containskey '31.1.2023'"  ).to eq [dds]
+        expect( dds.a_map[:"31.1.2023"] ).to eq "Testentry"
+        expect(  My::EmbeddedDocument.where "a_map containskey '1.1.2008'"  ).to eq [dds]
+        expect(  My::EmbeddedDocument.where "a_map containskey '1.10.2008'"  ).to eq []
+      end
+
+      it " do the update on all map-elements"  do
+        # todo 
+      end
+
+    end
 
     context "insert a 1:1 relation"  do
       before( :all  ) do
@@ -59,11 +74,11 @@ RSpec.describe Arcade::Document do
 
       it "select embedded properties" do
         ##  returns just the numbers
-        expect( My::EmbeddedDocument.query( projection: 'emb.number' ).query.select_result("emb.number")).to eq [nil,nil,1,2]
+        expect( My::EmbeddedDocument.query( projection: 'emb.number' ).query.select_result("emb.number").compact).to eq [1,2]
         ## returns an Array of Hashes
-        expect( My::EmbeddedDocument.query( projection: 'emb:{number}' ).execute.select_result( "emb")).to eq [nil,nil,{number: 1},{ number: 2}]
+        expect( My::EmbeddedDocument.query( projection: 'emb:{number}' ).execute.select_result( "emb").compact).to eq [{number: 1},{ number: 2}]
         ## returns the linked dataset(s)
-        expect( My::EmbeddedDocument.query( projection: 'emb[number=1]' ).execute.select_result("emb[number = 1]")).to eq  [nil,nil, My::Alist.where(number: 1).first.rid]
+        expect( My::EmbeddedDocument.query( projection: 'emb[number=1]' ).execute.select_result("emb[number = 1]").compact).to eq  [ My::Alist.where(number: 1).first.rid]
 
       end
     end
