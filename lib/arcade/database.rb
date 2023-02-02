@@ -9,7 +9,7 @@ module Arcade
   #
   ##
   class Database
-    include ::Logging
+    include Logging
     extend Dry::Core::ClassAttributes
     include Support::Model                          #  provides  allocate_model
 

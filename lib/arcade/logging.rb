@@ -1,4 +1,5 @@
 #require_relative 'default_formatter'
+module Arcade
 	module Logging
 		def self.included(base)
 			base.extend ClassMethods
@@ -32,5 +33,6 @@
 			"#{time.strftime("%d.%m.(%X)")}#{"%5s" % severity}->#{msg}\n"
 		end
 	end
+end
 end
 # source: https://github.com/jondot/sneakers/blob/master/lib/sneakers/concerns/logging.rb

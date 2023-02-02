@@ -47,6 +47,9 @@ module Arcade
     2. call with :in or :out     :  list any incoming or outgoing edges
     3. call withe via: Edge-Class:  list only  selected edges, including inheritance
 
+    Supports where:  -->  Strategie.nodes  where: {size: 10}
+    "select  both()[ size = 10  ]  from strategie "
+
       :call-seq:
       edges in_or_out, pattern
 =end
@@ -56,11 +59,9 @@ module Arcade
 
     def self.nodes in_or_out = :both, via: nil ,  **args
 
-      io =  in_or_out.to_s + "(" + resolve_edge_name(via) + ")"
-      search_query =  Query.new from: self, **args
-      nodes_query  =  Query.new from: search_query, projection: io
-      puts "nodes: #{nodes_query.to_s} "
-      nodes_query.query.select_result
+      s =  Query.new from: rid
+      s.nodes in_or_out, via: via, **args
+      s.query.select_result
     end
 
 
@@ -68,12 +69,15 @@ module Arcade
     ## ---------------------------------   Instance    Methods   --------------------------------- ##
     #                                                                                               #
 
-    def nodes in_or_out = :both, depth= 1, via: nil , execute: true
-      io =  in_or_out.to_s+ "(" + resolve_edge_name(via) + ")"
-       if execute
-         query( projection: io ).query.select_result
+    # Supports where:  -->  Strategie.first nodes  where: {size: 10}
+    # "select  both()[ size = 10  ]  from #113:8 "
+    def nodes in_or_out = :both, depth= 1, via: nil , execute: true, **args
+      s =  Query.new from: rid
+      s.nodes in_or_out, via: via, **args
+      if execute
+         s.query.select_result
        else
-         query(projection: io )
+         s  #  just return the query
        end
     end
 
