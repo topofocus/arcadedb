@@ -69,12 +69,10 @@ module Arcade
 =end
 
 		def compose(destination: :batch)
-      puts "kk: #{kind}"
 			if kind.to_sym == :update
 				return_statement = "return after " + ( @q[:aliases].empty? ?  "$current" : @q[:aliases].first.to_s)
 				[ 'update', target, set, remove, return_statement, where ].compact.join(' ')
       elsif kind.to_sym == :"update_map"
-        puts "hier udp"
         [ "update", target, map, where, misc ].compact.join(' ')
 			elsif kind.to_sym == :update!
 				[ 'update', target, set, where, misc ].compact.join(' ')
@@ -322,13 +320,14 @@ end # class << self
 		#              :in  --->  inE('edgeClass').out[where-condition]
 
 		def nodes in_or_out = :out, via: nil, where: nil, expand:  false
+
 			 condition = where.present? ?  "[ #{generate_sql_list(where)} ]" : ""
        via = resolve_edge_name(via) unless via.nil?
 
-			 start =  if in_or_out  == :in
-									'in'
-								elsif in_or_out ==  :out
-									'out'
+       start =  if in_or_out.is_a? Symbol
+                  in_or_out.to_s
+                elsif in_or_out.is_a? String
+                  in_or_out
 								else
 									"both"
 								end
