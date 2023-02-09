@@ -71,7 +71,7 @@ module Arcade
 
     # Supports where:  -->  Strategie.first nodes  where: {size: 10}
     # "select  both()[ size = 10  ]  from #113:8 "
-    def nodes in_or_out = :both, depth= 1, via: nil , execute: true, **args
+    def nodes in_or_out=:both, depth= 1, via: nil , execute: true, **args
       s =  Query.new from: rid
       s.nodes in_or_out, via: via, **args
       if execute
@@ -81,10 +81,10 @@ module Arcade
        end
     end
 
-    def edges in_or_out = :both, depth= 1, via: nil , execute: true
-      in_or_out = :both unless [:in, :out,].include? in_or_out
+    # Supports where: { where condition for edges }
+    def edges in_or_out = :both, depth= 1, via: nil , execute: true, **args
       in_or_out = in_or_out.to_s + "E"
-      nodes in_or_out, depth, via: via , execute: execute
+      nodes in_or_out, depth, via: via , execute: execute, **args
     end
 
 
@@ -169,7 +169,7 @@ Assigns another Vertex via an EdgeClass. If specified, puts attributes on the ed
 Returns the reloaded assigned vertex
 
 Wrapper for
-  Edge.create in: self, out: a_vertex, attributes: { some_attributes on the edge }
+  Edge.create in: self, out: a_vertex,  some: attributes.  on: the,  edge: type }
 
 returns the assigned vertex, thus enabling to chain vertices through
 
@@ -178,7 +178,7 @@ or
 	  (1..100).each{|n| vertex = vertex.assign(via: E2, vertex: V2.create(item: n))}
 =end
 
-  def assign vertex: , via:   , attributes: {}
+  def assign vertex: , via:   , **attributes
 
     via.create from: self, to: vertex,  **attributes
 

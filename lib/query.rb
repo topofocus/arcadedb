@@ -176,7 +176,7 @@ class << self
 							@q[def_m]  = value
 							self
 						elsif @q[def_m].present?
-						 "#{def_m.to_s}  #{generate_sql_list(@q[def_m]){' ,'}}"
+						 "#{def_m.to_s} #{generate_sql_list(@q[def_m]){' ,'}}"
 						end
 				end
 			end
