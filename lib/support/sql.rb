@@ -28,10 +28,10 @@ _Usecase:_
 
 =begin
 designs a list of "Key =  Value" pairs combined by "and" or the binding  provided by the block
-   ORD.generate_sql_list  where: 25 , upper: '65' 
-    => "where = 25 and upper = '65'"
-   ORD.generate_sql_list(  con_id: 25 , symbol: :G) { ',' } 
-    => "con_id = 25 , symbol = 'G'"
+   ORD.generate_sql_list  where: 25 , upper: '65'
+    => "where=25 and upper='65'"
+   ORD.generate_sql_list(  con_id: 25 , symbol: :G) { ',' }
+    => "con_id=25 , symbol='G'"
 
 If »NULL« should be addressed, { key: nil } is translated to "key = NULL"  (used by set:  in update and upsert),
 { key: [nil]  } is translated to "key is NULL" ( used by where )
@@ -39,12 +39,12 @@ If »NULL« should be addressed, { key: nil } is translated to "key = NULL"  (us
 =end
       def generate_sql_list attributes = {},  &b
         fill = block_given? ? yield : 'and'
-        case attributes 
+        case attributes
         when ::Hash
           attributes.map do |key, value|
             case value
             when nil
-              "#{key} =  NULL"
+              "#{key}=NULL"
             when ::Array
               if value == [nil]
                 "#{key} is NULL"
@@ -52,9 +52,9 @@ If »NULL« should be addressed, { key: nil } is translated to "key = NULL"  (us
                 "#{key} in #{value.to_db}"
               end
             when Range
-              "#{key} between #{value.first} and #{value.last} " 
+              "#{key} between #{value.first} and #{value.last} "
             else #  String, Symbol, Time, Trueclass, Falseclass ...
-              "#{key} = #{value.to_or}"
+              "#{key}=#{value.to_or}"
             end
           end.join(" #{fill} ")
         when ::Array
@@ -63,12 +63,12 @@ If »NULL« should be addressed, { key: nil } is translated to "key = NULL"  (us
           attributes
         when Symbol, Numeric
           attributes.to_s
-        end		
+        end
       end
 
 
       # used both in Query and MatchConnect
       # while and where depend on @q, a struct
-    end  # module 
-  end # module 
+    end  # module
+  end # module
 end # modul
