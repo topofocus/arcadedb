@@ -28,9 +28,13 @@ module Arcade
     end
 
     def self.create_database name
-      post_data  "create/#{name}"
-    rescue QueryError
-#      puts "error"
+      unless databases.include?( name.to_s )
+        post_data  "create/#{name}"
+      end
+    rescue QueryError => e
+      logger.fatal "Create database #{name} through \"POST create/#{name}\" failed"
+      logger.fatal  e
+      raise
     end
 
     def self.drop_database name
@@ -235,7 +239,7 @@ module Arcade
 
     # returns the json-response
     def self.analyse_result r, command
-        if r.success?
+      if r.success?
           return nil  if r.response_code == 204  # no content
           result = JSON.parse( r.response_body, symbolize_names: true )[:result]
           if result == [{}]
@@ -247,11 +251,11 @@ module Arcade
           error "Timeout Error"
           []
         elsif r.response_code > 0
-#          logger.error  "Execution Failure – Code: #{ r.response_code } – #{r.status_message} "
-          error_message = JSON.parse( r.response_body, symbolize_names: true )[:detail]
+          logger.error  "Execution Failure – Code: #{ r.response_code } – #{r.status_message} "
+          error_message = JSON.parse( r.response_body, symbolize_names: true )#[:detail]
           # available fields:  :detail, :exception, error
           raise Arcade::QueryError,  error_message
-          end
+        end
     end
     def self.auth
        @a ||= { httpauth: :basic,

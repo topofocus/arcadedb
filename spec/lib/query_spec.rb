@@ -27,9 +27,9 @@ RSpec.describe Arcade::Query do
   #    limit
   context "Basic queries"  do
 		Given( :where_with_hash ) { query.where   a: 2 , c: 'ufz';  }
-		Then { expect( where_with_hash.to_s ).to match /where a = 2 and c = 'ufz'/ }
-		Given( :where_with_mixed_array ){ query.where  [{ a: 2} , 'b > 3',{ c: 'ufz' }]  }
-		Then {  expect( where_with_mixed_array.to_s ).to match /where a = 2 and b > 3 and c = 'ufz'/ }
+		Then { expect( where_with_hash.to_s ).to match /where a=2 and c='ufz'/ }
+		Given( :where_with_mixed_array ){ query.where  [{ a: 2} , 'b>3',{ c: 'ufz' }]  }
+		Then {  expect( where_with_mixed_array.to_s ).to match /where a=2 and b>3 and c='ufz'/ }
 	end
 	context " distinct results"  do
 		Given( :implicit_distinct ) { query.distinct 'name'  }
@@ -42,7 +42,7 @@ RSpec.describe Arcade::Query do
 	context " order results" do
 
 		Given( :asc_and_skip ) { Arcade::Query.new from: TestQuery, order: {name: :asc}, skip: 30 }
-		Then {  expect( asc_and_skip.to_s ).to eq "select from test_query order by name asc skip  30" }
+		Then {  expect( asc_and_skip.to_s ).to eq "select from test_query order by name asc skip 30" }
 
 	end
 
@@ -57,7 +57,7 @@ RSpec.describe Arcade::Query do
 
 	context "usage of limit"  do
 		Given( :limit_query ) {  Arcade::Query.new  from: TestQuery, limit: 23 }
-		Then { expect( limit_query.to_s).to eq 'select from test_query  limit  23' }
+		Then { expect( limit_query.to_s).to eq 'select from test_query  limit 23' }
 
 		#	expect(q.compose( destination: :rest )).to eq 'select  from test_query  '
 		#  expect( q.get_limit).to eq 23
@@ -74,14 +74,14 @@ RSpec.describe Arcade::Query do
   #  selection-based
 	context "update data" do
 		When( :update_with_class ) { query.where(  a: 2 ).set( c: 'ufz' ).kind( 'update!' ) }
-    Then { expect( update_with_class.to_s ).to eq "update test_query set c = 'ufz' where a = 2"  }
+    Then { expect( update_with_class.to_s ).to eq "update test_query set c = 'ufz' where a=2"  }
 		Given( :update_with_rid ) do
 					Arcade::Query.new target: "#33:0",
                             where: { a: 2},
                             set: { c: 'ufz' },
                             kind: 'update'
 		end
-    Then { expect( update_with_rid.to_s ).to eq "update #33:0 set c = 'ufz' return after $current where a = 2"  }
+    Then { expect( update_with_rid.to_s ).to eq "update #33:0 set c = 'ufz' return after $current where a=2"  }
 
 		Given( :update_of_an_array ) do
 					Arcade::Query.new target: "#33:0",
@@ -89,8 +89,8 @@ RSpec.describe Arcade::Query do
                            set: { c: [ :a, 'b', 3 ] },
                            kind: 'update'
 		end
-    Then { expect( update_of_an_array.to_s ).to eq  "update #33:0 set c = [':a:', 'b', 3] return after $current where a = 2"  }
-		Then { expect( update_with_class.kind(:upsert).to_s ).to eq   "update test_query set c = 'ufz' upsert return after $current where a = 2"  }
+    Then { expect( update_of_an_array.to_s ).to eq  "update #33:0 set c = [':a:', 'b', 3] return after $current where a=2"  }
+		Then { expect( update_with_class.kind(:upsert).to_s ).to eq   "update test_query set c = 'ufz' upsert return after $current where a=2"  }
 		Given( :update_of_a_date ) do
 
 
@@ -125,26 +125,26 @@ RSpec.describe Arcade::Query do
 				q.where   a: 2
 				q.where  'b > 3'
 				q.where   c: 'ufz'
-				expect(q.where).to eq "where a = 2 and b > 3 and c = 'ufz'"
+				expect(q.where).to eq "where a=2 and b > 3 and c='ufz'"
 				q.distinct  'name'
 				q.order  name: :asc
 				q.order  vorname: :asc
 				expect(q.order).to eq "order by name asc, vorname asc"
 				q.projection   "eval( 'amount * 120 / 100 - discount' )"=> 'finalPrice'
 				expect(q.projection).to eq "distinct name, eval( 'amount * 120 / 100 - discount' ) as finalPrice"
-				expect(q.compose). to eq "select distinct name, eval( 'amount * 120 / 100 - discount' ) as finalPrice from test_query where a = 2 and b > 3 and c = 'ufz' order by name asc, vorname asc"
+				expect(q.compose). to eq "select distinct name, eval( 'amount * 120 / 100 - discount' ) as finalPrice from test_query where a=2 and b > 3 and c='ufz' order by name asc, vorname asc"
 			end
 
 		end
 		context "use the let block "  do
 			Given( :prefetch_link ) do
-				query.let("$city = adress.city").where  "$city.country.name = 'Italy' OR $city.country.name = 'France'"
+				query.let("$city = adress.city").where  "$city.country.name='Italy' OR $city.country.name='France'"
 			end
 			Given( :prefetch_link_alternative ) do
-				query.let( city: 'adress.city').where  "$city.country.name = 'Italy' OR $city.country.name = 'France'"
+				query.let( city: 'adress.city').where  "$city.country.name='Italy' OR $city.country.name='France'"
 			end
 
-			Then { expect( prefetch_link.to_s ).to eq "select from test_query let $city = adress.city where $city.country.name = 'Italy' OR $city.country.name = 'France' "}
+			Then { expect( prefetch_link.to_s ).to eq "select from test_query let $city = adress.city where $city.country.name='Italy' OR $city.country.name='France' "}
 
 			it "subquery and subsequent unionall" do
 				# pending( "Try's to fetch data from #5:0, if there aren'd any, it fails")
@@ -160,17 +160,17 @@ RSpec.describe Arcade::Query do
 			it "with unionall" do
 				q =  Arcade::Query.new from: TestQuery, where: { a: 2 , c: 'ufz' }
 				r =  Arcade::Query.new from: q , kind: 'traverse', projection: :day
-				expect( r.to_s ).to eq "traverse day from  ( select from test_query where a = 2 and c = 'ufz'  )  "
+				expect( r.to_s ).to eq "traverse day from  ( select from test_query where a=2 and c='ufz'  )  "
 				s = Arcade::Query.new from: r, projection: 'unionall( logs ) AS logs '
 				t = Arcade::Query.new from: s, projection: 'expand( logs ) '
-				expect( t.to_s ).to eq "select expand( logs )  from  ( select unionall( logs ) AS logs  from  ( traverse day from  ( select from test_query where a = 2 and c = 'ufz'  )   )   )  "
+				expect( t.to_s ).to eq "select expand( logs )  from  ( select unionall( logs ) AS logs  from  ( traverse day from  ( select from test_query where a=2 and c='ufz'  )   )   )  "
 
 			end
 			it " with expand" do
 				oi_query =  Arcade::Query.new from: 'Openinterest', limit: 10, projection: 'expand( contracts )'
 				#puts oi_query.to_s
 				contracts_query = Arcade::Query.new from: oi_query, projection: 'expand( distinct(ORDid) )'
-				expect( contracts_query.to_s ).to eq 'select expand( distinct(ORDid) ) from  ( select expand( contracts ) from Openinterest  limit  10 )  '
+				expect( contracts_query.to_s ).to eq 'select expand( distinct(ORDid) ) from  ( select expand( contracts ) from Openinterest  limit 10 )  '
 			end
 		end
 		context " Traverse " do
@@ -180,7 +180,7 @@ RSpec.describe Arcade::Query do
 					kind: 'traverse'
 			end
 
-			Then { expect(traverse_query.to_s).to eq "traverse from test_query where a = 2 and c = 'ufz' "  }
+			Then { expect(traverse_query.to_s).to eq "traverse from test_query where a=2 and c='ufz' "  }
 			When( :second_traverse_query ){ query.where( a: 2 , c: 'ufz' ).kind( 'traverse' ) }
 			Then { expect(second_traverse_query.to_s).to eq  traverse_query.to_s  }
 		end
@@ -204,7 +204,7 @@ RSpec.describe Arcade::Query do
 
 				it "first and last" do
 					q =  TestDocument.query( order: "@rid", limit: 1)
-					expect( q.to_s ).to eq "select from test_document order by @rid limit  1"
+					expect( q.to_s ).to eq "select from test_document order by @rid limit 1"
           expect(q.query.allocate_model).to eq  TestDocument.where( c: 1 )
 				end
         it { expect( TestDocument.first ). to eq TestDocument.where( c: 1  ).first }
@@ -216,7 +216,7 @@ RSpec.describe Arcade::Query do
           p =  q.execute{|y| y[:"$current"]}.first.allocate_model(false)
 					expect(p).to be_a TestDocument
 					expect(p.c).to eq 500
-          p2 =  TestDocument.upsert( set:{ c: 500}, where:' c = 500').first
+          p2 =  TestDocument.upsert( set:{ c: 500}, where:' c=500').first
           expect( p ).to eq p2
 				end
 
