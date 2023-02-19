@@ -227,7 +227,7 @@ end # class << self
 
       def as a=nil
         if a
-          @q[:as] = a   # subsequent calls overwrite older entries
+          @q[:as] = a   # subsequent calls overwrite previous entries
         else
           if @q[:as].blank?
             nil

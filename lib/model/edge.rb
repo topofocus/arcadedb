@@ -16,7 +16,7 @@ module Arcade
     end
 
     def delete
-      db.execute{  "delete edge #{ rid }" }
+      db.execute{  "delete edge #{ rid }" }.select_result
     end
     ## gets the adjacent Vertex
     def inV

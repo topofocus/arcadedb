@@ -38,21 +38,19 @@ module Arcade
       db.execute { "delete vertex #{database_name} #{compose_where(where)}"  } &.first[:count] rescue 0
     end
 
-
-
 =begin
-    List
+   Creates a Vertex-Instance.
+   Similar to `Vertex#insert`.
 
-    1. call without any parameter:  list all edges present
-    2. call with :in or :out     :  list any incoming or outgoing edges
-    3. call withe via: Edge-Class:  list only  selected edges, including inheritance
-
-    Supports where:  -->  Strategie.nodes  where: {size: 10}
-    "select  both()[ size = 10  ]  from strategie "
-
-      :call-seq:
-      edges in_or_out, pattern
+   Difference is the presence of a `created` property, a timestamp set to the time and date of creation.
 =end
+
+    def self.create timestamp: true, **args
+      #t= timestamp ?  ", created = Date(#{DateTime.now.to_i}) "  : ""
+      t= timestamp ?  ", created = sysdate() "  : ""
+      db.execute { "create VERTEX #{database_name} set #{args.map{|x,y| [x,y.to_or].join("=")}.join(', ')+t}" } &.first.allocate_model(false)
+    end
+
 
 ## get adjacent nodes based on a query on the actual model
 

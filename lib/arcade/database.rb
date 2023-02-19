@@ -165,7 +165,7 @@ module Arcade
       rid =  rid.join(':')
       rid = rid[1..-1] if rid[0]=="#"
       if rid.rid?
-        Api.query( database, "select from #{rid}" ) &.first.allocate_model(autocomplete)
+        Api.query( database, "select from #{rid}" ).first &.allocate_model(autocomplete)
       else
         error "Get requires a rid input"
       end

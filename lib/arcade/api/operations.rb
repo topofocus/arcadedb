@@ -47,7 +47,7 @@ module Arcade
     # 
     def self.create_document database, type, **attributes
       payload = { "@type" => type }.merge( attributes ).to_json
-      logger.info "C: #{payload}"
+      logger.debug "C: #{payload}"
       options = if session.nil?
                   { body: payload }.merge( auth ).merge( json )
                 else
