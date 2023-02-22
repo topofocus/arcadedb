@@ -206,6 +206,14 @@ module Arcade
          query( where: args ).query.allocate_model(autoload)
       end
 
+      # Finds the first matching record providing the parameters of a `where` query
+      #  Strategie.find symbol: 'Still'
+      #  is equivalent to
+      #  Strategie.all.find{|y| y.symbol == 'Still'
+      #  }
+      def find **args
+        where(**args).first
+      end
       # update returns a list of updated records
       #
       # It fires a query   update <type> set <property> = <new value > upsert return after $current where  < condition >

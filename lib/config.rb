@@ -37,7 +37,12 @@ module Arcade
                               Rails.logger
                             elsif Object.const_defined?(:Bridgetown)
                             else
-                              yml(v)
+                              output = yml(v)
+                              if output.upcase == 'STDOUT'
+                                Logger.new STDOUT
+                              else
+                                Logger.new File.open( output, 'a' )
+                              end
                             end
                           end
     setting :namespace, default:  :namespace, reader: true , constructor:  ->(v) { yml(v) }

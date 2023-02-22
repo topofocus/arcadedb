@@ -17,15 +17,15 @@ module Arcade
 				@logger = logger
 			end
 
-			def configure_logger(log= nil)
-				if log && ! log=='stdout'
+			def configure_logger(log= STDOUT)
+        if log.is_a? Logger
 					@logger = log
 				else
-					@logger = Logger.new(STDOUT)
-					@logger.level = Logger::INFO
-					@logger.formatter = DefaultFormatter
-				end
-			end
+					@logger = Logger.new log
+        end
+        @logger.level = Logger::INFO
+        @logger.formatter = DefaultFormatter
+      end
 		end
 
 	class DefaultFormatter < Logger::Formatter
