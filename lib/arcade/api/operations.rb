@@ -29,7 +29,8 @@ module Arcade
 
     def self.create_database name
       unless databases.include?( name.to_s )
-        post_data  "create/#{name}"
+      payload = { "command" => "create database #{name}" }.to_json
+        post_data  "server", { body: payload }.merge( auth ).merge( json )
       end
     rescue QueryError => e
       logger.fatal "Create database #{name} through \"POST create/#{name}\" failed"
@@ -38,7 +39,10 @@ module Arcade
     end
 
     def self.drop_database name
-      post_data  "drop/#{name}"
+      if databases.include?( name.to_s )
+      payload = { "command" => "drop database #{name}" }.to_json
+        post_data  "server", { body: payload }.merge( auth ).merge( json )
+      end
     end
     # ------------------------------  create document ------------------------------------------------- #
     # adds a document to the database
@@ -232,7 +236,7 @@ module Arcade
 
 
     def self.post_data command, options = auth
-     # puts "Post DATA #{command} #{options}"   # debug
+   #   puts "Post DATA #{command} #{options}"   # debug
       result  = Typhoeus.post Arcade::Config.base_uri + command, options
       analyse_result(result, command )
     end
