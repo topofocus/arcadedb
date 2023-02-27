@@ -28,28 +28,42 @@ module Arcade
       end
 
       def create_type
+        pti
+        the_class = nil   # declare as local var
         parent_present = ->(cl){ db.hierarchy.flatten.include? cl }
         e = ancestors.each
         myselfclass = e.next  # start with the actual class(self)
-        superclass = the_class  = e.next
+        puts "myselfclass:: #{myselfclass}"
+        loop do
+          superclass = the_class  = e.next
+          break if the_class.is_a? Class
+          puts "myselfclass:: #{the_class}"
+        end
         begin
         loop do
-          if ['Document','Vertex', 'Edge'].include? the_class.demodulize
-            if  the_class == superclass  # no inheritance
-              ## we have to use demodulise as the_class actually is Arcade::Vertex, ...
-              unless parent_present[ to_s.snake_case ]
-                db.create_type the_class.demodulize, to_s.snake_case
+          if the_class.respond_to?(:demodulize) 
+            if [ 'Document','Vertex', 'Edge'].include?(the_class.demodulize)
+              if  the_class == superclass  # no inheritance
+                ## we have to use demodulize as the_class actually is Arcade::Vertex, ...
+                puts "the_class: #{the_class}"
+                unless parent_present[ to_s.snake_case ]
+                  db.create_type the_class.demodulize, to_s.snake_case
+                else
+                  db.logger.warn "Type #{to_s.snake_case} is present, process skipped"
+                end
               else
-                db.logger.warn "Type #{to_s.snake_case} is present, process skipped"
+                if superclass.is_a? Class  #  maybe its a module. 
+                   extended = superclass.to_s.snake_case
+                 else
+                   extended = superclass.superclass.to_s.snake_case
+                 end
+                if !parent_present[extended]
+                  superclass.create_type
+                end
+                db.create_type the_class.demodulize, to_s.snake_case, extends:  extended
               end
-            else
-              extended = superclass.to_s.snake_case
-              if !parent_present[extended]
-                superclass.create_type
-              end
-              db.create_type the_class.demodulize, to_s.snake_case, extends:  extended
+              break  # stop iteration
             end
-            break  # stop iteration
           end
           the_class = e.next  # iterate through the enumerator
         end
