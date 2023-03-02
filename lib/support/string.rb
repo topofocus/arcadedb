@@ -32,7 +32,7 @@ module Arcade
        n.gsub(/([^\^])([A-Z])/,'\1_\2').downcase
       end
 
-  # borowed  from ActiveSupport::Inflector
+  # borrowed  from ActiveSupport::Inflector
       def underscore
         word = self.dup
         word.gsub!(/::/, '/')

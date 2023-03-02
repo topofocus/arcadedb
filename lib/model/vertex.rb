@@ -65,8 +65,12 @@ module Arcade
 
     #                                                                                               #
     ## ---------------------------------   Instance    Methods   --------------------------------- ##
-    #                                                                                               #
-
+    #
+    #  We need expand as fallback if a vertex, which is stored as link is automatically loaded
+    #
+      def expand
+        self
+      end
     # Supports where:  -->  Strategie.first nodes  where: {size: 10}
     # "select  both()[ size = 10  ]  from #113:8 "
     def nodes in_or_out=:both, depth= 1, via: nil , execute: true, **args
