@@ -56,23 +56,24 @@ RSpec.describe Arcade::Vertex do
 		context " create" do
       it { puts the_vertex.inspect }
 			Then { expect( the_vertex.rid).to match /^#[0-9]*:[0-9]*/   }
-		end
-		context " read" do
-			Given( :read_vertex ){ the_vertex.rid.expand }
-			Then { expect(read_vertex.object_id).not_to eq the_vertex.object_id}
+      Then { expect( Date.parse( the_vertex.created )).to eq Date.today }
+    end
+    context " read" do
+      Given( :read_vertex ){ the_vertex.rid.expand }
+      Then { expect(read_vertex.object_id).not_to eq the_vertex.object_id}
       Then { expect(read_vertex.invariant_attributes).to eq the_vertex.invariant_attributes }
-		end
-		context " update" do
-			Given( :updated_vertex ){ the_vertex.update a: 'c' }
-			Then { expect(updated_vertex.a).to eq 'c' }
-		end
-		context "delete" do
-			it "deletes the vertex" do
+    end
+    context " update" do
+      Given( :updated_vertex ){ the_vertex.update a: 'c' }
+      Then { expect(updated_vertex.a).to eq 'c' }
+    end
+    context "delete" do
+      it "deletes the vertex" do
         my_vertex =  My::V2.where( a: 'c' ).first
-				expect(my_vertex).to be_a  My::V2
-				expect{ my_vertex.delete }.to change{ My::V2.count }.by -1
-			end
-		end
+        expect(my_vertex).to be_a  My::V2
+        expect{ my_vertex.delete }.to change{ My::V2.count }.by -1
+      end
+    end
   end
 
 	describe "creating a sample graph"  do

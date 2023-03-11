@@ -185,8 +185,11 @@ or
     via.create from: self, to: vertex,  **attributes
 
     db.get vertex.rid  # return the assigned vertex
+  rescue IndexError => e
+    db.logger.error "Edge not created, already present."
+    vertex  #  return the vertex (for chaining)
   rescue ArgumentError => e
-    puts e.message
+    db.logger.error "ArgumentError: #{e.message}"
     nil
   end
 
@@ -201,7 +204,7 @@ Format: < Classname: Edges, Attributes >
 =end
 	def to_human
 
-    in_and_out = -> { "{#{attributes[:in]}->}{->#{attributes[:out] }}}, " }
+    in_and_out = -> { "{#{self.in.count}->}{->#{self.out.count }}, " }
 
 		#Default presentation of Arcade::Base::Model-Objects
 

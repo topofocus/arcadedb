@@ -167,7 +167,7 @@ module Arcade
       if rid.rid?
         Api.query( database, "select from #{rid}" ).first &.allocate_model(autocomplete)
       else
-        error "Get requires a rid input"
+        raise Arcade::QueryError "Get requires a rid input", caller
       end
     end
 

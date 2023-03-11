@@ -28,7 +28,6 @@ module Arcade
       end
 
       def create_type
-        pti
         the_class = nil   # declare as local var
         parent_present = ->(cl){ db.hierarchy.flatten.include? cl }
         e = ancestors.each
@@ -92,6 +91,7 @@ module Arcade
       def properties
 
       end
+
 
 
       # add timestamp attributes to the model
@@ -264,11 +264,6 @@ module Arcade
         end
       end
 
-      def update_map map, key, value, **args
-          args.merge!( updated: DateTime.now ) if timestamps
-          query( **( { kind: :update_map , map: { "#{map}.`#{key}`" => value } }.merge args ) ).execute{|y| y[:count] } &.first
-      end
-
 
       # returns a list of updated records
       def upsert **args
@@ -282,7 +277,7 @@ module Arcade
                     end
         result= query( **( { kind: :upsert  }.merge statement ) ).execute do | answer|
           z=  answer[:"$current"] &.allocate_model(false)  #  do not autoload modelfiles
-          error "Upsert failed", :load  unless z.is_a?  Arcade::Base
+          raise Arcade::LoadError "Upsert failed"   unless z.is_a?  Arcade::Base
           z  #  return record
         end
       end
@@ -300,7 +295,7 @@ module Arcade
       def not_permitted *m
         m.each do | def_m |
           define_method(  def_m ) do | v = nil |
-          error "operation not permitted", :immutable
+          raise ArcadeImmutableError "operation not permitted", caller
         end
         end
       end
@@ -380,8 +375,12 @@ module Arcade
     end
 
     # updates a map  property ,  actually adds the key-value pair to the property
-    def update_map map, key, value
-      db.execute { " update #{rid} set #{map}.`#{key}` = #{value.to_or}" }
+    def update_map m, key, value
+      if send( m ).nil?
+        db.execute { "update #{rid} set #{m} = MAP ( #{key.to_s.to_or} , #{value.to_or} ) "  }
+      else
+        db.execute { "update #{rid} set #{m}.`#{key.to_s}` = #{value.to_or}" }
+      end
       refresh
     end
     def delete

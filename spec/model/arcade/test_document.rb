@@ -12,8 +12,9 @@ module Arcade
 end
 ## The code below is executed on the database after the database-type is created
 ## Use the output of `ModelClass.database_name` as DB type  name
-## 
+##
 __END__
 CREATE PROPERTY test_document.name STRING
 CREATE PROPERTY test_document.age INTEGER
+CREATE PROPERTY test_document.d  MAP
 CREATE INDEX  ON test_document (name, age) UNIQUE

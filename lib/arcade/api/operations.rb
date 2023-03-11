@@ -81,6 +81,15 @@ module Arcade
         options = options.merge( headers: { "arcadedb-session-id" => session })
       end
       post_data "command/#{database}" , options
+    rescue Arcade::QueryError => e
+#        puts e.methods
+        #puts e.exception
+       # puts e.full_message
+        if   e.message =~ /retry/
+          retry
+        else
+          raise Arcade::IndexError  e.message
+        end
     end
 
     # ------------------------------  query           ------------------------------------------------- #
@@ -105,7 +114,7 @@ module Arcade
       if rid.rid?
       get_data  "document/#{database}/#{rid}"
       else
-        error "Get requires a rid input"
+        raise Arcade::Error "Get requires a rid input"
       end
     end
 
@@ -182,7 +191,7 @@ module Arcade
       options =  auth.merge( headers: { "arcadedb-session-id" => session })
       post_data  "rollback/#{database}", options
       @session_id =  nil
-      error "A Transaction has been rolled back" , :commit  if publish_error
+      raise Arcade::RollbackError "A Transaction has been rolled back"   if publish_error
     end
 
     private
@@ -252,13 +261,18 @@ module Arcade
             result
           end
         elsif r.timed_out?
-          error "Timeout Error"
+          raise Arcade::Error "Timeout Error", caller
           []
         elsif r.response_code > 0
           logger.error  "Execution Failure – Code: #{ r.response_code } – #{r.status_message} "
-          error_message = JSON.parse( r.response_body, symbolize_names: true )#[:detail]
+          error_message = JSON.parse( r.response_body, symbolize_names: true )
+          logger.error  "ErrorMessage:  #{ error_message[:detail]} "
+          if error_message[:detail] =~ /Duplicated key/
+            raise Arcade::IndexError, error_message[:detail]
+          else
           # available fields:  :detail, :exception, error
-          raise Arcade::QueryError,  error_message
+            raise Arcade::QueryError,  error_message[:detail]
+          end
         end
     end
     def self.auth
