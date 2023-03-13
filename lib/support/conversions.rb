@@ -129,7 +129,7 @@ module Arcade
 
     module  Time
       def to_or
-        "date(\'#{self.strftime("%Y%m%d%H%M%S")}\',\'yyyyMMddHHmmss\')"
+        "DATE(#{self.to_datetime.strftime('%Q')})"
       end
     end
 
@@ -142,12 +142,12 @@ module Arcade
         end
       end
       def to_or
-        "date(\'#{self.to_s}\',\'yyyy-MM-dd\')"
+        "DATE(#{self.strftime('%Q')})"
       end
     end
     module DateTime
       def to_or
-        "date(\'#{self.strftime("%Y%m%d%H%M%S")}\',\'yyyyMMddHHmmss\')"
+        "DATE(#{self.strftime('%Q')})"
       end
     end
     module Numeric

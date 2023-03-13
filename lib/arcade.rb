@@ -19,7 +19,7 @@ end
 require 'yaml'
 require 'securerandom'
 require 'typhoeus'    #  curl library
-require_relative '../lib/errors'
+require_relative '../lib/arcade/errors'
 require_relative '../lib/support/object'
 require_relative '../lib/support/string'
 require_relative '../lib/support/class'

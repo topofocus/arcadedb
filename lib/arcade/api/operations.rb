@@ -88,7 +88,7 @@ module Arcade
         if   e.message =~ /retry/
           retry
         else
-          raise Arcade::IndexError  e.message
+          raise   e.message
         end
     end
 
