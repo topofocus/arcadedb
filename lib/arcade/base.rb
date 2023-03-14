@@ -339,10 +339,14 @@ module Arcade
     # ensure, that only the rid is transmitted to the database
     #
     def to_json *args
-      rid
+      unless ["#0:0", "#-1:-1"].include?  rid   #  '#-1:-1' is the null-rid
+        rid
+      else
+        invariant_attributes.merge( :'@type' =>  self.class.database_name  ).to_json
+      end
     end
     def rid?
-      true
+      true unless ["#0:0", "#-1:-1"].include?  rid
     end
 
     # enables  usage of  Base-Objects in queries
