@@ -40,7 +40,7 @@ module Arcade
               if x.include?(:@type)
                 x.allocate_model
               else
-                x.transform_values!{  z.rid? ?  z.load_rid(false) : z }
+                x.transform_values!{|z|  z.rid? ?  z.load_rid(false) : z }
               end
             else
               x

@@ -271,7 +271,10 @@ module Arcade
             raise Arcade::IndexError, error_message[:detail]
           else
           # available fields:  :detail, :exception, error
-            raise Arcade::QueryError,  error_message[:detail]
+          error_message = JSON.parse( r.response_body, symbolize_names: true )
+          puts  error_message[:detail]
+#todo --> check!
+            raise  error_message[:detail]
           end
         end
     end

@@ -4,6 +4,8 @@ module Arcade
     attribute :age?, Types::Integer
     attribute :c?, Types::Integer
     attribute :d?, Types::Hash
+    attribute :emb?, Types::Any
+    attribute :many?, Types::Any
 
    def self.db_init
       File.read(__FILE__).gsub(/.*__END__/m, '')
@@ -17,4 +19,6 @@ __END__
 CREATE PROPERTY test_document.name STRING
 CREATE PROPERTY test_document.age INTEGER
 CREATE PROPERTY test_document.d  MAP
+CREATE PROPERTY test_document.emb  EMBEDDED
+CREATE PROPERTY test_document.many  LIST
 CREATE INDEX  ON test_document (name, age) UNIQUE

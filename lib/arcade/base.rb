@@ -32,11 +32,9 @@ module Arcade
         parent_present = ->(cl){ db.hierarchy.flatten.include? cl }
         e = ancestors.each
         myselfclass = e.next  # start with the actual class(self)
-        puts "myselfclass:: #{myselfclass}"
         loop do
           superclass = the_class  = e.next
           break if the_class.is_a? Class
-          puts "myselfclass:: #{the_class}"
         end
         begin
         loop do
@@ -44,7 +42,6 @@ module Arcade
             if [ 'Document','Vertex', 'Edge'].include?(the_class.demodulize)
               if  the_class == superclass  # no inheritance
                 ## we have to use demodulize as the_class actually is Arcade::Vertex, ...
-                puts "the_class: #{the_class}"
                 unless parent_present[ to_s.snake_case ]
                   db.create_type the_class.demodulize, to_s.snake_case
                 else
