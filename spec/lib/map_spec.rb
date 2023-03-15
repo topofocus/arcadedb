@@ -17,13 +17,14 @@ RSpec.describe Arcade::Query do
 
 
  context "Simple Hash" do
-  Given!( :the_document ){  TestDocument.insert name:"hugi", age: rand(99) }
+  Given( :the_document ){  TestDocument.insert name:"hugi", age: rand(99) }
   Then { the_document.is_a? Arcade::TestDocument }
   Then { the_document.name == 'hugi' }
 
   Given{ Arcade::Init.db.execute{ " update #{the_document.rid} set d= MAP( 'testkey', 'testvalue' ) " } ; the_document.refresh}
   Given{  Arcade::Init.db.execute{ " update #{the_document.rid} set d.testkey2 = 'testvalue2' " } }
   Given{ Arcade::Init.db.execute{ " update #{the_document.rid} set d += ['testkey3', 'testvalue3' ]" } }
+  Given{ Arcade::Init.db.execute{ " update #{the_document.rid} set d += {'testkey3': 'testvalue3' }" } }
 
   Then { the_document.refresh.d == { testkey: 'testvalue',  :testkey2 => 'testvalue2', :'testkey3' =>'testvalue3' }  }
  end
@@ -35,7 +36,9 @@ RSpec.describe Arcade::Query do
   Given{ Arcade::Init.db.execute{ " update #{the_document.rid} set d = MAP ( 'testkey', { 'nested_key': 'nested_value' } ) "  } }
   Then {  expect( the_document.refresh.d).to be_a Hash }
   Given{  Arcade::Init.db.execute{ " update #{the_document.rid} set d.testkey2 = { 'nested_key2': 'nested_value2'} " }}
-  Given{  Arcade::Init.db.execute{ " update #{the_document.rid} set d += ['testkey3', { 'nested_key3': 'nested_value3'} ]" } }
+  ##  update set d += { key: { nested_key : nested_value } }
+  Given{  Arcade::Init.db.execute{ " update #{the_document.rid} set d += {'testkey3': { 'nested_key3': 'nested_value3'} }" } }
+  ##  update set d += [ key: { nested_key : nested_value } ]
   Given{  Arcade::Init.db.execute{ " update #{the_document.rid} set d += ['testkey4', { 'nested_key4': 'nested_value4' }]" }}
   Then { the_document.refresh.d == { testkey: { nested_key: 'nested_value' },
                                     testkey2: { nested_key2: 'nested_value2' },

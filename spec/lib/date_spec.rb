@@ -83,5 +83,18 @@ RSpec.describe Arcade::Query do
     Then { query5.is_a?   Array }
     Then { query5.count == 3   }
     Then { query5 ==  [{:name=>"berta"}, {:name=>"Herta"}, {:name=>"Herta"}] }
+    ## query the 1:n relation
+    ## for now, the returned records  are not recognized as model-data. therfore "rid: #0:0" has to be merged manually
+    Given( :query6a ) { TestDocument.query expand: :many , where: "many contains( name='berta' )" }
+    Given( :query6 ) { Query.new( from: query6a,  where: { name: 'berta'}) }
+    Then { query6.to_s == "select from  ( select  expand ( many ) from test_document where many contains( name='berta' )  )  where name='berta' " }
+    When( :selected ) { query6.execute  }
+    Then { selected.is_a? Array   }
+    And  { selected.first.is_a? Hash }
+    Then { selected.first.merge( {:"@rid" => "#0:0"} ).allocate_model.is_a? Arcade::DatDocument }
+
+
+
+
   end
 end
