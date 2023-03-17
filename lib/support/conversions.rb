@@ -142,8 +142,12 @@ module Arcade
         end
       end
       def to_or
-        "DATE(#{self.strftime('%Q')})"
+        "DATE(\'#{self.to_s}\',\'yyyy-MM-dd\')"
+      #  "DATE(#{self.strftime('%Q')})"
       end
+     # def to_json
+     #   "DATE(#{self.strftime('%Q')})"
+     # end
     end
     module DateTime
       def to_or
@@ -166,10 +170,10 @@ module Arcade
       end
     end
 
-    module Hash 
+    module Hash
 
       # converts :abc => {anything} to "abc" => {anything}
-      #  
+      #
       # converts nn => {anything} to nn => {anything}
       #
       # leaves "abc" => {anything} untouched
@@ -189,7 +193,7 @@ module Arcade
       #
       def from_db
         # populate the hash by converting keys: stings to symbols, values: preprocess through :from_db
-        map do |k,v| 
+        map do |k,v|
           orient_k = if  k.to_s.to_i.to_s == k.to_s
                        k.to_i
                      else

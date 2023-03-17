@@ -14,4 +14,4 @@ end
 ##
 # Add Contrains to the edge
 __END__
-CREATE INDEX depends_out_in ON ex_depend_on  (`@out`, `@in`) UNIQUE
+CREATE INDEX ON ex_depend_on  (`@out`, `@in`) UNIQUE

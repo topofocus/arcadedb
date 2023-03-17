@@ -11,5 +11,5 @@ end
 ## Use the output of `ModelClass.database_name` as DB type  name
 ## 
 __END__
-CREATE PROPERTY ex_keyword.title STRING
-CREATE INDEX `Example[kexwords]` ON ex_keywords ( item  ) UNIQUE
+CREATE PROPERTY ex_keyword.item STRING
+CREATE INDEX ON ex_keyword ( item  ) UNIQUE

@@ -16,4 +16,4 @@ end
 ## 
 __END__
 CREATE PROPERTY ex_new_names.name STRING
-CREATE INDEX `Example[newnames]` ON ex_new_names ( name ) UNIQUE
+CREATE INDEX ON ex_new_names ( name ) UNIQUE

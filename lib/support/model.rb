@@ -16,7 +16,7 @@ module Arcade
 
     #  used by array#allocate_model
       def _allocate_model response=nil, auto = Config.autoload
-      #puts "Response #{response}"  # debugging
+#      puts "Response #{response}"  # debugging
 
       if response.is_a? Hash
         # save rid to a safe place

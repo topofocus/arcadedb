@@ -39,4 +39,4 @@ end
 __END__
 CREATE PROPERTY ex_human.name STRING
 CREATE PROPERTY ex_human.married BOOLEAN
-CREATE INDEX `Example[human]` ON ex_human ( name ) UNIQUE
+CREATE INDEX  ON ex_human ( name ) UNIQUE

@@ -223,7 +223,9 @@ module Arcade
       #  Strategie.all.find{|y| y.symbol == 'Still'
       #  }
       def find **args
-        where(**args).first
+        f= where(**args).first
+        f= where( "#{args.keys.first} like #{args.values.first.to_or}" ) if f.nil? || f.empty?
+        f
       end
       # update returns a list of updated records
       #
@@ -348,19 +350,22 @@ module Arcade
 
     # enables  usage of  Base-Objects in queries
     def to_or
-      rid
+      if rid?
+        rid
+      else
+        to_json
+      end
     end
 
     def to_human
 
 
-		"<#{self.class.to_s.snake_case}[#{rid}]: " + invariant_attributes.map do |attr, value|
+		"<#{self.class.to_s.snake_case}" + rid? ? "[#{rid}]: " : " " + invariant_attributes.map do |attr, value|
 			v= case value
 				 when Arcade::Base
 					 "< #{self.class.to_s.snake_case}: #{value.rid} >"
 				 when Array
            value.map{|x| x.to_s}
-#					 value.rrid #.to_human #.map(&:to_human).join("::")
 				 else
 					 value.from_db
 				 end
@@ -372,6 +377,20 @@ module Arcade
 
     def update **args
       Arcade::Query.new( from: rid , kind: :update, set: args).execute
+      refresh
+    end
+
+    def update_list l, value
+      value = if value.is_a? Arcade::Document
+                value.to_json
+              else
+                value.to_or
+              end
+      if send( l ).nil? || send(l).empty?
+        db.execute { "update #{rid} set  #{l} =  #{value}" }
+      else
+        db.execute { "update #{rid} set  #{l} += #{value}" }
+      end
       refresh
     end
 

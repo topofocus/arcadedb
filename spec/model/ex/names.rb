@@ -21,4 +21,4 @@ end
 __END__
 CREATE PROPERTY ex_names.child LINK
 CREATE PROPERTY ex_names.name STRING
-CREATE INDEX `Example[names]` ON ex_names ( name ) UNIQUE
+CREATE INDEX ON ex_names ( name ) UNIQUE

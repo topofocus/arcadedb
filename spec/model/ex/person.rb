@@ -17,4 +17,4 @@ end
 __END__
 CREATE PROPERTY ex_person.childen SET
 CREATE PROPERTY ex_person.name LINK
-CREATE INDEX `Example[person]` ON ex_peron ( name ) UNIQUE
+CREATE INDEX ON ex_peron ( name ) UNIQUE

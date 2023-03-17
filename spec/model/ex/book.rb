@@ -12,5 +12,5 @@ end
 ##
 __END__
 CREATE PROPERTY ex_book.title STRING
-CREATE PROPERTY ex_bool.married BOOLEAN
-CREATE INDEX `Example[book]` ON ex_book ( title ) UNIQUE
+CREATE PROPERTY ex_book.married BOOLEAN
+CREATE INDEX ON ex_book ( title ) UNIQUE
