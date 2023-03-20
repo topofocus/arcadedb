@@ -77,6 +77,8 @@ module Arcade
 
         rescue Arcade::RollbackError => e
           db.logger.warn e
+        rescue RuntimeError => e
+          db.logger.warn e
         end
       end
 
@@ -387,7 +389,7 @@ module Arcade
                 value.to_or
               end
       if send( l ).nil? || send(l).empty?
-        db.execute { "update #{rid} set  #{l} =  #{value}" }
+        db.execute { "update #{rid} set  #{l} =  [#{value}]" }
       else
         db.execute { "update #{rid} set  #{l} += #{value}" }
       end

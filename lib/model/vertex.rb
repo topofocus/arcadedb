@@ -57,7 +57,7 @@ module Arcade
 
     def self.nodes in_or_out = :both, via: nil ,  **args
 
-      s =  Query.new from: rid
+      s =  Query.new from: self
       s.nodes in_or_out, via: via, **args
       s.query.select_result
     end

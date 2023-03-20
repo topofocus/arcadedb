@@ -11,6 +11,8 @@ Book --> HasContent --> KeyWord
 
 and to query it dynamically using Arcade::Query
 
+The model-files are located in `/spec/model/ex`
+
 There are 3 default search items provided. They are used if no parameter is given.
 However, any parameter given is transmitted as serach-criteria, ie.
   ruby books.rb Juli August
@@ -71,67 +73,58 @@ loader.setup
          q.nodes :in, via: Ex::HasContent
 			end
 
+      main_query =  Arcade::Query.new
+
 			## We just create "select expand($z)"
       ## without 'expand' the result is "$z" -> "in(ex_has_content)"-> [ book-record ]
       ## with 'expand'  its                     "in(ex_has_content)"-> [ book-record ]
-      main_query =  Arcade::Query.new
 			main_query.expand( '$z' )
 
 
-		 print("\n === display_books_with » #{ desired_words.join "," } « === \n")
+      print("\n === display_books_with » #{ desired_words.join "," } « === \n")
 
-		 intersects = Array.new
-		 ## Now, add subqueries to the main-query
-		 desired_words.each_with_index do | word, i |
-			 symbol = ( i+97 ).chr   #  convert 1 -> 'a', 2 -> 'b' ...
-			 main_query.let   symbol =>  word_query[ item: word  ]
-			 intersects << "$#{symbol}"
-		 end
-		 ## Finally add the intersects statement
-     ## Use UnionAll for an superposition  of  positive seraches
-     ## Use Intercept for a positive search only if all parameters apply to one book.
-     #
-		 main_query.let   "$z = unionall(#{intersects.join(', ')}) "
-		 #main_query.let   "$z = Intersect(#{intersects.join(', ')}) "
-		 puts "generated Query:"
-		 puts main_query.to_s
-		 puts "\n\n\n"
-     result = main_query.query.select_result(:"in(ex_has_content)")
-		 puts '-' * 23
-		 puts "found books: "
-		 puts result.map( &:title ).uniq.join("; ")
-		 if result.empty?
-			 puts " -- None -- "
-			 puts " try » ruby books.rb Japan Flaute «  for a positive search in one of the two sentences"
-		 else
-			 puts '-_' * 23
-			 puts "that's it folks"
-		 end
-	 end
+      intersects = Array.new
+      ## Now, add subqueries to the main-query
+      desired_words.each_with_index do | word, i |
+        symbol = ( i+97 ).chr   #  convert 1 -> 'a', 2 -> 'b' ...
+        main_query.let   symbol =>  word_query[ item: word  ]
+        intersects << "$#{symbol}"
+      end
+      ## Finally add the intersects statement
+      ## Use UnionAll for an superposition  of  positive seraches
+      ## Use Intercept for a positive search only if all parameters apply to one book.
+      #
+      main_query.let   "$z = unionall(#{intersects.join(', ')}) "
+      #main_query.let   "$z = Intersect(#{intersects.join(', ')}) "
+      puts "generated Query:"
+      puts main_query.to_s
+      puts "\n\n\n"
+      result = main_query.query.select_result
+      puts '-' * 23
+      print "found books: "
+      puts result.map( &:title ).uniq.join("; ")
+      if result.empty?
+        puts " -- None -- "
+        puts " try » ruby books.rb Japan Flaute «  for a positive search in one of the two sentences"
+      else
+        puts '-_' * 23
+        puts "that's it folks"
+      end
+   end
 
  if $0 == __FILE__
 
 	 search_items =  ARGV.empty? ? ['China', 'aus', 'Flaute'] : ARGV
 
        ## clear test database
-
        databases =  Arcade::Api.databases
        if  databases.include?(Arcade::Config.database[:test])
          Arcade::Api.drop_database Arcade::Config.database[:test]
        end
        Arcade::Api.create_database Arcade::Config.database[:test]
 
-       ## Universal Database handle
-       DB = Arcade::Init.connect 'test'
-       ## clear test database
+       Arcade::Init.connect 'test'
 
-       databases =  Arcade::Api.databases
-       if  databases.include?(Arcade::Config.database[:test])
-         Arcade::Api.drop_database Arcade::Config.database[:test]
-       end
-       Arcade::Api.create_database Arcade::Config.database[:test]
-
-      
        print "\n === REBUILD  finished=== \n"
 	## check wether the database tables exist. Then delete Database-Class and preallocated ruby-Object
        print " creating Book and  Keyword as Vertex; HasContent as Edge \n"
@@ -139,8 +132,6 @@ loader.setup
        Ex::Keyword.create_type
        Ex::HasContent.create_type
        print "\n === PROPERTY === \n"
-
-	 # search_items =  ARGV.empty? ? ['China', 'aus', 'Flaute'] : ARGV
 
        read_samples
        display_books_with *search_items
