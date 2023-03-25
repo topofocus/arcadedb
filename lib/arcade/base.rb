@@ -38,17 +38,17 @@ module Arcade
         end
         begin
         loop do
-          if the_class.respond_to?(:demodulize) 
+          if the_class.respond_to?(:demodulize)
             if [ 'Document','Vertex', 'Edge'].include?(the_class.demodulize)
               if  the_class == superclass  # no inheritance
                 ## we have to use demodulize as the_class actually is Arcade::Vertex, ...
                 unless parent_present[ to_s.snake_case ]
                   db.create_type the_class.demodulize, to_s.snake_case
                 else
-                  db.logger.warn "Type #{to_s.snake_case} is present, process skipped"
+                  db.logger.warn "Type #{ to_s.snake_case } is present, process skipped"
                 end
               else
-                if superclass.is_a? Class  #  maybe its a module. 
+                if superclass.is_a? Class  #  maybe its a module.
                    extended = superclass.to_s.snake_case
                  else
                    extended = superclass.superclass.to_s.snake_case
@@ -141,11 +141,11 @@ module Arcade
         record
       rescue QueryError => e
         db.logger.error "Dataset NOT created"
-        db.logger.error "Provided Attributes: #{attributes.inspect}"
-       #  Api.rollback db.database   --->  raises "transactgion not begun" 
+        db.logger.error "Provided Attributes: #{ attributes.inspect }"
+       #  Api.rollback db.database   --->  raises "transactgion not begun"
       rescue  Dry::Struct::Error => e
         Api.rollback db.database
-        db.logger.error "#{rid} :: Validation failed, record deleted."
+        db.logger.error "#{ rid } :: Validation failed, record deleted."
         db.logger.error e.message
       end
 
@@ -226,7 +226,7 @@ module Arcade
       #  }
       def find **args
         f= where(**args).first
-        f= where( "#{args.keys.first} like #{args.values.first.to_or}" ) if f.nil? || f.empty?
+        f= where( "#{ args.keys.first } like #{ args.values.first.to_or }" ) if f.nil? || f.empty?
         f
       end
       # update returns a list of updated records
@@ -362,10 +362,10 @@ module Arcade
     def to_human
 
 
-		"<#{self.class.to_s.snake_case}" + rid? ? "[#{rid}]: " : " " + invariant_attributes.map do |attr, value|
+		"<#{ self.class.to_s.snake_case }" + rid? ? "[#{ rid }]: " : " " + invariant_attributes.map do |attr, value|
 			v= case value
 				 when Arcade::Base
-					 "< #{self.class.to_s.snake_case}: #{value.rid} >"
+					 "< #{ self.class.to_s.snake_case }: #{ value.rid } >"
 				 when Array
            value.map{|x| x.to_s}
 				 else
@@ -382,6 +382,19 @@ module Arcade
       refresh
     end
 
+    def insert_document name, obj
+      puts "object:  #{obj.class}"
+      value = if obj.is_a? Arcade::Document
+                obj.to_json
+              else
+                obj.to_or
+              end
+      puts "value: #{value}"
+      if send( name ).nil? || send( name ).empty?
+        db.execute { "update #{ rid } set  #{ name } =  #{ value }" }.first[:count]
+      end
+    end
+
     def update_list l, value
       value = if value.is_a? Arcade::Document
                 value.to_json
@@ -389,9 +402,9 @@ module Arcade
                 value.to_or
               end
       if send( l ).nil? || send(l).empty?
-        db.execute { "update #{rid} set  #{l} =  [#{value}]" }
+        db.execute { "update #{ rid } set  #{ l } =  [#{ value }]" }
       else
-        db.execute { "update #{rid} set  #{l} += #{value}" }
+        db.execute { "update #{ rid } set  #{ l } += #{ value }" }
       end
       refresh
     end
@@ -399,14 +412,14 @@ module Arcade
     # updates a map  property ,  actually adds the key-value pair to the property
     def update_map m, key, value
       if send( m ).nil?
-        db.execute { "update #{rid} set #{m} = MAP ( #{key.to_s.to_or} , #{value.to_or} ) "  }
+        db.execute { "update #{ rid } set #{ m } = MAP ( #{ key.to_s.to_or } , #{ value.to_or } ) "  }
       else
-        db.execute { "update #{rid} set #{m}.`#{key.to_s}` = #{value.to_or}" }
+        db.execute { "update #{ rid } set #{ m }.`#{ key.to_s }` = #{ value.to_or }" }
       end
       refresh
     end
     def delete
-      response = db.execute { "delete from #{rid}" }
+      response = db.execute { "delete from #{ rid }" }
       true if response == [{ count: 1 }]
     end
     def == arg
