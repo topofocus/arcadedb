@@ -16,7 +16,6 @@ module Arcade
 
     #  used by array#allocate_model
       def _allocate_model response=nil, auto = Config.autoload
-#      puts "Response #{response}"  # debugging
 
       if response.is_a? Hash
         # save rid to a safe place
@@ -38,7 +37,7 @@ module Arcade
               x.map{ | y | y.rid? ?  y.load_rid(false) : y }   # do not autoload further records, prevents from recursive locking
             when Hash
               if x.include?(:@type)
-                x.allocate_model
+                x.merge( rid: '#0:0' ).allocate_model(false)
               else
                 x.transform_values!{|z|  z.rid? ?  z.load_rid(false) : z }
               end

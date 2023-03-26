@@ -23,11 +23,12 @@ RSpec.describe Arcade::Query do
       #                           { 'name': 'Äugi',''age': #{rand(99) }, 
       #                              { '@type': 'dat_document', 'name': 'ope', 'date': '#{Date.today.to_or}' }}" }
       d = DatDocument.new date: Date.new( 2022,4,5 ), name: 'berta', age: 25, rid: '#0:0'
-      TestDocument.create date: Date.new( 1989, 4,2 ),name: "Tussi", age: rand(45),  emb: d,  many: [d]
+      TestDocument.create date: Date.new( 1989, 4,2 ),name: "Tussi", age: rand(45),  emb: d
+      TestDocument.create date: Date.new( 1989, 4,3 ),name: "karl", age: rand(45),  many: [d]
   end # beforDatDocument.create Date: Date.today, name: 'Hugi', age: rand(99) e
 
 
-  context "single documents", focus: true do
+  context "single documents" do
     Given( :the_document ){  Arcade::TestDocument.find name: 'hugi'}
     Then { the_document.is_a? Arcade::TestDocument }
     Then { the_document.name == 'hugi' }
@@ -40,24 +41,33 @@ RSpec.describe Arcade::Query do
 #
   end
 
-  context "embedded documents" , focus: true  do
+  context "embedded document created upon creating the main type"   do
     Given( :emb_document ){  Arcade::TestDocument.find name:'Tussi'}
     Then { emb_document.is_a? Arcade::TestDocument }
     Then { emb_document.emb.is_a? Arcade::DatDocument }
+    Then { emb_document.emb.name == 'berta' }
   end
 
 
-  context "add an ebedded document" , focus: true do
+  context "add an ebedded document"  do
 #    Given( :e ){  DatDocument.new(date: Date.new( 2022,4,5 ), name: 'berta', age: 25 , rid: '#0:0')}
 #    Then { e.is_a? Arcade::DatDocument }
     Given( :the_document ){  Arcade::TestDocument.find name: 'imara'}
     When ( :count ){ the_document.insert_document :emb, DatDocument.new(date: Date.new( 2022,4,5 ), name: 'berta', age: 25 , rid: '#0:0')  }
     Then { count ==  1  }
-    Then { the_document.refresh.emb.allocate_model.is_a? Arcade::DatDocument }
+    Then { the_document.refresh.emb.is_a? Arcade::DatDocument }
+  end
+
+
+  context "update an ebedded document" do
+    Given( :emb_document ){  Arcade::TestDocument.find name:'Tussi'}
+    Then { emb_document.emb.is_a? Arcade::DatDocument }
+    When { emb_document.update_embedded :emb, :name, 'Gertrude' }
+    Then { emb_document.refresh.emb.name == 'Gertrude' }
   end
   context "many embedded documents"   do
     before(:all) do
-      document = Arcade::TestDocument.find name:'Tussi'
+      document = Arcade::TestDocument.find name:'karl'
       list = ->{ Arcade::DatDocument.new date: Date.new( 2022,rand(11)+1, rand(16)+1), name: 'Herta', age: rand(99), rid: '#0:0' }
 #     list = ->{ DatDocument.new date: Date.new( 2022,11, 16), name: 'Herta', age: rand(99), rid: '#0:0' }
 
@@ -65,7 +75,7 @@ RSpec.describe Arcade::Query do
        Arcade::Init.db.execute{ " update #{document.rid} set  many += #{list[].to_json}" } 
 
     end
-    Given( :document ) { Arcade::TestDocument.find name:'Tussi' }
+    Given( :document ) { Arcade::TestDocument.find name:'karl' }
     Then { document.refresh.many.is_a? Array }
     ## Get a specific row
    # Given( :result ) { Arcade::Init.db.query(" select many[ 1 ] from #{document.rid}").allocate_model }

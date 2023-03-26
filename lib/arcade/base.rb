@@ -382,29 +382,33 @@ module Arcade
       refresh
     end
 
+    # inserts or updates a embedded document
     def insert_document name, obj
-      puts "object:  #{obj.class}"
       value = if obj.is_a? Arcade::Document
                 obj.to_json
               else
                 obj.to_or
               end
-      puts "value: #{value}"
-      if send( name ).nil? || send( name ).empty?
+#      if send( name ).nil? || send( name ).empty?
         db.execute { "update #{ rid } set  #{ name } =  #{ value }" }.first[:count]
-      end
+#      end
     end
 
-    def update_list l, value
+    # updates a single property in an embedded document
+    def update_embedded embedded, embedded_property, value
+      db.execute{ " update #{rid} set `#{embedded}`.`#{embedded_property}` =  #{value.to_or}" }
+    end
+
+    def update_list list, value
       value = if value.is_a? Arcade::Document
                 value.to_json
               else
                 value.to_or
               end
-      if send( l ).nil? || send(l).empty?
-        db.execute { "update #{ rid } set  #{ l } =  [#{ value }]" }
+      if send( list ).nil? || send( list ).empty?
+        db.execute { "update #{ rid } set  #{ list } =  [#{ value }]" }
       else
-        db.execute { "update #{ rid } set  #{ l } += #{ value }" }
+        db.execute { "update #{ rid } set  #{ list } += #{ value }" }
       end
       refresh
     end
@@ -428,7 +432,7 @@ module Arcade
     end
 
     def refresh
-      rid.load_rid
+      db.get(rid)
     end
   end
 end

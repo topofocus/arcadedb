@@ -80,7 +80,7 @@ module Arcade
       ## Load the database object if the string is a rid
       # (Default: No Autoloading of rid-links)
       def load_rid autocomplete = false
-        db.get( self){  autocomplete }  if rid?  rescue nil
+        db.get( self ){  autocomplete }  if rid?  rescue nil
       end
 
       # updates the record    ### retired in favour of Arcade::Base.update
