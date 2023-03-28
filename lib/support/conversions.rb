@@ -204,6 +204,13 @@ module Arcade
         end.to_h
       end
 
+      def to_human
+        "< " + map do  | k,v |
+          vv = v.is_a?( Arcade::Base ) ? v.to_human[1..-2] :  v.to_s
+           k.to_s + ": "  + vv
+        end.join( "\n    " ) + " >"
+      end
+
       def allocate_model( autoload = Config.autoload )
         _allocate_model( self , autoload )
       end
