@@ -34,7 +34,15 @@ module Arcade
             when String
               x.rid? ?  x.load_rid : x
             when Array
-              x.map{ | y | y.rid? ?  y.load_rid(false) : y }   # do not autoload further records, prevents from recursive locking
+              x.map do| y |
+                if y.is_a?(Hash) && y.include?(:@type)   # if embedded documents are present, load them
+                  y.merge( rid: '#0:0' ).allocate_model(false)
+                elsif y.rid?                             # if links are present, load the object
+                  y.load_rid(false) # do not autoload further records, prevents from recursive locking
+                else
+                  y
+                end
+              end
             when Hash
               if x.include?(:@type)
                 x.merge( rid: '#0:0' ).allocate_model(false)
