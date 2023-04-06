@@ -52,7 +52,7 @@ If »NULL« should be addressed, { key: nil } is translated to "key = NULL"  (us
                 "#{key} in #{value.to_db}"
               end
             when Range
-              "#{key} between #{value.first} and #{value.last} "
+              "#{key} between #{value.first.to_or} and #{value.last.to_or} "
             else #  String, Symbol, Time, Trueclass, Falseclass ...
               "#{key}=#{value.to_or}"
             end

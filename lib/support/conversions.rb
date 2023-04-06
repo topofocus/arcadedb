@@ -62,7 +62,7 @@ module Arcade
       #  handles  [query: => [{ result }, {result} ], too
 
       def allocate_model autoload=false
-        if size==1 && first.is_a?( Hash ) && !first.keys.include?( :@rid )
+        if size==1 && first.is_a?( Hash ) && !first.keys.include?( :@type )
             # Load only the associated record, not the entire structure
             first.values.flatten.map{ |x| x.allocate_model(false) }
         else
@@ -142,7 +142,8 @@ module Arcade
         end
       end
       def to_or
-        "DATE(\'#{self.to_s}\',\'yyyy-MM-dd\')"
+        "\"#{self.to_s}\""
+      # "DATE(\'#{self.to_s}\',\'yyyy-MM-dd\')"
       #  "DATE(#{self.strftime('%Q')})"
       end
      # def to_json

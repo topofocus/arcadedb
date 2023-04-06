@@ -138,32 +138,33 @@ module Arcade
 	#
 	# Includes the start_vertex (start_at =0 by default)
 	#
-	# If the vector should not include the start_vertex, call with `start_at:1` and increase the depth by 1
+	# If the vector should not include the start_vertex, call with `start_at: 1` and increase the depth by 1
 	#
 	# fires a query
 	#
 	#    select  from  ( traverse  outE('}#{via}').in  from #{vertex}  while $depth < #{depth}   )
 	#            where $depth >= #{start_at}
 	#
-	# If » excecute: false « is specified, the traverse-statement is returned (as Arcade::Query object)
+	# If » execute: false « is specified, the traverse-statement is returned (as Arcade::Query object)
+  #
+  # Multiple Edges can be specifies in the via-parameter (use Array-notation)
+    # e.i.
+    #  traverse( :in, via: [TG::DateOf, Arcade::HasOrder], depth: 4, start_at: 1 ).map(&:w).reverse
+    #
 	def traverse in_or_out = :out, via: nil,  depth: 1, execute: true, start_at: 0, where: nil
 
-#			edges = detect_edges( in_or_out, via, expand: false)
 			the_query = query kind: 'traverse'
-      the_query.projection  in_or_out.to_s + "(" + resolve_edge_name(via) + ")"
+      the_query.projection  in_or_out.to_s + "(" + resolve_edge_name(*via) + ")"
 			the_query.where where if where.present?
 			the_query.while "$depth < #{depth} " unless depth <=0
-#			edges.each{ |ec| the_query.nodes in_or_out, via: ec, expand: false }
 			outer_query = Query.new from: the_query, where: "$depth >= #{start_at}"
 			if execute
         outer_query.execute.allocate_model
 				else
 		#			the_query.from self  #  complete the query by assigning self
-					the_query            #  returns the OrientQuery  -traverse object
+					the_query            #  returns the Query  -traverse object
 				end
 		end
-
-
 
 =begin
 Assigns another Vertex via an EdgeClass. If specified, puts attributes on the edge.
