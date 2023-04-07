@@ -37,11 +37,14 @@ module Arcade
     # {:name=>"test1", :type=>"vertex"},
     # {:parentTypes=>["test1"], :name=>"test2", :type=>"vertex"}]
     #
-    def types
+    def types refresh=false
       #  uses API
-      t= Api.query(database, "select from schema:types"   )
+      if $types.nil? || refresh
+       $types = Api.query(database, "select from schema:types"   )
                    .map{ |x| x.transform_keys &:to_sym     }   #  symbolize keys
                    .map{ |y| y.delete_if{|_,b,| b.empty? } }   #  eliminate  empty entries
+      end
+      $types
 
     end
 
@@ -102,7 +105,9 @@ module Arcade
           "create edge type #{type} "
         end.concat( args.map{|x,y| "#{x} #{y} "}.join)
       end
-      Api.execute database, &exe
+      db= Api.execute database, &exe
+      types( true )  # update cached schema
+      db
 
     rescue Arcade::QueryError
       Arcade::Database.logger.warn "Database type #{type} already present"
