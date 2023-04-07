@@ -377,6 +377,23 @@ module Arcade
 
     alias to_s to_human
 
+    def to_html  # iruby
+      _modul, _class =  self.class.to_s.split "::"
+      the_class =  _modul == 'Arcade' ? _class : self.class.to_s
+      IRuby.display IRuby.html "<b style=\"color: #50953DFF\"><#{ the_class}</b>"
+      + rid? ? "[#{ rid }]: " : " " + invariant_attributes.map do |attr, value|
+        v= case value
+           when Arcade::Base
+             "< #{ self.class.to_s.snake_case }: #{ value.rid } >"
+           when Array
+             value.map{|x| x.to_s}
+           else
+             value.from_db
+           end
+        "%s : %s" % [ attr, v]  unless v.nil?
+      end.compact.sort.join(', ') + ">".gsub('"' , ' ')
+    end
+
     def update **args
       Arcade::Query.new( from: rid , kind: :update, set: args).execute
       refresh
