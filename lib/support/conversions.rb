@@ -22,6 +22,15 @@ module Arcade
         map &:to_human
       end
 
+      def to_html
+        # all elements are treated equally
+         if first.is_a? Arcade::Base
+           IRuby::Table map(&:invariant_attributes)
+         else
+           IRuby.display IRuby.html "<p> #{map(&:to_human).join("<br>")}</p>"
+         end
+      end
+
       # used to enable
       # def abc *key
       # where key is a Range, an comma separated List or an item

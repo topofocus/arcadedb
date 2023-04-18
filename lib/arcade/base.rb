@@ -226,7 +226,7 @@ module Arcade
       #  }
       def find **args
         f= where(**args).first
-        f= where( "#{ args.keys.first } like #{ args.values.first.to_or }" ) if f.nil? || f.empty?
+        f= where( "#{ args.keys.first } like #{ args.values.first.to_or }" ).first if f.nil? || f.empty?
         f
       end
       # update returns a list of updated records
