@@ -45,7 +45,10 @@ module Arcade
                    .map{ |y| y.delete_if{|_,b,| b.empty? } }   #  eliminate  empty entries
       end
       $types
-
+      ## upom startup, this is the first access to the database-server
+    rescue NoMethodError => e
+      logger.fatal "Could not read Database Types. \n Is the database running?"
+      Kernel.exit
     end
 
     def indexes
