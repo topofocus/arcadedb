@@ -2,10 +2,10 @@
 
 Ruby Interface to a [Arcade Database](https://arcadedb.com/).
 
-
-> This ist an beta version. 
-
-The adapter implements the HTTP-JSON-Api of ArcadeDB.
+The program utilizes the HTTP-JSON API to direct database queries to an ArcadeDB server. 
+The server's response is then mapped to an ORM (Object-Relational Mapping) based on DRY::Struct. 
+Each database type is represented by a dedicated Model Class, where complex queries are encapsulated. 
+The program also includes a  Query-Preprocessor for constructing custom queries in ruby fashion.
 
 ***ArcadeDB internally uses `Arcade` as primary namespace**** 
 
@@ -21,7 +21,7 @@ Edit the file `arcade.yml`  and  provide suitable databases for test, developmen
 
 ## Console
 
-To start an interactive console, a small script is provided in the bin-directory.
+To start an interactive console, a script is provided in the bin-directory.
 ```
 $ cd bin && ./console.rb  t   ( or "d" or "p" for Test, Development and Production environment)
 
@@ -47,11 +47,15 @@ module Demo
   class Person < Arcade::Vertex
     attribute :name, Types::Nominal::String
     timestamps true
+    
+    def grandparents
+      db.query( "select in('is_family') from #{rid} ") &.allocate_model
+    end
   end
 end
 __END__
   CREATE PROPERTY demo_user.name STRING
-  CREATE INDEX on demo_user( name  ) UNIQUE
+  CREATE INDEX on demo_user( name ) UNIQUE
 ```
 
 Only the `name` attribute is declared. Timestamps (created & updated attributes) are included, too
@@ -112,7 +116,7 @@ $ My::Names.query( limit: 1).query.allocate_model.to_human
  # replaces the hash with a My::Names Object 
 ```
 
-The **third Layer** implements a low level access to the database API. 
+The **Base Layer** implements a low level access to the database API. 
 
 ```ruby
 
@@ -142,7 +146,7 @@ $ Arcade::Api.get_record <database>,  rid      #  returns a hash
 
 ## ORM Behavior
 
-Simple tasks are implemented on the model layer. a
+Simple tasks are implemented on the model layer.
 
 ### Ensure that a Record exists
 
