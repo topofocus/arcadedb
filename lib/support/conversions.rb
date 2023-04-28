@@ -195,7 +195,7 @@ module Arcade
                       when Symbol, String
                         k.to_s
                       else
-                        raise "not supported key: #[k} -- must a sting, symbol or number"
+                        raise "not supported key: #{k} -- must a sting, symbol or number"
                       end
           [orient_k, v.to_db]
         end.to_h
