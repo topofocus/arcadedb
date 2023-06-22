@@ -59,14 +59,14 @@ module Arcade
 
       s =  Query.new from: self
       s.nodes in_or_out, via: via, **args
-      s.query.select_result
+      s.query &.select_result
     end
 
 
     #                                                                                               #
     ## ---------------------------------   Instance    Methods   --------------------------------- ##
     #
-    #  We need expand as fallback if a vertex, which is stored as link is automatically loaded
+    #  We need expand as fallback if a vertex, which is stored as link, is automatically loaded
     #
       def expand
         self
@@ -77,7 +77,7 @@ module Arcade
       s =  Query.new from: rid
       s.nodes in_or_out, via: via, **args
       if execute
-         s.query.select_result
+         s.query &.select_result
        else
          s  #  just return the query
        end
@@ -209,7 +209,7 @@ Format: < Classname: Edges, Attributes >
 
 		#Default presentation of Arcade::Base::Model-Objects
 
-		"<#{self.class.to_s.snake_case}[#{rid}]: "  +
+		"<#{self.class.to_s.snake_case}[#{rid}]:"  +
       in_and_out[] +
       invariant_attributes.map do |attr, value|
 			v= case value

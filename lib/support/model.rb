@@ -19,14 +19,17 @@ module Arcade
     #  used by array#allocate_model
       def _allocate_model response=nil, auto = Config.autoload
 
+
       if response.is_a? Hash
         # save rid to a safe place
         temp_rid = response.delete :"@rid"
-
-        return response if temp_rid.rid?.nil?
-        # extract type infos  and convert to database-name
         type           = response.delete :"@type"
         cat            = response.delete :"@cat"
+
+        return response if type.nil?
+        temp_rid = "#0:0" if temp_rid.nil?
+        type = "d" if type.nil?
+        # extract type infos  and convert to database-name
         n, type_name = type.camelcase_and_namespace
         n = self.namespace if n.nil?
         # autoconvert rid's in attributes to model-records  (exclude edges!)
@@ -38,7 +41,7 @@ module Arcade
             when Array
               x.map do| y |
                 if y.is_a?(Hash) && y.include?(:@type)   # if embedded documents are present, load them
-                  y.merge( rid: '#0:0' ).allocate_model(false)
+                  y.allocate_model(false)
                 elsif y.rid?                             # if links are present, load the object
                   y.load_rid(false) # do not autoload further records, prevents from recursive locking
                 else
@@ -47,7 +50,7 @@ module Arcade
               end
             when Hash
               if x.include?(:@type)
-                x.merge( rid: '#0:0' ).allocate_model(false)
+                x.allocate_model(false)
               else
                 x.transform_values!{|z|  z.rid? ?  z.load_rid(false) : z }
               end
@@ -61,7 +64,7 @@ module Arcade
         #
       begin
         # create a new object of that  class with the appropriate attributes
-        new = klass.new  **response.merge( rid: temp_rid || "#0:0" )  # #0:0 --> embedded model records
+        new = klass.new  **response.merge( rid: temp_rid  )
       rescue ::ArgumentError => e
         raise  "Allocation of class #{klass.to_s} failed"
       end

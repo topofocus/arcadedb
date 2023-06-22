@@ -5,7 +5,7 @@ module Arcade
     # schema schema.strict    #  -- throws an error if  specified keys are missing
     transform_keys{ |x|  x[0] == '@' ? x[1..-1].to_sym : x.to_sym }
     # Types::Rid -->  only accept  #000:000,  raises an Error, if rid is not present
-    attribute :rid, Types::Rid
+    attribute :rid?, Types::Rid
     # maybe there are edges   ## removed in favour of instance methods
 #    attribute :in?, Types::Nominal::Any
 #    attribute :out?, Types::Nominal::Any

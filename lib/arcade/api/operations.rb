@@ -81,15 +81,6 @@ module Arcade
         options = options.merge( headers: { "arcadedb-session-id" => session })
       end
       post_data "command/#{database}" , options
-    rescue Arcade::QueryError => e
-#        puts e.methods
-        #puts e.exception
-       # puts e.full_message
-        if   e.message =~ /retry/
-          retry
-        else
-          raise   e.message
-        end
     end
 
     # ------------------------------  query           ------------------------------------------------- #
@@ -136,10 +127,11 @@ module Arcade
       begin_transaction database
       success = args.map do | name, format |
         r= execute(database) {" create property #{type.to_s}.#{name.to_s} #{format.to_s} " } &.first
+        puts "R: #{r.inspect}"
         if r.nil?
           false
         else
-          r.keys == [ :propertyName, :typeName, :operation ] && r[:operation] == 'create property'
+          r[:operation] == 'create property'
         end
       end.uniq
       if success == [true]
@@ -155,16 +147,16 @@ module Arcade
     # ------------------------------ index            ------------------------------------------------- #
     def self.index database, type,  name ,  *properties
       properties = properties.map( &:to_s )
-      unique_requested = "unique" if properties.delete("unique")  
+      unique_requested = "unique" if properties.delete("unique")
       unique_requested = "notunique" if  properties.delete("notunique" )
       automatic = true if
       properties << name  if properties.empty?
-  #    puts " create index  #{type.to_s}[#{name.to_s}] on #{type} ( #{properties.join(',')} ) #{unique_requested}" 
+  #    puts " create index  #{type.to_s}[#{name.to_s}] on #{type} ( #{properties.join(',')} ) #{unique_requested}"
       #    VV 22.10: providing an index-name raises an  Error (  Encountered " "(" "( "" at line 1, column 44. Was expecting one of:     <EOF>      <SCHEMA> ...     <NULL_STRATEGY> ...     ";" ...     "," ...   )) )
       #    named  indices droped for now
-      success = execute(database) {" create index   on #{type} ( #{properties.join(',')} ) #{unique_requested}" } &.first
+      success = execute(database) {" create index IF NOT EXISTS on #{type} (#{properties.join(', ')}) #{unique_requested}" } &.first
 #      puts "success: #{success}"
-      success && success.keys == [ :totalIndexed, :name, :operation ] &&   success[:operation] == 'create index' 
+       success[:operation] == 'create index'
 
     end
 
@@ -191,7 +183,7 @@ module Arcade
       options =  auth.merge( headers: { "arcadedb-session-id" => session })
       post_data  "rollback/#{database}", options
       @session_id =  nil
-      raise Arcade::RollbackError "A Transaction has been rolled back"   if publish_error
+      raise  "A Transaction has been rolled back"   if publish_error
     end
 
     private
@@ -246,8 +238,21 @@ module Arcade
 
     def self.post_data command, options = auth
    #   puts "Post DATA #{command} #{options}"   # debug
-      result  = Typhoeus.post Arcade::Config.base_uri + command, options
-      analyse_result(result, command )
+      i = 0; a=""
+      loop do
+        result  = Typhoeus.post Arcade::Config.base_uri + command, options
+        #  Code: 503 – Service Unavailable
+        if result.response_code.to_i == 503  #  retry two times
+          i += 1
+          puts JSON.parse( result.response_body, symbolize_names: true )
+          raise Arcade::QueryError, JSON.parse( result.response_body, symbolize_names: true ) if i > 3
+          sleep 0.1
+        else
+         a= analyse_result(result, command )
+          break
+        end
+      end
+      a
     end
 
     # returns the json-response
@@ -271,10 +276,8 @@ module Arcade
             raise Arcade::IndexError, error_message[:detail]
           else
           # available fields:  :detail, :exception, error
-          error_message = JSON.parse( r.response_body, symbolize_names: true )
-          puts  error_message[:detail]
-#todo --> check!
-            raise  error_message[:detail]
+            puts  error_message[:detail]
+            #raise  error_message[:detail], caller
           end
         end
     end
