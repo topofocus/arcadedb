@@ -375,7 +375,12 @@ module Arcade
 		end.compact.sort.join(', ') + ">".gsub('"' , ' ')
     end
 
-    alias to_s to_human
+
+    #  configure irb-output to to_human for all Arcade::Base-Objects
+    #
+    def inspect
+      to_human
+    end
 
     def to_html  # iruby
       _modul, _class =  self.class.to_s.split "::"
