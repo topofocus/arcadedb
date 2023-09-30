@@ -57,7 +57,7 @@ module Arcade
       payload = { "@type" => type }.merge( attributes ).to_json
       logger.debug "C: #{payload}"
       options = if session.nil?
-                  { body: payload }.merge( auth ).merge( json )
+        { body: payload }.merge( auth ).merge( json )
                 else
         { body: payload }.merge( auth ).merge( json ).merge( headers: { "arcadedb-session-id" => session })
                 end
@@ -105,7 +105,7 @@ module Arcade
       if rid.rid?
       get_data  "document/#{database}/#{rid}"
       else
-        raise Arcade::Error "Get requires a rid input"
+        raise Error "Get requires a rid input"
       end
     end
 
@@ -164,7 +164,7 @@ module Arcade
     # ------------------------------ transaction      ------------------------------------------------- #
     #
     def self.begin_transaction database
-      result  = Typhoeus.post Arcade::Config.base_uri + "begin/#{database}", auth
+      result  = Typhoeus.post Config.base_uri + "begin/#{database}", auth
       @session_id = result.headers["arcadedb-session-id"]
 
       # returns the session-id 
@@ -231,7 +231,7 @@ module Arcade
     end
 
     def self.get_data command, options = auth
-      result  = Typhoeus.get Arcade::Config.base_uri + command, options
+      result  = Typhoeus.get Config.base_uri + command, options
       analyse_result(result, command)
     end
 
@@ -240,12 +240,12 @@ module Arcade
    #   puts "Post DATA #{command} #{options}"   # debug
       i = 0; a=""
       loop do
-        result  = Typhoeus.post Arcade::Config.base_uri + command, options
+        result  = Typhoeus.post Config.base_uri + command, options
         #  Code: 503 – Service Unavailable
         if result.response_code.to_i == 503  #  retry two times
           i += 1
           puts JSON.parse( result.response_body, symbolize_names: true )
-          raise Arcade::QueryError, JSON.parse( result.response_body, symbolize_names: true ) if i > 3
+          raise QueryError, JSON.parse( result.response_body, symbolize_names: true ) if i > 3
           sleep 0.1
         else
          a= analyse_result(result, command )
@@ -266,14 +266,14 @@ module Arcade
             result
           end
         elsif r.timed_out?
-          raise Arcade::Error "Timeout Error", caller
+          raise Error "Timeout Error", caller
           []
         elsif r.response_code > 0
           logger.error  "Execution Failure – Code: #{ r.response_code } – #{r.status_message} "
           error_message = JSON.parse( r.response_body, symbolize_names: true )
           logger.error  "ErrorMessage:  #{ error_message[:detail]} "
           if error_message[:detail] =~ /Duplicated key/
-            raise Arcade::IndexError, error_message[:detail]
+            raise IndexError, error_message[:detail]
           else
           # available fields:  :detail, :exception, error
             puts  error_message[:detail]
@@ -283,8 +283,8 @@ module Arcade
     end
     def self.auth
        @a ||= { httpauth: :basic,
-         username: Arcade::Config.admin[:user],
-         password: Arcade::Config.admin[:pass] }
+         username: Config.admin[:user],
+         password: Config.admin[:pass] }
     end
 
     def self.json
@@ -292,7 +292,7 @@ module Arcade
     end
 #  not tested
     def self.delete_data command
-      result  = Typhoeus.delete Arcade::Config.base_uri + command, auth
+      result  = Typhoeus.delete Config.base_uri + command, auth
       analyse_result(result, command)
     end
   end
