@@ -104,7 +104,7 @@ module Arcade
 			elsif @q[:database].present?
 				the_argument =  @q[:database]
 				case @q[:database]
-									when Arcade::Base   # a single record
+									when Base   # a single record
 										the_argument.rid
 									when self.class	      # result of a query
 										' ( '+ the_argument.compose + ' ) '
@@ -370,7 +370,7 @@ end # class << self
 		end
 :protected
 		def resolve_target
-			if @q[:database].is_a? Arcade::Query
+			if @q[:database].is_a? Query
 				@q[:database].resolve_target
 			else
 				@q[:database]
