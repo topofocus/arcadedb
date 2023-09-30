@@ -75,7 +75,7 @@ module Arcade
           db.execute { the_command }
         end unless custom_setup.nil?
 
-        rescue Arcade::RollbackError => e
+        rescue RollbackError => e
           db.logger.warn e
         rescue RuntimeError => e
           db.logger.warn e
@@ -222,8 +222,7 @@ module Arcade
       # Finds the first matching record providing the parameters of a `where` query
       #  Strategie.find symbol: 'Still'
       #  is equivalent to
-      #  Strategie.all.find{|y| y.symbol == 'Still'
-      #  }
+      #  Strategie.all.find{|y| y.symbol == 'Still' }
       def find **args
         f= where(**args).first
         f= where( "#{ args.keys.first } like #{ args.values.first.to_or }" ).first if f.nil? || f.empty?
@@ -278,14 +277,14 @@ module Arcade
                     end
         result= query( **( { kind: :upsert  }.merge statement ) ).execute do | answer|
           z=  answer[:"$current"] &.allocate_model(false)  #  do not autoload modelfiles
-          raise Arcade::LoadError "Upsert failed"   unless z.is_a?  Arcade::Base
+          raise LoadError "Upsert failed"   unless z.is_a?  Base
           z  #  return record
         end
       end
 
 
       def query **args
-        Arcade::Query.new( **{ from: self }.merge(args) )
+        Query.new( **{ from: self }.merge(args) )
       end
 
       # immutable support
@@ -332,7 +331,7 @@ module Arcade
     end
 
     def query **args
-      Arcade::Query.new( **{ from: rid }.merge(args) )
+      Query.new( **{ from: rid }.merge(args) )
     end
 
     # to JSON  controlls the serialisation of Arcade::Base Objects for the HTTP-JSON API
@@ -364,7 +363,7 @@ module Arcade
 
 		"<#{ self.class.to_s.snake_case }" + rid? ? "[#{ rid }]: " : " " + invariant_attributes.map do |attr, value|
 			v= case value
-				 when Arcade::Base
+				 when Base
 					 "< #{ self.class.to_s.snake_case }: #{ value.rid } >"
 				 when Array
            value.map{|x| x.to_s}
@@ -388,7 +387,7 @@ module Arcade
       IRuby.display IRuby.html "<b style=\"color: #50953DFF\"><#{ the_class}</b>"
       + rid? ? "[#{ rid }]: " : " " + invariant_attributes.map do |attr, value|
         v= case value
-           when Arcade::Base
+           when Base
              "< #{ self.class.to_s.snake_case }: #{ value.rid } >"
            when Array
              value.map{|x| x.to_s}
@@ -400,13 +399,13 @@ module Arcade
     end
 
     def update **args
-      Arcade::Query.new( from: rid , kind: :update, set: args).execute
+      Query.new( from: rid , kind: :update, set: args).execute
       refresh
     end
 
     # inserts or updates a embedded document
     def insert_document name, obj
-      value = if obj.is_a? Arcade::Document
+      value = if obj.is_a? Document
                 obj.to_json
               else
                 obj.to_or
@@ -422,7 +421,7 @@ module Arcade
     end
 
     def update_list list, value
-      value = if value.is_a? Arcade::Document
+      value = if value.is_a? Document
                 value.to_json
               else
                 value.to_or
