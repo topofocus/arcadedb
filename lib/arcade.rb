@@ -12,13 +12,9 @@ require 'json'
 module Types
   include Dry.Types()
 end
-#require 'pg'          #  ruby postgres driver
-#require 'mini_sql'
-#require 'sequel'
-#require 'httparty'
 require 'yaml'
 require 'securerandom'
-require 'typhoeus'    #  curl library
+require 'httpx'
 require 'arcade/errors'
 require_relative '../lib/support/object'
 require_relative '../lib/support/string'

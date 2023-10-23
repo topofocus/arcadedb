@@ -11,6 +11,7 @@ require 'terminal-table'
 require 'zeitwerk'
 require 'pastel'
 require 'arcade'
+#require 'pry'
 #begin
 
 
@@ -116,5 +117,10 @@ DB = Arcade::Init.connect e
 #require 'pry'
 require 'irb'
 ARGV.clear
+#begin
 IRB.start(__FILE__)
+#rescue ArgumentError => e
+#  puts e
+##  retry
+#end
 #Pry.start(__FILE__)

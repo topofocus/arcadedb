@@ -134,10 +134,10 @@ module Arcade
       #  ( depreciated )
 
       def  create **attributes
-        Api.begin_transaction db.database
+        s = Api.begin_transaction db.database
         attributes.merge!( created: DateTime.now ) if timestamps
         record = insert **attributes
-        Api.commit db.database
+        Api.commit db.database, s
         record
       rescue QueryError => e
         db.logger.error "Dataset NOT created"

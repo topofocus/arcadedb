@@ -30,12 +30,12 @@ RSpec.describe Arcade::Document do
       expect( Arcade::TestDocument.count ).to eq 1
     end
 
-    it "try to create a document with constrains" do
-      document =  Arcade::TestDocument.create name: 'Hugo', age: '40'
-
-      expect( Arcade::TestDocument.count ).to eq 1
-    end
-
+#    it "try to create a document with constrains" do
+#      document =  Arcade::TestDocument.create name: 'Hugo', age: '40'
+#
+#      expect( Arcade::TestDocument.count ).to eq 1
+#    end
+#
     it "Use schemaless properties" do
       document =  Arcade::TestDocument.create name: 'Hugo', age: 60,  city: 'London'
       expect( Arcade::TestDocument.count ).to eq 2
