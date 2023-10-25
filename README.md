@@ -14,10 +14,22 @@ The program also includes a  Query-Preprocessor for constructing custom queries 
 A running AracdeDB-Instance. [Quick-Start-Guide](https://docs.arcadedb.com/#Quick-Start-Docker).
 
 [ArcadeDB V 22.10.1](https://github.com/ArcadeData/arcadedb/releases/tag/22.10.1)ff is supported
-
+## Installation
+Add this line to your Gemfile:
+```ruby
+gem "arcadedb"
+```
+or install it in your system:
+```
+> gem install arcadedb
+```
+and then just require it in your program:
+```ruby
+require "arcade"
+```
 ## Config
 
-Edit the file `arcade.yml`  and  provide suitable databases for test, development and production environment.
+Add a file `arcade.yml` at the root of your program or in the `config`-dir  and  provide suitable databases for test, development and production environment.
 
 ## Console
 
