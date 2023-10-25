@@ -7,7 +7,7 @@
 ##	       development (d)  [default]
 ##	       test (t)
 require 'bundler/setup'
-require 'terminal-table'
+#require 'terminal-table'
 require 'zeitwerk'
 require 'pastel'
 require 'arcade'
@@ -110,7 +110,7 @@ e=  ARGV.empty? ? :development :  ARGV.last.downcase.to_sym
 #require "#{__dir__}/../spec/model_helper"
 
 loader =  Zeitwerk::Loader.new
-loader.push_dir ("#{__dir__}/../spec/model")
+loader.push_dir ("#{__dir__}/../model")
 loader.setup
 puts  "DB = Arcade::Database-instance"
 DB = Arcade::Init.connect e
