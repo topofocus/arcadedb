@@ -41,12 +41,7 @@ module Arcade
           if the_class.respond_to?(:demodulize)
             if [ 'Document','Vertex', 'Edge'].include?(the_class.demodulize)
               if  the_class == superclass  # no inheritance
-                ## we have to use demodulize as the_class actually is Arcade::Vertex, ...
-                unless parent_present[ to_s.snake_case ]
                   db.create_type the_class.demodulize, to_s.snake_case
-                else
-                  db.logger.warn "Type #{ to_s.snake_case } is present, process skipped"
-                end
               else
                 if superclass.is_a? Class  #  maybe its a module.
                    extended = superclass.to_s.snake_case
@@ -134,10 +129,10 @@ module Arcade
       #  ( depreciated )
 
       def  create **attributes
-        Api.begin_transaction db.database
+        s = Api.begin_transaction db.database
         attributes.merge!( created: DateTime.now ) if timestamps
         record = insert **attributes
-        Api.commit db.database
+        Api.commit db.database, s
         record
       rescue QueryError => e
         db.logger.error "Dataset NOT created"

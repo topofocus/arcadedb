@@ -112,8 +112,13 @@ module Arcade
       types( true )  # update cached schema
       db
 
-    rescue Arcade::QueryError
-      Arcade::Database.logger.warn "Database type #{type} already present"
+    rescue HTTPX::HTTPError => e
+#      puts "ERROR:  #{e.message.to_s}"
+      if e.status == 500 && e.message.to_s =~ /already exists/
+        Arcade::Database.logger.warn "Database type #{type} already present"
+      else
+        raise
+      end
     end
 
     alias create_class create_type
@@ -233,8 +238,18 @@ module Arcade
     # If an Error occurs, its rolled back
     #
     def execute   &block
-      Api.begin_transaction database
-      response = Api.execute database, &block
+      s = Api.begin_transaction database
+  #    begin
+      response = Api.execute database, nil, s, &block
+    #  rescue HTTPX::HTTPError => e
+    #    raise e.message
+    #    puts  e.methods
+    #    puts e.status
+    #    puts e.response
+    #    puts e.message
+    #    puts e.exception
+    #    puts e.cause
+    #  end
       # puts response.inspect  # debugging
       r= if  response.is_a? Hash
            _allocate_model res
@@ -251,11 +266,15 @@ module Arcade
          else
            response
          end
-     Api.commit database
-     r # return associated array of Arcade::Base-objects
-    rescue  Dry::Struct::Error, Arcade::QueryError => e
-      Api.rollback database
-      logger.error "Execution  FAILED --> #{e.exception}"
+     if Api.commit( database, s) == 204
+        r # return associated array of Arcade::Base-objects
+     else
+       []
+     end
+    rescue  Dry::Struct::Error, HTTPX::HTTPError, Arcade::QueryError => e
+      Api.rollback database, s
+      logger.error "Execution  FAILED -->  Status #{e.status}"
+ #     logger.error "Execution  FAILED --> #{e.exception.message}"
       []  #  return empty result
     end
 
@@ -272,7 +291,17 @@ module Arcade
 
       content = attributes.empty? ?  "" : "CONTENT #{attributes.to_json}"
       cr = ->( f, t ) do
-        edges = Api.execute( database, "create edge #{edge_class} from #{f.rid} to #{t.rid} #{content}").allocate_model(false) 
+        begin
+        edges = Api.execute( database, "create edge #{edge_class} from #{f.rid} to #{t.rid} #{content}").allocate_model(false)
+        rescue HTTPX::HTTPError => e
+         # if e.status == 503
+         #   puts e.status
+         # puts e.message
+         # puts e.message.class
+         # end
+          raise unless e.message =~ /Found duplicate key/
+         puts "#"+e.message.split("#").last[0..-3]
+        end
         #else
         #  logger.error "Could not create Edge  #{edge_class} from #{f} to #{t}"
         ##  logger.error edges.to_s

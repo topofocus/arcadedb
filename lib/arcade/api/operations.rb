@@ -1,5 +1,6 @@
 module Arcade
  module  Api
+   extend Primitives
 =begin
   This is a simple admin interface
 
@@ -22,44 +23,53 @@ module Arcade
 
 =end
 
+    # ------------------------------ Service methods  ------------------------------------------------- #
+    # ------------------------------                  ------------------------------------------------- #
+    # ------------------------------ databases        ------------------------------------------------- #
+    #  returns an array of databases present on the database-server                                     #
 
     def self.databases
       get_data 'databases'
     end
 
+    # ------------------------------ create database  ------------------------------------------------- #
+    #  creates a database if not present                                                                #
     def self.create_database name
-      unless databases.include?( name.to_s )
-      payload = { "command" => "create database #{name}" }.to_json
-        post_data  "server", { body: payload }.merge( auth ).merge( json )
-      end
-    rescue QueryError => e
+      return if databases.include?( name.to_s )
+      payload = { "command" => "create database #{name}" }
+        post_data  "server", payload
+    rescue HTTPX::HTTPError => e
       logger.fatal "Create database #{name} through \"POST create/#{name}\" failed"
       logger.fatal  e
       raise
     end
 
+    # ------------------------------  drop  database  ------------------------------------------------- #
+    #  deletes the given database                                                                       #
     def self.drop_database name
-      if databases.include?( name.to_s )
-      payload = { "command" => "drop database #{name}" }.to_json
-        post_data  "server", { body: payload }.merge( auth ).merge( json )
-      end
+      return unless databases.include?( name.to_s )
+      payload = {"command" => "drop database #{name}" }
+       post_data  "server",  payload
+    rescue HTTPX::HTTPError => e
+      logger.fatal "Drop database #{name} through \"POST drop database/#{name}\" failed"
+      raise
     end
     # ------------------------------  create document ------------------------------------------------- #
-    # adds a document to the database
+    # adds a document to the specified database table
     #
     # specify database-fields as hash-type parameters
     #
     # i.e   Arcade::Api.create_document 'devel', 'documents',  name: 'herta meyer', age: 56, sex: 'f'
     #
     # returns the rid of the inserted dataset
-    # 
+    #
     def self.create_document database, type, **attributes
-      payload = { "@type" => type }.merge( attributes ).to_json
+      payload = { "@type" => type }.merge( attributes )
       logger.debug "C: #{payload}"
       options = if session.nil?
-        { body: payload }.merge( auth ).merge( json )
+         payload
                 else
-        { body: payload }.merge( auth ).merge( json ).merge( headers: { "arcadedb-session-id" => session })
+        payload.merge headers: { "arcadedb-session-id" => session }
                 end
       post_data "document/#{database}", options
     end
@@ -71,23 +81,22 @@ module Arcade
     #
     # returns an Array of results (if propriate)
     # i.e
-    # Arcade::Api.execcute( "devel" ) { 'select from test  ' }
+    # Arcade::Api.execute( "devel" ) { 'select from test  ' }
     #  =y [{"@rid"=>"#57:0", "@type"=>"test", "name"=>"Hugo"}, {"@rid"=>"#60:0", "@type"=>"test", "name"=>"Hubert"}]
     #
-    def self.execute database, query=nil
+    def self.execute database, query=nil, session_id= nil
       pl = query.nil? ? provide_payload(yield) : provide_payload(query)
-      options =   { body: pl }.merge( auth ).merge( json )
-      unless session.nil?
-        options = options.merge( headers: { "arcadedb-session-id" => session })
+      if session_id.nil? && session.nil?
+        post_data "command/#{database}" , pl
+      else
+        post_transaction "command/#{database}" , pl, session_id || session
       end
-      post_data "command/#{database}" , options
     end
 
     # ------------------------------  query           ------------------------------------------------- #
     # same for idempotent queries
     def self.query database, query
-      options = { body: provide_payload(query)  }.merge( auth ).merge( json )
-      post_data   "query/#{database}" , options
+      post_data   "query/#{database}" , provide_payload(query)
     end
 
     # ------------------------------  get_record      ------------------------------------------------- #
@@ -151,7 +160,7 @@ module Arcade
       unique_requested = "notunique" if  properties.delete("notunique" )
       automatic = true if
       properties << name  if properties.empty?
-  #    puts " create index  #{type.to_s}[#{name.to_s}] on #{type} ( #{properties.join(',')} ) #{unique_requested}"
+ #    puts " create index  #{type.to_s}[#{name.to_s}] on #{type} ( #{properties.join(',')} ) #{unique_requested}"
       #    VV 22.10: providing an index-name raises an  Error (  Encountered " "(" "( "" at line 1, column 44. Was expecting one of:     <EOF>      <SCHEMA> ...     <NULL_STRATEGY> ...     ";" ...     "," ...   )) )
       #    named  indices droped for now
       success = execute(database) {" create index IF NOT EXISTS on #{type} (#{properties.join(', ')}) #{unique_requested}" } &.first
@@ -160,31 +169,6 @@ module Arcade
 
     end
 
-
-    # ------------------------------ transaction      ------------------------------------------------- #
-    #
-    def self.begin_transaction database
-      result  = Typhoeus.post Config.base_uri + "begin/#{database}", auth
-      @session_id = result.headers["arcadedb-session-id"]
-
-      # returns the session-id 
-    end
-
-
-    # ------------------------------ commit           ------------------------------------------------- #
-    def self.commit database
-    options =  auth.merge( headers: { "arcadedb-session-id" => session })
-      post_data  "commit/#{database}", options
-      @session_id =  nil
-    end
-
-    # ------------------------------ rollback         ------------------------------------------------- #
-    def  self.rollback database, publish_error=true
-      options =  auth.merge( headers: { "arcadedb-session-id" => session })
-      post_data  "rollback/#{database}", options
-      @session_id =  nil
-      raise  "A Transaction has been rolled back"   if publish_error
-    end
 
     private
 
@@ -227,38 +211,15 @@ module Arcade
                                       [ :language,  value.to_sym ]
                                     end
                                   end # case
-                                end .to_h ).to_json # map
-    end
-
-    def self.get_data command, options = auth
-      result  = Typhoeus.get Config.base_uri + command, options
-      analyse_result(result, command)
+                                end .to_h ) # map
     end
 
 
-    def self.post_data command, options = auth
-   #   puts "Post DATA #{command} #{options}"   # debug
-      i = 0; a=""
-      loop do
-        result  = Typhoeus.post Config.base_uri + command, options
-        #  Code: 503 – Service Unavailable
-        if result.response_code.to_i == 503  #  retry two times
-          i += 1
-          puts JSON.parse( result.response_body, symbolize_names: true )
-          raise QueryError, JSON.parse( result.response_body, symbolize_names: true ) if i > 3
-          sleep 0.1
-        else
-         a= analyse_result(result, command )
-          break
-        end
-      end
-      a
-    end
 
-    # returns the json-response
+    # returns the json-response   ## retiered
     def self.analyse_result r, command
       if r.success?
-          return nil  if r.response_code == 204  # no content
+          return nil  if r.status == 204  # no content
           result = JSON.parse( r.response_body, symbolize_names: true )[:result]
           if result == [{}]
            []
@@ -287,12 +248,9 @@ module Arcade
          password: Config.admin[:pass] }
     end
 
-    def self.json
-      { headers: { "Content-Type" => "application/json"} }
-    end
 #  not tested
     def self.delete_data command
-      result  = Typhoeus.delete Config.base_uri + command, auth
+      result  = HTTPX.delete Config.base_uri + command, auth
       analyse_result(result, command)
     end
   end

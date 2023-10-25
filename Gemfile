@@ -5,11 +5,6 @@ source "https://rubygems.org"
 #git_source(:github) {|repo_name| "https://github.com/#{repo_name}" }
 gemspec
 gem 'sdoc'
-gem  'dry-configurable'
-# gem  'pg'
-#gem  'sequel'
-
-#gem  'mini_sql' #, path: '../mini_sql/'
 group :development, :test do
 	gem "awesome_print"
   gem 'pastel'

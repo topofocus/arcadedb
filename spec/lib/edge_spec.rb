@@ -14,7 +14,7 @@ RSpec.describe Arcade::Query do
   end # before
 
 
- context "non unique edges" do
+ context "non unique edges"  do
   Given!( :the_node ){  Node.insert item:rand(76) }
   Then { the_node.is_a? Arcade::Node }
   Then { the_node.item.is_a? Integer }

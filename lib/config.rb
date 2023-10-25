@@ -48,17 +48,19 @@ module Arcade
     setting :namespace, default:  :namespace, reader: true , constructor:  ->(v) { yml(v) }
     setting :secret, reader: true,  default: 12, constructor:  ->(v) { seed(v) }
      private
-    # if a config dir exists, use it
+     # if a config dir exists, use it.
+     # Standard:  ProjectRoot/config.yml
      def self.config_file
-       if @cd.nil?
-         ( cd =  ProjectRoot + 'arcade.yml' ).exist? ||
-         ( cd =  ProjectRoot + 'config' + 'arcade.yml' ).exist? ||
-         ( cd =  ProjectRoot + "config.yml" )
-          @cd = cd
-       else
-         @cd
+
+       configdir =  -> do
+         pr =  ProjectRoot.is_a?(Pathname)?  ProjectRoot : Pathname.new( ProjectRoot )
+         ( cd =  pr + 'arcade.yml' ).exist? || ( cd =   pr + 'config' + 'arcade.yml' ).exist? || ( cd =   pr + 'config.yml' )
+         cd
        end
+
+       @cd ||= configdir[]
      end
+
     def self.yml key=nil
       y= YAML::load_file( config_file )
       key.nil?  ?  y : y[key]
