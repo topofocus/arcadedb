@@ -112,8 +112,13 @@ module Arcade
       types( true )  # update cached schema
       db
 
-    rescue Arcade::QueryError
-      Arcade::Database.logger.warn "Database type #{type} already present"
+    rescue HTTPX::HTTPError => e
+#      puts "ERROR:  #{e.message.to_s}"
+      if e.status == 500 && e.message.to_s =~ /already exists/
+        Arcade::Database.logger.warn "Database type #{type} already present"
+      else
+        raise
+      end
     end
 
     alias create_class create_type

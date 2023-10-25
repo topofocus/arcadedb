@@ -17,9 +17,6 @@ loader =  Zeitwerk::Loader.new
 loader.push_dir ("#{__dir__}/model")
 loader.setup
 
-read_yml = -> (key) do
-	YAML::load_file( File.expand_path('../spec.yml',__FILE__))[key]
-end
 Arcade::Init.connect :test
 
 RSpec.configure do |config|

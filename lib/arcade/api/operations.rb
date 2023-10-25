@@ -1,5 +1,6 @@
 module Arcade
  module  Api
+   extend Primitives
 =begin
   This is a simple admin interface
 
@@ -22,11 +23,17 @@ module Arcade
 
 =end
 
+    # ------------------------------ Service methods  ------------------------------------------------- #
+    # ------------------------------                  ------------------------------------------------- #
+    # ------------------------------ databases        ------------------------------------------------- #
+    #  returns an array of databases present on the database-server                                     #
 
     def self.databases
       get_data 'databases'
     end
 
+    # ------------------------------ create database  ------------------------------------------------- #
+    #  creates a database if not present                                                                #
     def self.create_database name
       return if databases.include?( name.to_s )
       payload = { "command" => "create database #{name}" }
@@ -37,25 +44,25 @@ module Arcade
       raise
     end
 
+    # ------------------------------  drop  database  ------------------------------------------------- #
+    #  deletes the given database                                                                       #
     def self.drop_database name
       return unless databases.include?( name.to_s )
       payload = {"command" => "drop database #{name}" }
        post_data  "server",  payload
     rescue HTTPX::HTTPError => e
       logger.fatal "Drop database #{name} through \"POST drop database/#{name}\" failed"
-      puts e.methods
-      puts e.status
       raise
     end
     # ------------------------------  create document ------------------------------------------------- #
-    # adds a document to the database
+    # adds a document to the specified database table
     #
     # specify database-fields as hash-type parameters
     #
     # i.e   Arcade::Api.create_document 'devel', 'documents',  name: 'herta meyer', age: 56, sex: 'f'
     #
     # returns the rid of the inserted dataset
-    # 
+    #
     def self.create_document database, type, **attributes
       payload = { "@type" => type }.merge( attributes )
       logger.debug "C: #{payload}"
@@ -163,43 +170,6 @@ module Arcade
     end
 
 
-    # ------------------------------ transaction      ------------------------------------------------- #
-    #
-    def self.begin_transaction database
-      http = HTTPX.plugin(:basic_auth).basic_auth( auth[:username], auth[:password] ).with(debug_level: 1)
-      result  = http.post Config.base_uri + "begin/#{database}"
-      @session_id = result.headers["arcadedb-session-id"]
-
-      # returns the session-id 
-    end
-
-
-    # ------------------------------ commit           ------------------------------------------------- #
-    def self.commit database, session_id
-      http = HTTPX.plugin(:basic_auth)
-                  .basic_auth(auth[:username], auth[:password])
-                  .with(  headers: { "arcadedb-session-id" => session_id } , debug_level: 1)
-      response = http.post( Config.base_uri + "commit/#{database}" )
-      response.raise_for_status
-      @session_id =  nil
-      response.status  #  returns 204 --> success
-                       #          403 --> incalid credentials
-                       #          500 --> Transaction  not begun
-
-    end
-
-    # ------------------------------ rollback         ------------------------------------------------- #
-    def  self.rollback database, session_id, publish_error=true
-      http = HTTPX.plugin(:basic_auth)
-                  .basic_auth(auth[:username], auth[:password])
-                  .with( headers: { "arcadedb-session-id"=>session_id }, debug_level: 1)
-      response = http.post( Config.base_uri + "rollback/#{database}" )
-      response.raise_for_status
-      @session_id =  nil
-      logger.error  "A Transaction has been rolled back"  # if publish_error
-      response.status
-    end
-
     private
 
      def self.logger
@@ -244,64 +214,9 @@ module Arcade
                                 end .to_h ) # map
     end
 
-    def self.get_data command, options = auth
-      http = HTTPX.plugin( :basic_auth ).basic_auth( auth[:username], auth[:password] )
-      response = http.get( Config.base_uri + command )
-      response.raise_for_status
 
-      JSON.parse( response.body, symbolize_names: true )[:result]
 
-#      case response = http.basic_auth(auth[:username], auth[:password]).get( Config.base_uri + command )
-#      in { status: 200..203, body:  }
-#        puts "success: #{JSON.parse(body, symbolize_names: true)[:result]}"
-#      in { status: 400..499, body:  }
-#        puts "client error: #{body.json}"
-#      in { status: 500.., body:  }
-#          puts "server error: #{body.to_s}"
-#      in { error: error  }
-#          puts "error: #{error.message}"
-#      else
-#          raise "unexpected: #{response}"
-#      end
-#      puts "result : #{response}"
-#      puts "code: #{response.status}"
-#      analyse_result(response, command)
-    end
-
-    def self.post_transaction command, params, session
-      http = HTTPX.plugin(:basic_auth)
-                  .basic_auth(auth[:username], auth[:password])
-                  .with( headers: { "arcadedb-session-id"=>session }, debug_level: 1)
-      response = http.post( Config.base_uri + command, json:  params )
-      response.raise_for_status
-      JSON.parse( response.body, symbolize_names: true )[:result]
-
-    end
-
-    def self.post_data command, options = auth
-      i = 0; a=""
-  #    loop do
-      http = HTTPX.plugin(:basic_auth)
-                  .basic_auth(auth[:username], auth[:password])
-      response = http.post( Config.base_uri + command, json:  options )
-      response.raise_for_status
-      JSON.parse( response.body, symbolize_names: true )[:result]
-    #    result  = HTTPX.post Config.base_uri + command, options
-    #    #  Code: 503 – Service Unavailable
-    #    if result.response_code.to_i == 503  #  retry two times
-    #      i += 1
-    #      puts JSON.parse( result.response_body, symbolize_names: true )
-    #      raise QueryError, JSON.parse( result.response_body, symbolize_names: true ) if i > 3
-    #      sleep 0.1
-    #    else
-    #     a= analyse_result(result, command )
-    #      break
-    #    end
-    #  end
-    #  a
-    end
-
-    # returns the json-response
+    # returns the json-response   ## retiered
     def self.analyse_result r, command
       if r.success?
           return nil  if r.status == 204  # no content
@@ -333,9 +248,6 @@ module Arcade
          password: Config.admin[:pass] }
     end
 
-    def self.json
-      { headers: { "Content-Type" => "application/json"} }
-    end
 #  not tested
     def self.delete_data command
       result  = HTTPX.delete Config.base_uri + command, auth

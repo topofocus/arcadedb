@@ -12,7 +12,7 @@ end
 
 
 RSpec.describe Arcade::Api do
-  context "Arade returns present databases" do
+  context "Arcade returns present databases"  do
     subject {  Arcade::Api.databases  }
     it { is_expected.to be_a Array }
   end

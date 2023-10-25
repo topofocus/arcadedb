@@ -1,11 +1,7 @@
 ---
-## absolute path to the oetl-script
-:pg:
- :host: localhost # 172.28.50.25 
- :port: 5432
 :environment:
   :test:
-    dbname: test
+    dbname: playground
     user:  root
     pass:  topo1focus
   :development:
@@ -17,7 +13,7 @@
     user: root
     pass: topo1focus
 :admin:
-  :host: localhost
+  :host: 10.247.8.109
   :port: 2480
   :user: root
   :pass: topo1focus
