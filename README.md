@@ -14,16 +14,23 @@ The program also includes a  Query-Preprocessor for constructing custom queries 
 A running AracdeDB-Instance. [Quick-Start-Guide](https://docs.arcadedb.com/#Quick-Start-Docker).
 
 [ArcadeDB V 22.10.1](https://github.com/ArcadeData/arcadedb/releases/tag/22.10.1)ff is supported
-## Installation
-Add this line to your Gemfile:
-```ruby
-gem "arcadedb"
+## New Project
+
 ```
-or install it in your system:
+mkdir project && cd project
+bundle init
+bundle add arcadedb
+bundle add pastel  # for console output
+mkdir model
+mkdir bin
 ```
-> gem install arcadedb
-```
-and then just require it in your program:
+copy `https://github.com/topofocus/arcadedb/blob/main/bin/console` to the `bin` directory  
+copy `https://github.com/topofocus/arcadedb/blob/main/arcade.yml` fo the project root and modify to your needs
+
+Then you should be able run bin/console and submit database commands.
+
+## Add to a project
+Just require it in your program:
 ```ruby
 require "arcade"
 ```
@@ -37,7 +44,7 @@ To start an interactive console, a script is provided in the bin-directory.
 ```
 $ cd bin && ./console.rb  t   ( or "d" or "p" for Test, Development and Production environment)
 
-**Database definitions  (model-files) of the test-suite are included!**
+**in Test environment Database definitions  (model-files) of the test-suite are included!**
 ```
 
 ## Examples  & Specs
