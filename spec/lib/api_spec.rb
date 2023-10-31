@@ -7,7 +7,6 @@ def clear_arcade
   Arcade::Api.drop_database Arcade::Config.database[:test] 
   end
   Arcade::Api.create_database Arcade::Config.database[:test]
-  Arcade::Api.create_database Arcade::Config.database[:test]
 end
 
 

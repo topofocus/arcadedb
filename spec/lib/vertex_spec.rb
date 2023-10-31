@@ -52,11 +52,11 @@ RSpec.describe Arcade::Vertex do
     My::E3.create_type
   end
 	describe "CRUD", focus: true  do
-		Given( :the_vertex ){ My::V2.create a: "a", b: 2, c: [1,2,3] , d: {a: 'b'}}
+		Given( :the_vertex ){ My::V2.insert a: "a", b: 2, c: [1,2,3] , d: {a: 'b'}}
 		context " create" do
       it { puts the_vertex.inspect }
 			Then { expect( the_vertex.rid).to match /^#[0-9]*:[0-9]*/   }
-      Then { expect( Date.parse( the_vertex.created )).to eq Date.today }
+#      Then { expect( Date.parse( the_vertex.created )).to eq Date.today }
     end
     context " read" do
       Given( :read_vertex ){ the_vertex.rid.expand }

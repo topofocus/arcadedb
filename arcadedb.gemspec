@@ -23,15 +23,10 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "bundler", "~> 2"
   spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "rspec", "~> 4.0"
-  #	'activesupport', '>= 6.0'
-#	spec.add_dependency 'activemodel'
   spec.add_dependency "httpx"
   spec.add_dependency 'dry-schema'
   spec.add_dependency 'dry-struct'
   spec.add_dependency 'dry-core'
   spec.add_dependency 'dry-configurable'
-  spec.add_dependency 'dry-monads'
-  ## Database-Access via Postgres is not implemented
-#	spec.add_dependency 'pg'
-#	spec.add_dependency 'mini_sql'
+#  spec.add_dependency 'dry-monads'  # future use
 end

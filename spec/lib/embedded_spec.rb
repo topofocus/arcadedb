@@ -69,7 +69,6 @@ RSpec.describe Arcade::Query do
     before(:all) do
       document = Arcade::TestDocument.find name:'karl'
       list = ->{ Arcade::DatDocument.new date: Date.new( 2022,rand(11)+1, rand(16)+1), name: 'Herta', age: rand(99), rid: '#0:0' }
-#     list = ->{ DatDocument.new date: Date.new( 2022,11, 16), name: 'Herta', age: rand(99), rid: '#0:0' }
 
        Arcade::Init.db.execute{ " update #{document.rid} set  many += #{list[].to_json}" } 
        Arcade::Init.db.execute{ " update #{document.rid} set  many += #{list[].to_json}" } 

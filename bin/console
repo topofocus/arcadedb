@@ -106,12 +106,18 @@ loader =  Zeitwerk::Loader.new
 if e.to_s[0] == 't'
   loader.push_dir ("#{__dir__}/../spec/model")
 else
-  loader.push_dir ("#{__dir__}/../model")
+  loader.push_dir ("#{__dir__}/../lib/model")
+
 end
 loader.setup
 puts  "DB = Arcade::Database-instance"
 DB = Arcade::Init.connect e
 #require 'pry'
+if e.to_s[0] == 't'
+    DB.create_type :document, 'test_document'
+    DB.create_type :vertex, :test_vertex
+
+end
 require 'irb'
 ARGV.clear
 

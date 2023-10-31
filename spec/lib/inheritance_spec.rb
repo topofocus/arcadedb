@@ -21,7 +21,7 @@ RSpec.describe Arcade::Document do
     DB = Arcade::Database.new :test
     Arcade::BaseNode.create_type
     Arcade::ExtraNode.create_type
-    Arcade::Connects.create_type 
+#    Arcade::Connects.create_type 
   end
 
 
@@ -33,13 +33,13 @@ RSpec.describe Arcade::Document do
   end
 
   context "check inheritance" do
-   it "create a document" do
-      document =  Arcade::ExtraNode.create name: 'Hugo', age: 40, item: 1
-      expect( document ).to be_a Arcade::ExtraNode
-      expect( document.rid ).to  match /\A[#]{,1}[0-9]{1,}:[0-9]{1,}\z/
-      expect( document.name ).to eq "Hugo"
-      expect( document.age ).to eq 40
-      expect( document.item ).to eq 1 
+   it "create a node" do
+      node =  Arcade::ExtraNode.insert name: 'Hugo', age: 40, item: 1
+      expect( node ).to be_a Arcade::ExtraNode
+      expect( node.rid ).to  match /\A[#]{,1}[0-9]{1,}:[0-9]{1,}\z/
+      expect( node.name ).to eq "Hugo"
+      expect( node.age ).to eq 40
+      expect( node.item ).to eq 1 
       expect( Arcade::ExtraNode.count ).to eq 1
       expect( Arcade::Node.count ).to eq 1
     end

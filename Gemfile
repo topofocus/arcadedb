@@ -10,7 +10,7 @@ group :development, :test do
   gem 'pastel'
   gem 'zeitwerk'
   gem 'terminal-table'
-  gem 'rubocop'
+ # gem 'rubocop'
 	gem "rspec"
 	gem 'rspec-legacy_formatters'
 	gem 'rspec-its'
@@ -21,5 +21,5 @@ group :development, :test do
 	gem 'guard'#, :platforms => :ruby
 	gem 'guard-rspec'
 	gem 'rb-inotify'
-	gem 'pry'
+#	gem 'pry'
 end

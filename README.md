@@ -13,7 +13,6 @@ The program also includes a  Query-Preprocessor for constructing custom queries 
 
 A running AracdeDB-Instance. [Quick-Start-Guide](https://docs.arcadedb.com/#Quick-Start-Docker).
 
-[ArcadeDB V 22.10.1](https://github.com/ArcadeData/arcadedb/releases/tag/22.10.1)ff is supported
 ## New Project
 
 ```
@@ -25,9 +24,16 @@ mkdir model
 mkdir bin
 ```
 copy `https://github.com/topofocus/arcadedb/blob/main/bin/console` to the `bin` directory  
-copy `https://github.com/topofocus/arcadedb/blob/main/arcade.yml` fo the project root and modify to your needs
+copy `https://github.com/topofocus/arcadedb/blob/main/arcade.yml` to the project root and modify to your needs
 
-Then you should be able run bin/console and submit database commands.
+## Console
+
+To start an interactive console, a script is provided in the bin-directory.
+```
+$ cd bin && ./console.rb  t   ( or "d" or "p" for Test, Development and Production environment)
+
+**in Test environment Database definitions  (model-files) of the test-suite are included!**
+```
 
 ## Add to a project
 Just require it in your program:
@@ -38,14 +44,6 @@ require "arcade"
 
 Add a file `arcade.yml` at the root of your program or in the `config`-dir  and  provide suitable databases for test, development and production environment.
 
-## Console
-
-To start an interactive console, a script is provided in the bin-directory.
-```
-$ cd bin && ./console.rb  t   ( or "d" or "p" for Test, Development and Production environment)
-
-**in Test environment Database definitions  (model-files) of the test-suite are included!**
-```
 
 ## Examples  & Specs
 
@@ -79,12 +77,12 @@ __END__
 
 Only the `name` attribute is declared. Timestamps (created & updated attributes) are included, too
 
-`Demo::User.create_type`  creates the type and executes the database-commands after __END__.   
+`Demo::User.create_type`  creates the type and executes provided database-commands after __END__.   
 
 Other properties are schemaless. 
 
 ```ruby
-Person.create name: "Hubert", age: 35
+Person.insert name: "Hubert", age: 35
 Person.update set: { age: 36 }, where: { name: 'Hubert' }
 persons = Person.where "age > 40"
 persons.first.update age: 37
@@ -109,14 +107,12 @@ DB =  Arcade::Init.db
 $ DB.get nn, mm                                 # returns a Aracde:Base object
                                                 # rid is either "#11:10:" or two numbers
 $ DB.query querystring                          # returns either an Array of results (as  Hash) 
-$ DB.execute { querystring }                    # 
+$ DB.execute { querystring }                    # execute a non idempotent query within a (nested) transaction
 $ DB.create <name>, attribute: value ....       # Creates a new <Document | Vertex> and returns the rid
                                                 # Operation is performed as Database-Transaction and is rolled back on error
-$ DB.insert <name>, attribute: value ....       # Inserts a new <Document | Vertex> and returns the rid
+$ DB.insert <name>, attribute: value ....       # Inserts a new <Document | Vertex> and returns the new object
 $ DB.create_edge <name>, from: <rid> or [rid, rid, ..] , to: <rid> or [rid, rid, ..]
 
-DB.query " Select from person where age > 40 "
-DB.execute { " Update person set name='Hubert' return after $current where age = 36 " }
 ```
 
 **Convert database input to Arcade::Base Models**
@@ -236,20 +232,24 @@ Select a range of nodes and perform a mathematical operation
   -=> select median(note_count) from  ( traverse out(connects) from #52:0 while $depth < 100 )  where $depth>=50  
    =>   {:"median(note_count)"=>75.5 }
 ```
-## Include in your own project
 
-Until a gem is released, first clone the project and set up your project environment
+### Transactions
+
+Database-Transactions are largely encapsulated
+
 ```
-mkdir workspace && cd workspace
-git clone https://github.com/topofocus/arcadedb
-mkdir my-project && cd my-project
-bundle init
-cat "gem arcadedb, path='../arcadedb' " >> Gemfile
-bundle install && bundle upate
-cp ../arcadedb/config.yml .
-mkdir bin
-cp ../arcadedb/bin/console bin/
-````
+TestVertex.create_type
+TestVertex.begin_transaction
+
+{ perform insert, update, query, etc tasks in the database (not only the type) }
+
+TestVertex.commit 
+
+# or
+
+TestVertex.rollback
+
+```
 
 
 ## Contributing

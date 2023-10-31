@@ -4,7 +4,7 @@ require 'database_helper'
 
 
 def linear_elements start, count  #returns the edge created
-	new_vertex = ->(n) { Arcade::ExtraNode.create( note_count: n) }
+	new_vertex = ->(n) { Arcade::ExtraNode.insert( note_count: n) }
 	(2..count).each{ |n| start = start.assign vertex: new_vertex[n], via: Arcade::Connects }
 end
 
@@ -26,10 +26,10 @@ RSpec.describe "Edges" do
     before(:all) do
       previous_logger_level =  Arcade::Database.logger.level
       Arcade::Database.logger.level = Logger::ERROR
-      b =	 Arcade::ExtraNode.create( extraitem: 'nucleus' )
+      b =	 Arcade::ExtraNode.insert( extraitem: 'nucleus' )
       (1..10).map do |n| 
-        new_node =  Arcade::Node.create( item: n)
-        (1..10).map{|i|	new_node.assign vertex: Arcade::Node.create( item: new_node.item * rand(99999)), via: Arcade::Connects, attributes: { extra: true  }}
+        new_node =  Arcade::Node.insert( item: n)
+        (1..10).map{|i|	new_node.assign vertex: Arcade::Node.insert( item: new_node.item * rand(99999)), via: Arcade::Connects, attributes: { extra: true  }}
         Arcade::Connects.create from: b, to: new_node, basic: true
       end
       Arcade::Database.logger.level = previous_logger_level
@@ -48,7 +48,7 @@ RSpec.describe "Edges" do
 
         previous_logger_level =  Arcade::Database.logger.level
         Arcade::Database.logger.level = Logger::ERROR
-        start_node =  Arcade::ExtraNode.create( extraitem: 'linear' )
+        start_node =  Arcade::ExtraNode.insert( extraitem: 'linear' )
         linear_elements start_node , 200
         Arcade::Database.logger.level = previous_logger_level
       end

@@ -22,7 +22,7 @@ RSpec.describe Arcade::Document do
 
   context "CRUD" do     ##  unfinised
     it  "create a document" do
-      document =  Arcade::TestDocument.create name: 'Hugo', age: 40
+      document =  Arcade::TestDocument.insert name: 'Hugo', age: 40
       expect( document ).to be_a Arcade::TestDocument
       expect( document.rid ).to  match /\A[#]{,1}[0-9]{1,}:[0-9]{1,}\z/
       expect( document.name ).to eq "Hugo"
@@ -37,7 +37,7 @@ RSpec.describe Arcade::Document do
 #    end
 #
     it "Use schemaless properties" do
-      document =  Arcade::TestDocument.create name: 'Hugo', age: 60,  city: 'London'
+      document =  Arcade::TestDocument.insert name: 'Hugo', age: 60,  city: 'London'
       expect( Arcade::TestDocument.count ).to eq 2
       expect( document.city ).to be_a String
       expect( document.values ).to include  city: 'London'

@@ -8,7 +8,6 @@ require 'zeitwerk'
 #require 'active_support'
 
 require 'arcade'
-require 'postgres_helper'
 ## todo: is this necessary?
 module My; end
 ##

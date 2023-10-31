@@ -9,7 +9,7 @@ module Arcade
   $ Arcade::Api.drop_database   <a string>  # returns true if successfull
 
   $ Arcade::Api.create_document <database>, <type>,  attributes
-  $ Arcade::Api.execute( <database> ) { <query> }
+  $ Arcade::Api.execute( <database>  [, session_id:  some_session_id ]) { <query> }
   $ Arcade::Api.query( <database> ) { <query> }
   $ Arcade::Api.get_record <database>,  rid  #  returns a hash
 
@@ -63,15 +63,13 @@ module Arcade
     #
     # returns the rid of the inserted dataset
     #
-    def self.create_document database, type, **attributes
+    def self.create_document database, type, session_id: nil, **attributes
       payload = { "@type" => type }.merge( attributes )
-      logger.debug "C: #{payload}"
-      options = if session.nil?
-         payload
-                else
-        payload.merge headers: { "arcadedb-session-id" => session }
-                end
-      post_data "document/#{database}", options
+      if session_id.nil?
+        post_data "document/#{database}", payload
+      else
+        post_transaction "document/#{database}", payload, session_id: session_id
+      end
     end
 
     # ------------------------------  execute         ------------------------------------------------- #
@@ -84,19 +82,23 @@ module Arcade
     # Arcade::Api.execute( "devel" ) { 'select from test  ' }
     #  =y [{"@rid"=>"#57:0", "@type"=>"test", "name"=>"Hugo"}, {"@rid"=>"#60:0", "@type"=>"test", "name"=>"Hubert"}]
     #
-    def self.execute database, query=nil, session_id= nil
-      pl = query.nil? ? provide_payload(yield) : provide_payload(query)
-      if session_id.nil? && session.nil?
+    def self.execute database, session_id: nil
+      pl = provide_payload(yield)
+      if session_id.nil?
         post_data "command/#{database}" , pl
       else
-        post_transaction "command/#{database}" , pl, session_id || session
+        post_transaction "command/#{database}" , pl, session_id: session_id
       end
     end
 
     # ------------------------------  query           ------------------------------------------------- #
     # same for idempotent queries
-    def self.query database, query
-      post_data   "query/#{database}" , provide_payload(query)
+    def self.query database, query, session_id: nil
+      if session_id.nil?
+        post_data   "query/#{database}" , provide_payload(query)
+      else
+        post_transaction "query/#{database}" , provide_payload(query), session_id: session_id
+      end
     end
 
     # ------------------------------  get_record      ------------------------------------------------- #
@@ -133,9 +135,9 @@ module Arcade
     #
     def self.property database, type, **args
 
-      begin_transaction database
+      s= begin_transaction database
       success = args.map do | name, format |
-        r= execute(database) {" create property #{type.to_s}.#{name.to_s} #{format.to_s} " } &.first
+        r= execute(database, session_id: s) {" create property #{type.to_s}.#{name.to_s} #{format.to_s} " } &.first
         puts "R: #{r.inspect}"
         if r.nil?
           false
@@ -144,10 +146,10 @@ module Arcade
         end
       end.uniq
       if success == [true]
-        commit database
+        commit database session_id: s
         true
       else
-        rollback database
+        rollback database log: false, session_id: s
       end
 
 
@@ -160,9 +162,6 @@ module Arcade
       unique_requested = "notunique" if  properties.delete("notunique" )
       automatic = true if
       properties << name  if properties.empty?
- #    puts " create index  #{type.to_s}[#{name.to_s}] on #{type} ( #{properties.join(',')} ) #{unique_requested}"
-      #    VV 22.10: providing an index-name raises an  Error (  Encountered " "(" "( "" at line 1, column 44. Was expecting one of:     <EOF>      <SCHEMA> ...     <NULL_STRATEGY> ...     ";" ...     "," ...   )) )
-      #    named  indices droped for now
       success = execute(database) {" create index IF NOT EXISTS on #{type} (#{properties.join(', ')}) #{unique_requested}" } &.first
 #      puts "success: #{success}"
        success[:operation] == 'create index'
@@ -176,9 +175,6 @@ module Arcade
        Database.logger
      end
 
-    def self.session
-      @session_id
-    end
 
     def self. provide_payload( the_yield, action: :post )
       unless the_yield.is_a? Hash
@@ -216,42 +212,11 @@ module Arcade
 
 
 
-    # returns the json-response   ## retiered
-    def self.analyse_result r, command
-      if r.success?
-          return nil  if r.status == 204  # no content
-          result = JSON.parse( r.response_body, symbolize_names: true )[:result]
-          if result == [{}]
-           []
-          else
-            result
-          end
-        elsif r.timed_out?
-          raise Error "Timeout Error", caller
-          []
-        elsif r.response_code > 0
-          logger.error  "Execution Failure – Code: #{ r.response_code } – #{r.status_message} "
-          error_message = JSON.parse( r.response_body, symbolize_names: true )
-          logger.error  "ErrorMessage:  #{ error_message[:detail]} "
-          if error_message[:detail] =~ /Duplicated key/
-            raise IndexError, error_message[:detail]
-          else
-          # available fields:  :detail, :exception, error
-            puts  error_message[:detail]
-            #raise  error_message[:detail], caller
-          end
-        end
-    end
     def self.auth
        @a ||= { httpauth: :basic,
          username: Config.admin[:user],
          password: Config.admin[:pass] }
     end
 
-#  not tested
-    def self.delete_data command
-      result  = HTTPX.delete Config.base_uri + command, auth
-      analyse_result(result, command)
-    end
   end
 end

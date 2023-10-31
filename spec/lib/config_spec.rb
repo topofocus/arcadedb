@@ -9,6 +9,6 @@ RSpec.describe Arcade::Config do
   context "Top level keys" do
     subject { Arcade::Config.yml }
     it { expect( subject).to be_a Hash }
-    it { expect( subject.keys ).to eq [:pg, :environment, :admin, :logger, :namespace, :autoload] }
+    it { expect( subject.keys ).to eq [:environment, :admin, :logger, :namespace, :autoload] }
   end
 end

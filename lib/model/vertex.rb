@@ -29,13 +29,14 @@ module Arcade
       if args[:all] == true
         where = {}
       elsif args[:rid].present?
-        return db.execute { "delete vertex #{args[:rid]}" }.first["count"]
+        return db.transmit { "delete from #{args[:rid]}" }.first["count"]
       else
         where.merge!(args) if where.is_a?(Hash)
         return 0 if where.empty?
       end
       # query returns [{count => n }]
-      db.execute { "delete vertex #{database_name} #{compose_where(where)}"  } &.first[:count] rescue 0
+      puts "delete vertex #{database_name} #{compose_where(where)}"
+      db.transmit { "delete vertex `#{database_name}` #{compose_where(where)}"  } &.first[:count] rescue 0
     end
 
 =begin
@@ -48,7 +49,8 @@ module Arcade
     def self.create timestamp: true, **args
       #t= timestamp ?  ", created = Date(#{DateTime.now.to_i}) "  : ""
       t= timestamp ?  ", created = sysdate() "  : ""
-      db.execute { "create VERTEX #{database_name} set #{args.map{|x,y| [x,y.to_or].join("=")}.join(', ')+t}" } &.first.allocate_model(false)
+     # db.transmit { "create VERTEX #{database_name} set #{args.map{|x,y| [x,y.to_or].join("=")}.join(', ')+t}" } &.first.allocate_model(false)
+     Api.create_document  db.database, database_name, session_id: db.session,  **args
     end
 
 

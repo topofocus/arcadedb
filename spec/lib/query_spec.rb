@@ -242,7 +242,7 @@ RSpec.describe Arcade::Query do
 			context "model record based queries"  do
 				before( :all ) do
 					TestQuery.delete all: true
-				 @the_record =  TestQuery.create c:1
+				 @the_record =  TestQuery.insert c:1
 				end
 
 				it " simple update " do

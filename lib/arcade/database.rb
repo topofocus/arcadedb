@@ -17,12 +17,12 @@ module Arcade
     defines :environment
 
     def initialize  environment=:development
-      self.class.configure_logger( Config.logger ) 
-      @connection =  connect environment
+      self.class.configure_logger( Config.logger )
       if self.class.environment.nil?    # class attribute is set on the first call
                                         # further instances of Database share the same environment
         self.class.environment  environment
       end
+      @session_id = nil #  declare session_id
       self.class.namespace  Object.const_get( Config.namespace )
     end
 
@@ -39,20 +39,19 @@ module Arcade
     #
     def types refresh=false
       #  uses API
-      if $types.nil? || refresh
-       $types = Api.query(database, "select from schema:types"   )
-                   .map{ |x| x.transform_keys &:to_sym     }   #  symbolize keys
-                   .map{ |y| y.delete_if{|_,b,| b.empty? } }   #  eliminate  empty entries
+      if @types.nil? || refresh
+       @types = Api.query(database, "select from schema:types"   )
+                   .map{ |y| y.delete_if{|_,b,| b.blank? } }   #  eliminate  empty entries
       end
-      $types
-      ## upom startup, this is the first access to the database-server
+      @types
+      ## upon startup, this is the first access to the database-server
     rescue NoMethodError => e
       logger.fatal "Could not read Database Types. \n Is the database running?"
       Kernel.exit
     end
 
     def indexes
-      DB.types.find{|x| x.key? :indexes }[:indexes]
+      types.find{|x| x.key? :indexes }[:indexes]
     end
 
     # ------------ hierarchy -------------
@@ -108,14 +107,14 @@ module Arcade
           "create edge type #{type} "
         end.concat( args.map{|x,y| "#{x} #{y} "}.join)
       end
-      db= Api.execute database, &exe
+      dbe= Api.execute database, &exe
       types( true )  # update cached schema
-      db
+      dbe
 
     rescue HTTPX::HTTPError => e
 #      puts "ERROR:  #{e.message.to_s}"
       if e.status == 500 && e.message.to_s =~ /already exists/
-        Arcade::Database.logger.warn "Database type #{type} already present"
+        Arcade::Database.logger.debug "Database type #{type} already present"
       else
         raise
       end
@@ -125,10 +124,39 @@ module Arcade
 
     # ------------ drop type  -----------
     #  delete any record prior to the attempt to drop a type.
-    #  The `unsafe` option is nit implemented.
+    #  The `unsafe` option is not implemented.
     def drop_type  type
       Api.execute database, "drop type #{type} if exists"
     end
+
+    # ------------------------------  transaction ----------------------------------------------------- #
+    #  Encapsulates simple transactions
+    #
+    #  nested transactions are not supported.
+    #  * use the low-leve api.begin_tranaction for that purpose
+    #  * reuses an existing transaction
+    #
+    def begin_transaction
+      @session_id ||= Api.begin_transaction database
+    end
+    # ------------------------------  commit      ----------------------------------------------------- #
+    def commit
+     r = Api.commit( database, session_id: session)
+      @session_id = nil
+     true if r == 204
+     end
+
+    # ------------------------------  rollback    ----------------------------------------------------- #
+    #
+    def  rollback
+     r = Api.rollback( database, session_id: session)
+     @session_id = nil
+     true if r == 500
+    rescue HTTPX::HTTPError => e
+      raise
+     end
+
+
 
     # ------------ create  -----------
     # returns an rid of the successfully  created vertex or document
@@ -141,21 +169,34 @@ module Arcade
     #
     def create type, **params
       #  uses API
-      Api.create_document database, type,  **params
+      Api.create_document database, type,  session_id: session, **params
     end
 
+    # ------------------------------  insert     ------------------------------------------------------ #
+    #
+    # translates the given parameters to
+    # INSERT INTO [TYPE:]<type>|BUCKET:<bucket>|INDEX:<index>
+    #   [(<field>[,]*) VALUES (<expression>[,]*)[,]*]|
+    #   [CONTENT {<JSON>}|[{<JSON>}[,]*]]
+    #
+    #   :from and :return are not supported
+    #
+    # If a transaction is active, the insert is executed in that context.
+    # Nested transactions are not supported
     def insert  **params
 
-      content_params = params.except( :type, :bucket, :index, :from, :return )
+      content_params = params.except( :type, :bucket, :index, :from, :return, :session_id )
       target_params = params.slice( :type, :bucket, :index )
+#      session_id = params[:session_id]   # extraxt session_id  --> future-use? 
       if  target_params.empty?
-        logger.error "Could not insert: target mising (type:, bucket:, index:)"
+        raise "Could not insert: target missing (type:, bucket:, index:)"
       elsif content_params.empty?
         logger.error "Nothing to Insert"
       else
         content =  "CONTENT #{ content_params.to_json }"
         target =  target_params.map{|y,z|  y==:type ?  z : "#{y.to_s} #{ z } "}.join
-        Api.execute( database, "INSERT INTO #{target} #{content} ") &.first.allocate_model(false)
+        result = Api.execute( database, session_id: session ){ "INSERT INTO #{target} #{content} "}
+        result &.first.allocate_model(false)
       end
     end
 
@@ -178,103 +219,61 @@ module Arcade
       rid =  rid.join(':')
       rid = rid[1..-1] if rid[0]=="#"
       if rid.rid?
-        Api.query( database, "select from #{rid}" ).first &.allocate_model(autocomplete)
+        Api.query( database, "select from #{rid}", session_id: session ).first &.allocate_model(autocomplete)
       else
         raise Arcade::QueryError "Get requires a rid input", caller
       end
     end
 
-    # ------------------------------  property        ------------------------------------------------- #
-    # Adds properties to the type
+    # ------------------------------  get        ------------------------------------------------------ #
     #
-    #  call via
-    #  Api.property <database>, <type>, name1: a_format , name2: a_format
+    #  Delete the specified rid
     #
-    #  Format is one of
-    #   Boolean, Integer, Short, Long, Float, Double, String
-    #   Datetime, Binary, Byte, Decimal, Link
-    #   Embedded, EmbeddedList, EmbeddedMap
-    #
-    #   In case of an Error,  anything is rolled back and nil is returned
-    #
-    def self.property database, type, **args
-
-      begin_transaction database
-      success = args.map do | name, format |
-        r= execute(database) {" create property #{type.to_s}.#{name.to_s} #{format.to_s} " } &.first
-        if r.nil?
-          false
-        else
-          r.keys == [ :propertyName, :typeName, :operation ] && r[:operation] == 'create property'
-        end
-      end.uniq
-      if success == [true]
-        commit database
-        true
-      else
-        rollback database
-      end
-
-
-    end
-
-    # ------------------------------ index            ------------------------------------------------- #
-    def self.index database, type,  name ,  *properties
-      properties = properties.map( &:to_s )
-      unique_requested = "unique" if properties.delete("unique")
-      unique_requested = "notunique" if  properties.delete("notunique" )
-      automatic = true if
-      properties << name  if properties.empty?
-    end
-
     def delete rid
-      r =  Api.execute( database ){ "delete from #{rid}" }
+      r =  Api.execute( database, session_id: session ){ "delete from #{rid}" }
       success =  r == [{ :count => 1 }]
     end
 
+    # ------------------------------  transmit   ------------------------------------------------------ #
+    # transmits a command  which potentially modifies the database
+    #
+    # Uses the given session_id for transaction-based operations
+    #
+    # Otherwise just performs the operation
+
+    def transmit   &block
+      response = Api.execute database,  session_id: session, &block
+      if  response.is_a? Hash
+           _allocate_model res
+      else
+           response
+      end
+    end
+    # ------------------------------  execute    ------------------------------------------------------ #
     # execute a command  which modifies the database
     #
     # The operation is performed via Transaction/Commit
     # If an Error occurs, its rolled back
     #
+    # If a transaction is already active, a nested transation is initiated
+    #
     def execute   &block
-      s = Api.begin_transaction database
-  #    begin
-      response = Api.execute database, nil, s, &block
-    #  rescue HTTPX::HTTPError => e
-    #    raise e.message
-    #    puts  e.methods
-    #    puts e.status
-    #    puts e.response
-    #    puts e.message
-    #    puts e.exception
-    #    puts e.cause
-    #  end
-      # puts response.inspect  # debugging
+      # initiate a new transaction
+     s= Api.begin_transaction database
+      response = Api.execute database,  session_id: s,  &block
       r= if  response.is_a? Hash
-           _allocate_model res
-#         elsif response.is_a? Array
-           # remove empty results
-#           response.delete_if{|y| y.empty?}
-          # response.map do | res |
-          #   if res.key? :"@rid"
-          #     allocate_model res
-          #   else
-          #     res
-          #   end
-          # end
+           _allocate_model response
          else
            response
          end
-     if Api.commit( database, s) == 204
+     if Api.commit( database, session_id: s) == 204
         r # return associated array of Arcade::Base-objects
      else
        []
      end
-    rescue  Dry::Struct::Error, HTTPX::HTTPError, Arcade::QueryError => e
-      Api.rollback database, s
-      logger.error "Execution  FAILED -->  Status #{e.status}"
- #     logger.error "Execution  FAILED --> #{e.exception.message}"
+    rescue  Dry::Struct::Error, HTTPX::HTTPError => e
+      Api.rollback database, session_id: s, log: false
+      logger.info "Execution  FAILED -->  Status #{e.status}"
       []  #  return empty result
     end
 
@@ -283,7 +282,7 @@ module Arcade
     # detects database-records and  allocates them as model-objects
     #
     def query  query_object
-      Api.query database, query_object.to_s
+      Api.query database, query_object.to_s, session_id: session
     end
 
     #  returns an array of rid's   (same logic as create)
@@ -292,20 +291,12 @@ module Arcade
       content = attributes.empty? ?  "" : "CONTENT #{attributes.to_json}"
       cr = ->( f, t ) do
         begin
-        edges = Api.execute( database, "create edge #{edge_class} from #{f.rid} to #{t.rid} #{content}").allocate_model(false)
+          cmd = -> (){  "create edge #{edge_class} from #{f.rid} to #{t.rid} #{content}" }
+        edges = transmit( &cmd ).allocate_model(false)
         rescue HTTPX::HTTPError => e
-         # if e.status == 503
-         #   puts e.status
-         # puts e.message
-         # puts e.message.class
-         # end
           raise unless e.message =~ /Found duplicate key/
          puts "#"+e.message.split("#").last[0..-3]
         end
-        #else
-        #  logger.error "Could not create Edge  #{edge_class} from #{f} to #{t}"
-        ##  logger.error edges.to_s
-        #end
       end
       from =  [from] unless from.is_a? Array
       to =  [to] unless to.is_a? Array
@@ -316,52 +307,12 @@ module Arcade
 
     end
 
-
-    # query all:  select @rid, *  from {database}
-
-#  not used
- #  def get_schema
- #    query( "select from schema:types" ).map do |a|
- #      puts "a: #{a}"
- #      class_name = a["name"]
- #      inherent_class =  a["parentTypes"].empty? ? [Object,nil] : a["parentTypes"].map(&:camelcase_and_namespace)
- #       namespace, type_name = a["type"].camelcase_and_namespace
- #       namespace= Arcade if namespace.nil?
- #      klass=  Dry::Core::ClassBuilder.new(  name: type_name,
- #                                          parent: nil,
- #                                          namespace:  namespace).call
- #    end
- #  rescue NameError
- #    logger.error "Dataset type #{e} not defined."
- #    raise
- #  end
-   #  Postgres is not implemented
-   # connects to the database and initialises @connection
-    def connection
-      @connection
+    def session
+      @session_id
     end
 
-    def connect environment=:development   # environments:  production devel test
-      if [:production, :development, :test].include? environment
-
-        #  connect through the ruby  postgres driver
-#       c= PG::Connection.new  dbname: Config.database[environment],
-#         user: Config.username[environment],
-#         password: Config.password[environment],
-#         host:  Config.pg[:host],
-#         port:  Config.pg[:port]
-#
-     end
-    rescue PG::ConnectionBad => e
-      if e.to_s  =~  /Credentials/
-        logger.error  "NOT CONNECTED ! Either Database is not present or credentials (#{ Config.username[environment]} / #{Config.password[environment]}) are wrong"
-        nil
-      else
-        raise
-      end
-    end  # def
-
-
-
+    def session?
+      !session.nil?
+    end
   end  # class
 end  #  module

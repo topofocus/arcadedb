@@ -6,5 +6,8 @@ module Arcade
    # def accepted_methods
    #
    # end
+   def self.create **attributes
+     Api.create_document  db.database, database_name, session_id: db.session,  **attributes
+   end
   end
 end

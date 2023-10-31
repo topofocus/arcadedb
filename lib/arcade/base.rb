@@ -27,6 +27,16 @@ module Arcade
         self.name.snake_case
       end
 
+      def begin_transaction
+        db.begin_transaction
+      end
+      def  commit
+        db.commit
+      end
+      def rollback
+        db.rollback
+      end
+
       def create_type
         the_class = nil   # declare as local var
         parent_present = ->(cl){ db.hierarchy.flatten.include? cl }
@@ -118,8 +128,10 @@ module Arcade
       #        (not supported (jet): [RETURN <expression>] [FROM <query>] )
 
       def insert **attributes
-        db.insert type: database_name, **attributes
+        db.insert type: database_name, session_id: attributes.delete(:session_id), **attributes
       end
+
+      alias  create insert
 
       ## ----------------------------------------- create       ---------------------------------- ##
       #
@@ -128,21 +140,21 @@ module Arcade
       #  returns the model dataset
       #  ( depreciated )
 
-      def  create **attributes
-        s = Api.begin_transaction db.database
-        attributes.merge!( created: DateTime.now ) if timestamps
-        record = insert **attributes
-        Api.commit db.database, s
-        record
-      rescue QueryError => e
-        db.logger.error "Dataset NOT created"
-        db.logger.error "Provided Attributes: #{ attributes.inspect }"
-       #  Api.rollback db.database   --->  raises "transactgion not begun"
-      rescue  Dry::Struct::Error => e
-        Api.rollback db.database
-        db.logger.error "#{ rid } :: Validation failed, record deleted."
-        db.logger.error e.message
-      end
+     # def  create **attributes
+     #   s = Api.begin_transaction db.database
+     #   attributes.merge!( created: DateTime.now ) if timestamps
+     #   record = insert **attributes
+     #   Api.commit db.database, s
+     #   record
+     # rescue HTTPX::HTTPError => e
+     #   db.logger.error "Dataset NOT created"
+     #   db.logger.error "Provided Attributes: #{ attributes.inspect }"
+     #   Api.rollback db.database  # --->  raises "transactgion not begun"
+     # rescue  Dry::Struct::Error => e
+     #   Api.rollback db.database
+     #   db.logger.error "#{ rid } :: Validation failed, record deleted."
+     #   db.logger.error e.message
+     # end
 
       def count  **args
         command = "count(*)"
@@ -367,6 +379,9 @@ module Arcade
 				 end
 			"%s : %s" % [ attr, v]  unless v.nil?
 		end.compact.sort.join(', ') + ">".gsub('"' , ' ')
+
+    rescue TypeError => e
+      attributes
     end
 
 

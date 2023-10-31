@@ -32,7 +32,7 @@ RSpec.describe Arcade::Document do
   end
   context "Add a record" do
    it "create a document" do
-      document =  Arcade::TestDocument.create name: 'Hugo', age: 40, item: 1
+      document =  Arcade::TestDocument.insert name: 'Hugo', age: 40, item: 1
       expect( document ).to be_a Arcade::TestDocument
       expect( document.rid ).to  match /\A[#]{,1}[0-9]{1,}:[0-9]{1,}\z/
       expect( document.name ).to eq "Hugo"
@@ -72,12 +72,12 @@ RSpec.describe Arcade::Document do
       expect( document.item ).to eq 7
       expect( Arcade::TestDocument.count ).to eq 2
       d =  Arcade::TestDocument.update! set:{ name: 'Zwerg', age: 60, item: 7}, where: { name: 'Zwerg' }
-      puts d.inspect
       expect( d ).to be_a Integer
       expect( d ).to eq 1
     end
    it "add a record through inheritance" do
-      document =  Arcade::DepTestDoc.create name: 'HugoTester', age: 140, item: 1
+     # insert returns a document
+      document =  Arcade::DepTestDoc.insert name: 'HugoTester', age: 140, item: 1
       expect( document ).to be_a Arcade::TestDocument
       expect( document.rid ).to  match /\A[#]{,1}[0-9]{1,}:[0-9]{1,}\z/
       expect( document.name ).to eq "HugoTester"
@@ -88,11 +88,22 @@ RSpec.describe Arcade::Document do
     end
 
    it "select a record " do   # where returns an Array, even if only one record is  selected
-      document =  Arcade::DepTestDoc.create name: 'BertaTester', age: 40, item: 6
-      expect(  Arcade::DepTestDoc.where( item: 6 )&.first ).to eq document
-      expect(  Arcade::DepTestDoc.where( name: 'BertaTester' ) &.first ).to eq document
-      expect(  Arcade::DepTestDoc.where( "name like \"BertaTester\" ") &.first ).to eq document
-   end 
+      rid =  Arcade::DepTestDoc.create name: 'BertaTester', age: 40, item: 6
+      expect(  Arcade::DepTestDoc.where( item: 6 )&.first ).to eq rid
+      expect(  Arcade::DepTestDoc.where( name: 'BertaTester' ) &.first ).to eq rid
+      expect(  Arcade::DepTestDoc.where( "name like \"BertaTester\" ") &.first ).to eq rid
+   end
+
+   it "create within a transaction"  do
+      Arcade::DepTestDoc.begin_transaction
+      rid =  Arcade::DepTestDoc.create  name: 'TransactionTester', age: 41, item: 7
+      #expect{ rid.expand }.to  raise_error( HTTPX::HTTPError )
+      expect(  Arcade::DepTestDoc.where( item: 7 )&.first ).to eq rid
+      Arcade::DepTestDoc.rollback
+      expect(  Arcade::DepTestDoc.where( item: 7 )&.first ).to  be_nil
+   end
+
+
 
   end
 end
