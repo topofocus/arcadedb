@@ -35,8 +35,8 @@ module Arcade
         return 0 if where.empty?
       end
       # query returns [{count => n }]
-      puts "delete vertex #{database_name} #{compose_where(where)}"
-      db.transmit { "delete vertex `#{database_name}` #{compose_where(where)}"  } &.first[:count] rescue 0
+      puts "delete from  #{database_name} #{compose_where(where)}"
+      db.transmit { "delete  from `#{database_name}` #{compose_where(where)}"  } &.first[:count] rescue 0
     end
 
 =begin
@@ -73,8 +73,17 @@ module Arcade
       def expand
         self
       end
-    # Supports where:  -->  Strategie.first nodes  where: {size: 10}
-    # "select  both()[ size = 10  ]  from #113:8 "
+    #  ---------------------------------   Nodes   ----------------------------------------------- #
+      #  fetches adjacet nodes
+      #  supported
+      #  nodes  in_or_out =  :in, :out, :both, :inE, :outE
+      #         via       =   Arcade Database Type (the ruby class)
+      #         where     =   a condition
+      #                      inE, outE  -->  matches attributes on the edge
+      #                      in, out, both -> matches attributes on the adjacent vertex
+      #  Example  Strategie.first nodes  where: {size: 10}
+      #  "select  both()[ size = 10  ]  from #113:8 "
+      #
     def nodes in_or_out=:both, depth= 1, via: nil , execute: true, **args
       s =  Query.new from: rid
       s.nodes in_or_out, via: via, **args

@@ -23,3 +23,4 @@ All notable changes to this project will be documented in this file.
 - Type.query performs idempotent queries 
 - Type.create returns a rid
 - Type.insert returns a type-object
+- Vertex.nodes supports conditions on edges

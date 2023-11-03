@@ -61,9 +61,8 @@ They operate similar to ActiveRecord Model Objects but are based on [Dry-Struct]
 ```ruby
 # Example model file  /model/demo/user.rb
 module Demo
-  class Person < Arcade::Vertex
+  class User < Arcade::Vertex
     attribute :name, Types::Nominal::String
-    timestamps true
     
     def grandparents
       db.query( "select in('is_family') from #{rid} ") &.allocate_model
@@ -75,7 +74,7 @@ __END__
   CREATE INDEX on demo_user( name ) UNIQUE
 ```
 
-Only the `name` attribute is declared. Timestamps (created & updated attributes) are included, too
+Only the `name` attribute is declared. 
 
 `Demo::User.create_type`  creates the type and executes provided database-commands after __END__.   
 
@@ -91,6 +90,43 @@ persons.first.update father: Person.create( name: 'Mike', age: 94 )
 Person.all
 Person.delete all: true || where: age: 56 , ...
 ```
+
+### Nodes and Traverse
+
+`ArcadeDB` wraps common queries of bidirectional connected vertices.
+
+Suppose
+```ruby 
+m = Person.create name: 'Hubert', age: '25'
+f = Person.create name: 'Pauline', age: '28'
+m.assign via: IsMarriedTo, vertex: f , divorced: false
+
+```
+This creates the simple graph 
+>  Hubert --- is_married_to --> Pauline 
+>                  |
+>                  -- divorced (attribute on the edge)
+
+This can be queried through
+
+```ruby
+hubert =  Person.find name: 'Hubert'
+pauline = hubert.nodes( :out, via: IsMarriedTo ).first
+
+```
+Conditions may be set, to. 
+```ruby
+hubert.nodes( :out, via: IsMarriedTo, where: "age < 30" )
+```
+gets all wives of hubert, who are younger then 30 years.  
+or
+```ruby
+Person.nodes( :outE, via: IsMarriedTo, where: { divorced: false } )
+
+```
+gets all wives where the divorced-condition, which is set on the edge, is false. 
+
+## Query
 
 A **Query Preprocessor** is implemented. Its adapted from ActiveOrient. The [documentation](https://github.com/topofocus/active-orient/wiki/OrientQuery)
 is still valid,  however the class has changed to `Arcade::Query`. 
@@ -118,7 +154,7 @@ $ DB.create_edge <name>, from: <rid> or [rid, rid, ..] , to: <rid> or [rid, rid,
 **Convert database input to Arcade::Base Models**
 
 Either  `DB.query` or  `DB.execute` return the raw JSON-input from the database. It can always converted to model-objects by chaining
-`allocatet_model`.
+`allocate_model` or `select_result`.
 
 ```ruby
 $ DB.query "select from my_names limit 1"

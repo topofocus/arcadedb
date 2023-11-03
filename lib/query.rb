@@ -324,14 +324,16 @@ end # class << self
 			 condition = where.present? ?  "[ #{generate_sql_list(where)} ]" : ""
        via = resolve_edge_name(via) unless via.nil?
 
-       start =  if in_or_out.is_a? Symbol
-                  in_or_out.to_s
-                elsif in_or_out.is_a? String
-                  in_or_out
-								else
-									"both"
-								end
-			 argument = " #{start}(#{via})#{condition} "
+       argument = if in_or_out.to_s[-1] == 'E'
+                    case in_or_out.to_s[0..-2]
+                    when 'in'
+                      "inE(#{via})#{condition}.outV()"
+                    when 'out'
+                      "outE(#{via})#{condition}.inV()"
+                    end
+                  else
+                    "#{in_or_out.to_s}(#{via})#{condition}"
+                  end
 
 			 if expand.present?
 				 send :expand, argument

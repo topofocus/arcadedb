@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    arcadedb (0.4)
+    arcadedb (0.4.1)
       dry-configurable
       dry-core
       dry-schema
@@ -65,7 +65,7 @@ GEM
       guard-compat (~> 1.1)
       rspec (>= 2.99.0, < 4.0)
     http-2-next (1.0.1)
-    httpx (1.0.2)
+    httpx (1.1.0)
       http-2-next (>= 1.0.1)
     ice_nine (0.11.2)
     listen (3.8.0)

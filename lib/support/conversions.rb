@@ -63,6 +63,7 @@ module Arcade
       #
 
       def select_result condition=nil
+        return [] if self.empty?
         condition = first.keys.first if condition.nil?
         map{|x| x[condition.to_sym]}.flatten.allocate_model
       end

@@ -203,7 +203,7 @@ module Arcade
                                       [ :serializer, value.to_sym ]
                                     end
                                   when :language
-                                    if [:sql, :cypher, :gremlin, :neo4j ].include? value.to_sym
+                                    if [:sql, :cypher, :gremlin, :neo4j, :sqlscript, :graphql, :mongo ].include? value.to_sym
                                       [ :language,  value.to_sym ]
                                     end
                                   end # case

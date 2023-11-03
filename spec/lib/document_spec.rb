@@ -11,7 +11,7 @@ require 'database_helper'
 RSpec.describe Arcade::Document do
   before(:all) do
     clear_arcade
-    DB = Arcade::Database.new :test
+    DB = Arcade::Init.db
     Arcade::DepTestDoc.create_type
   end
 
@@ -95,13 +95,25 @@ RSpec.describe Arcade::Document do
    end
 
    it "create within a transaction"  do
-      Arcade::DepTestDoc.begin_transaction
+      DB.begin_transaction
       rid =  Arcade::DepTestDoc.create  name: 'TransactionTester', age: 41, item: 7
       #expect{ rid.expand }.to  raise_error( HTTPX::HTTPError )
       expect(  Arcade::DepTestDoc.where( item: 7 )&.first ).to eq rid
-      Arcade::DepTestDoc.rollback
+      DB.rollback
       expect(  Arcade::DepTestDoc.where( item: 7 )&.first ).to  be_nil
    end
+
+   it " Add a link  to the document" do
+      primary_document =  Arcade::TestDocument.insert name: 'Fred', age: 40, item: 4
+      dependend_document =  Arcade::TestDocument.insert name: 'Berta', age: 50, item: 5
+      modified_document = primary_document.update dep: dependend_document
+      expect( modified_document.dep ).to eq dependend_document
+
+
+
+
+   end
+
 
 
 
