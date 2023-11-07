@@ -44,13 +44,19 @@ end
 
 RSpec.describe Arcade::Vertex do
   before(:all) do
-    clear_arcade
-    DB = Arcade::Database.new :test
+    connect
+    db = Arcade::Init.db
+    db.begin_transaction
     My::V2.create_type
     My::V3.create_type
     My::E2.create_type
     My::E3.create_type
   end
+  after(:all) do
+     db = Arcade::Init.db
+     db.rollback
+  end
+
 	describe "CRUD", focus: true  do
 		Given( :the_vertex ){ My::V2.insert a: "a", b: 2, c: [1,2,3] , d: {a: 'b'}}
 		context " create" do

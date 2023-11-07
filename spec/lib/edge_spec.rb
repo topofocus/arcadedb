@@ -5,13 +5,18 @@ require 'rspec/given'
 
 include Arcade
 
-RSpec.describe Arcade::Query do
+RSpec.describe Arcade::Edge do
   before( :all ) do
-    clear_arcade
-    DB= Arcade::Database.new :test
+    connect
+    db = Arcade::Init.db
+    db.begin_transaction
     Arcade::Node.create_type
     Arcade::UniqEdge.create_type
   end # before
+  after(:all) do
+     db = Arcade::Init.db
+     db.rollback
+  end
 
 
  context "non unique edges"  do

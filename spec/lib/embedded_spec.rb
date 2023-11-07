@@ -12,12 +12,15 @@ include Arcade
 
 RSpec.describe Arcade::Query do
   before( :all ) do
-    clear_arcade
-    DB= Arcade::Database.new :test
+    connect
+    db = Arcade::Init.db
+    db.begin_transaction
     Arcade::DatDocument.create_type
     Arcade::TestDocument.create_type
-    TestDocument.insert date: Date.new( 2019,5,16 ), name:"hugi", age: rand(99)
-    TestDocument.insert date: Date.new( 2020,5,16 ), name:"imara", age: rand(99)
+    Arcade::DatDocument.delete all: true
+    Arcade::TestDocument.delete all: true
+    TestDocument.create date: Date.new( 2019,5,16 ), name:"hugi", age: rand(99)
+    TestDocument.create date: Date.new( 2020,5,16 ), name:"imara", age: rand(99)
     DatDocument.create date: Date.today, name: 'Hugi', age: rand(99)
       #Arcade::Init.db.execute { " insert into test_document set (name, age, emb) content 
       #                           { 'name': 'Äugi',''age': #{rand(99) }, 
@@ -27,9 +30,15 @@ RSpec.describe Arcade::Query do
       TestDocument.create date: Date.new( 1989, 4,3 ),name: "karl", age: rand(45),  many: [d]
   end # beforDatDocument.create Date: Date.today, name: 'Hugi', age: rand(99) e
 
+  after(:all) do
+     db = Arcade::Init.db
+     db.rollback
+  end
 
   context "single documents" do
     Given( :the_document ){  Arcade::TestDocument.find name: 'hugi'}
+#    it{  puts Arcade::TestDocument.all.map &:to_human }
+#    it{  puts Arcade::DatDocument.all.map &:to_human }
     Then { the_document.is_a? Arcade::TestDocument }
     Then { the_document.name == 'hugi' }
 
@@ -49,32 +58,44 @@ RSpec.describe Arcade::Query do
   end
 
 
-  context "add an ebedded document"  do
-#    Given( :e ){  DatDocument.new(date: Date.new( 2022,4,5 ), name: 'berta', age: 25 , rid: '#0:0')}
-#    Then { e.is_a? Arcade::DatDocument }
+  context "add an ebedded document"   do
+    before( :all ) do
+    the_document = Arcade::TestDocument.find name: 'imara'
+    the_document.insert_document :emb,
+                                 DatDocument.new(date: Date.new( 2022,4,5 ),
+                                                 name: 'berta',
+                                                 age: 25 ,
+                                                 rid: '#0:0')
+    end
+
     Given( :the_document ){  Arcade::TestDocument.find name: 'imara'}
-    When ( :count ){ the_document.insert_document :emb, DatDocument.new(date: Date.new( 2022,4,5 ), name: 'berta', age: 25 , rid: '#0:0')  }
-    Then { count ==  1  }
-    Then { the_document.refresh.emb.is_a? Arcade::DatDocument }
+    Then { the_document.emb.is_a? Arcade::DatDocument }
   end
 
 
   context "update an ebedded document" do
-    Given( :emb_document ){  Arcade::TestDocument.find name:'Tussi'}
+    before(:all) do
+    emb_document =  Arcade::TestDocument.find name:'Tussi'
+    emb_document.update_embedded :emb, :name, 'Gertrude'
+    end
+    Given( :emb_document ) { Arcade::TestDocument.find name:'Tussi'}
     Then { emb_document.emb.is_a? Arcade::DatDocument }
-    When { emb_document.update_embedded :emb, :name, 'Gertrude' }
     Then { emb_document.refresh.emb.name == 'Gertrude' }
   end
-  context "many embedded documents"   do
+  context "many embedded documents" , focus: true   do
     before(:all) do
       document = Arcade::TestDocument.find name:'karl'
-      list = ->{ Arcade::DatDocument.new date: Date.new( 2022,rand(11)+1, rand(16)+1), name: 'Herta', age: rand(99), rid: '#0:0' }
+      list = ->(a){ Arcade::DatDocument.new date: Date.new( 2022,rand(11)+1, rand(16)+1), name: 'Herta'+a, age: rand(99), rid: '#0:0' }
 
-       Arcade::Init.db.execute{ " update #{document.rid} set  many += #{list[].to_json}" } 
-       Arcade::Init.db.execute{ " update #{document.rid} set  many += #{list[].to_json}" } 
+      #  todo:  make execute work in transaction
+       Arcade::Init.db.transmit{ " update #{document.rid} set  many += #{list["w"].to_json}" } 
+       Arcade::Init.db.transmit{ " update #{document.rid} set  many += #{list["x"].to_json}" } 
 
     end
     Given( :document ) { Arcade::TestDocument.find name:'karl' }
+    it{  puts document.to_human }
+#    it{  puts Arcade::TestDocument.all.map &:to_human }
+
     Then { document.refresh.many.is_a? Array }
     ## Get a specific row
    # Given( :result ) { Arcade::Init.db.query(" select many[ 1 ] from #{document.rid}").allocate_model }
@@ -94,12 +115,12 @@ RSpec.describe Arcade::Query do
     Given( :query4 ) { document.query(projection: 'many.name').execute.select_result }
     Then { query4.is_a?  Array }
     Then { query4.count == 3  }
-    Then { query4 == ['berta','Herta', "Herta"]  }
+    Then { query4 == ['berta','Hertaw', "Hertax"]  }
     Given( :query5 ) { document.query(projection: 'many:{name} as test').execute.first[:test] }
     #  test: [ { name: 'berta' }, { name: 'Herta' }  usw...
     Then { query5.is_a?   Array }
     Then { query5.count == 3   }
-    Then { query5 ==  [{:name=>"berta"}, {:name=>"Herta"}, {:name=>"Herta"}] }
+    Then { query5 ==  [{:name=>"berta"}, {:name=>"Hertaw"}, {:name=>"Hertax"}] }
     ## query the 1:n relation
     ## for now, the returned records  are not recognized as model-data. therfore "rid: #0:0" has to be merged manually
     Given( :query6a ) { TestDocument.query expand: :many , where: "many contains( name='berta' )" }

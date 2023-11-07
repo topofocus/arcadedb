@@ -10,14 +10,18 @@ end
 
 RSpec.describe "Edges" do
   before( :all ) do
-    clear_arcade
-    DB = Arcade::Database.new :test
+    connect
+    db = Arcade::Init.db
+    db.begin_transaction
 
     Arcade::BaseNode.create_type
     Arcade::Node.create_type
     Arcade::ExtraNode.create_type
     Arcade::Connects.create_type
-    #   c.uniq_index
+  end
+  after(:all) do
+     db = Arcade::Init.db
+     db.rollback
   end
 
 

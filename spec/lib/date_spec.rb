@@ -20,8 +20,9 @@ include Arcade
 
 RSpec.describe Arcade::Query do
   before( :all ) do
-    clear_arcade
-    DB= Arcade::Database.new :test
+    connect
+    db = Arcade::Init.db
+    db.begin_transaction
     Arcade::DatDocument.create_type
 #CREATE PROPERTY dat_document.date DATE
 #CREATE PROPERTY dat_document.name STRING
@@ -44,8 +45,11 @@ RSpec.describe Arcade::Query do
     d = DatDocument.new date: Date.new( 2022,4,5 ), name: 'berta', age: 25, rid: '#0:0'
 #  insert into list and embedded
     TestDocument.insert date: Date.new( 1989, 4,2 ),name: "Tussi", age: rand(45),  emb: d,  many: [d]
+  end # before
+  after(:all) do
+     db = Arcade::Init.db
+     db.rollback
   end
-
 
   context "single documents"  do
     Given( :the_document ){  TestDocument.find name: 'hugi'}

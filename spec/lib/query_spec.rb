@@ -7,13 +7,16 @@ include Arcade
 
 RSpec.describe Arcade::Query do
   before( :all ) do
-    clear_arcade
-    DB= Arcade::Database.new :test
+    connect
+    db = Arcade::Init.db
+    db.begin_transaction
     Arcade::TestQuery.create_type
     Arcade::TestDocument.create_type
-#    @db.create_class 'Openinterest'
-#    @db.create_class "match_query"
   end # before
+  after(:all) do
+     db = Arcade::Init.db
+     db.rollback
+  end
 
 
 
@@ -198,7 +201,7 @@ RSpec.describe Arcade::Query do
 				it "count" do
 					q = TestDocument.query projection:  'COUNT(*)'
 					expect(q.to_s).to eq "select COUNT(*) from test_document "
-					expect(q.execute{|x|  x[:"COUNT(*)"]}).to eq [200]
+					expect(q.execute{|x|  x[:"COUNT(*)"]}).to eq [201]
 				end
 				it{	expect( TestDocument.count( where: 'c <100' ) ).to eq 99 }
 

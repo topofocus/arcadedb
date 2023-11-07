@@ -14,9 +14,15 @@ require 'database_helper'
 #
 RSpec.describe Arcade::Document do
   before(:all) do
-    clear_arcade
-    DB = Arcade::Database.new :test
+    connect
+    db = Arcade::Init.db
+    db.begin_transaction
     Arcade::TestDocument.create_type
+    Arcade::TestDocument.delete all: true
+  end
+  after(:all) do
+     db = Arcade::Init.db
+     db.rollback
   end
 
 

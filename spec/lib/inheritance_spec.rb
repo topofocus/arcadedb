@@ -17,16 +17,20 @@ require 'database_helper'
 #
 RSpec.describe Arcade::Document do
   before(:all) do
-    clear_arcade
-    DB = Arcade::Database.new :test
+    connect
+    db = Arcade::Init.db
+    db.begin_transaction
     Arcade::BaseNode.create_type
     Arcade::ExtraNode.create_type
-#    Arcade::Connects.create_type 
+  end
+  after(:all) do
+     db = Arcade::Init.db
+     db.rollback
   end
 
 
   context "check environment" do
-    subject { DB.hierarchy }
+    subject { Arcade::Init.db.hierarchy }
     its(:first) { is_expected.to eq ['base_node'] }
     ## Detect Inheritance 
     its(:last)  { is_expected.to eq ['node', 'extra_node'] }

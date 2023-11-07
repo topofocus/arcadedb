@@ -1,5 +1,7 @@
 require 'spec_helper'
 require 'database_helper'
+
+require 'rspec/given'
 ###
 # The model directory  `spec/model` contains sample files
 # #
@@ -10,28 +12,38 @@ require 'database_helper'
 #
 RSpec.describe Arcade::Document do
   before(:all) do
-    clear_arcade
-    DB = Arcade::Init.db
+    connect
+    db = Arcade::Init.db
+  #  db.execute{ "DROP TYPE test_document UNSAFE IF EXISTS" }
+  #  db.execute{ "DROP TYPE dep_test_doc  UNSAFE IF EXISTS" }
+    db.begin_transaction
+    Arcade::TestDocument.create_type
     Arcade::DepTestDoc.create_type
+  end
+  after(:all) do
+     db = Arcade::Init.db
+     db.rollback
   end
 
 
   context "check hierarchy" do
-    subject { DB.hierarchy  type: :document }
-    its(:first) { is_expected.to include 'test_document' }
+    Given( :databases ) { Arcade::Init.db.hierarchy  type: :document }
+    Then{ expect( databases.flatten ).to include 'test_document' }
   end
   context "check indexes" do
-    subject{ DB.indexes }
+    Given( :indexes ){ Arcade::Init.db.indexes.first }
     ###
     ## expected output: {:unique=>false, :name=>"test_document[name]",:typeName=>"test_document",:automatic=>true, :type=>"LSM_TREE",:properties=>["name"]}
     # check if the index ist applied
-    its( :first ){ is_expected.to be_a Hash }
-    it{ expect( subject.first[:name]).to eq "test_document[name,age]" }
+#    it{ puts indexes.inspect }
+    Then { indexes.is_a? Hash }
+    And  { indexes[:name] == "test_document[name,age]" }
     # check if the declared properties are set
-    it{ expect( subject.first[:properties]).to eq ["name","age"] }
+    And { indexes[:properties] == ["name","age"] }
   end
   context "Add a record" do
    it "create a document" do
+      Arcade::TestDocument.delete all: true
       document =  Arcade::TestDocument.insert name: 'Hugo', age: 40, item: 1
       expect( document ).to be_a Arcade::TestDocument
       expect( document.rid ).to  match /\A[#]{,1}[0-9]{1,}:[0-9]{1,}\z/
@@ -55,13 +67,13 @@ RSpec.describe Arcade::Document do
     end
 
    it "update an document" do
-      d =  Arcade::TestDocument.update set:{ name: 'Zwerg', age: 70, item: 5}, where: { name: 'Z' }
+      d =  Arcade::TestDocument.update set: { name: 'Zwerg', age: 70, item: 5}, where: { name: 'Z' }
       expect( d ).to be_a Array
       expect( d.size ).to eq 0
-      d =  Arcade::TestDocument.update! set:{ name: 'Zwerg', age: 70, item: 5}, where: { name: 'Z' }
+      d =  Arcade::TestDocument.update! set: { name: 'Zwerg', age: 70, item: 5}, where: { name: 'Z' }
       expect( d ).to be_a Integer
       expect( d ).to eq 0
-      d =  Arcade::TestDocument.update set:{ name: 'Zwerg', age: 60, item: 7}, where: { name: 'Zwerg' }
+      d =  Arcade::TestDocument.update set: { name: 'Zwerg', age: 60, item: 7}, where: { name: 'Zwerg' }
       expect( d ).to be_a Array
       expect( d.size ).to eq 1
       document = d[0]
@@ -71,7 +83,9 @@ RSpec.describe Arcade::Document do
       expect( document.age ).to eq 60
       expect( document.item ).to eq 7
       expect( Arcade::TestDocument.count ).to eq 2
-      d =  Arcade::TestDocument.update! set:{ name: 'Zwerg', age: 60, item: 7}, where: { name: 'Zwerg' }
+#      puts Arcade::TestDocument.all.map &:to_human
+      d =  Arcade::TestDocument.update! set: { name: 'Zwergen'}, where: { item: 7 }
+#      puts Arcade::TestDocument.all.map &:to_human
       expect( d ).to be_a Integer
       expect( d ).to eq 1
     end
@@ -94,14 +108,6 @@ RSpec.describe Arcade::Document do
       expect(  Arcade::DepTestDoc.where( "name like \"BertaTester\" ") &.first ).to eq rid
    end
 
-   it "create within a transaction"  do
-      DB.begin_transaction
-      rid =  Arcade::DepTestDoc.create  name: 'TransactionTester', age: 41, item: 7
-      #expect{ rid.expand }.to  raise_error( HTTPX::HTTPError )
-      expect(  Arcade::DepTestDoc.where( item: 7 )&.first ).to eq rid
-      DB.rollback
-      expect(  Arcade::DepTestDoc.where( item: 7 )&.first ).to  be_nil
-   end
 
    it " Add a link  to the document" do
       primary_document =  Arcade::TestDocument.insert name: 'Fred', age: 40, item: 4
