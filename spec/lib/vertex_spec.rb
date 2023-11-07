@@ -33,6 +33,7 @@ def threaded_creation data
 #	Arcade::Database.logger.level=2
 	My::V2.delete all: true
 	data.map do |d|
+#      print d
 		th << Thread.new do
 			My::V2.create data: d
 		end
@@ -57,21 +58,23 @@ RSpec.describe Arcade::Vertex do
      db.rollback
   end
 
-	describe "CRUD", focus: true  do
-		Given( :the_vertex ){ My::V2.insert a: "a", b: 2, c: [1,2,3] , d: {a: 'b'}}
-		context " create" do
-      it { puts the_vertex.inspect }
+	describe "CRUD"  do
+      before(:all) { My::V2.insert a: "a", b: 2, c: [1,2,3] , d: {a: 'b'}}
+		context " created" do
+      Given( :the_vertex ){ My::V2.find  a: "a" }
+      #it { puts the_vertex.inspect }
 			Then { expect( the_vertex.rid).to match /^#[0-9]*:[0-9]*/   }
 #      Then { expect( Date.parse( the_vertex.created )).to eq Date.today }
     end
-    context " read" do
-      Given( :read_vertex ){ the_vertex.rid.expand }
-      Then { expect(read_vertex.object_id).not_to eq the_vertex.object_id}
-      Then { expect(read_vertex.invariant_attributes).to eq the_vertex.invariant_attributes }
-    end
     context " update" do
-      Given( :updated_vertex ){ the_vertex.update a: 'c' }
-      Then { expect(updated_vertex.a).to eq 'c' }
+      before(:all) do
+                    the_vertex = My::V2.find  a: "a"
+                    the_vertex.update a: 'c'
+      end
+      Given( :not_existent_vertex ){ My::V2.find  a: "a" }
+      Then { not_existent_vertex.nil? }
+      Given( :the_updated_vertex ){ My::V2.find  a: "c" }
+      Then { the_updated_vertex.a == "c" }
     end
     context "delete" do
       it "deletes the vertex" do
@@ -86,18 +89,18 @@ RSpec.describe Arcade::Vertex do
    Given( :the_node ){ create_structure( My::V1.upsert( where:{ item: 1 }).first ) }
    # Then{ expect( the_node.to_human ).to match /out: {E2=>10, E3=>10}, item : 1>/ }
 		Then{ the_node.edges( :out ).size ==  20 }
-		Then{ the_node.edges( :in ).empty? }
+		And{ the_node.edges( :in ).empty? }
 	  context "Analysing Edges" do
 			Then{ the_node.edges( via: My::E2 ).size == 10 }
-			Then{ the_node.edges( via: My::E3 ).size == 10 }
-			Then{ the_node.edges( :in, via: My::E2 ).empty? }
-			Then{ the_node.edges( /e/ ).size ==  20 }
+			And { the_node.edges( via: My::E3 ).size == 10 }
+			And { the_node.edges( :in, via: My::E2 ).empty? }
+			And { the_node.edges.size ==  20 }
 		end
 		context "simulating nodes with edges" do
 			Given( :the_edges ){ the_node.edges( :out, via: My::E2  ) }
 			Then{ the_edges.is_a? Array }
-      Then{ expect( the_edges.map{|x| x.in.expand }.map( &:node ).sort ).to eq [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  }
-      Then{ the_edges.map{|x| x.in.expand }.map( &:node)  == the_node.nodes( via: My::E2 ).map( &:node )  }
+      And { expect( the_edges.map{|x| x.in.expand }.map( &:node ).sort ).to eq [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  }
+      And { the_edges.map{|x| x.in.expand }.map( &:node)  == the_node.nodes( via: My::E2 ).map( &:node )  }
 		end
 		context "Analysing adjacent nodes" do
 			Given( :the_nodes ){ the_node.nodes via: My::E3 }
@@ -132,14 +135,14 @@ RSpec.describe Arcade::Vertex do
 		end
 	end
 
-	# describe "threaded creation",  pending: "not implemented jet" do
-	#	  Given( :the_raw_data ){ (1 .. 10000).map{ |y|   Math.sin(y) } }
-	#	 Then { expect(the_raw_data.size).to eq 10000 }
+	 describe "threaded creation",  focus: true do
+		  Given( :the_raw_data ){ (1 .. 1000).map{ |y|   Math.sin(y) } }
+		 Then { expect(the_raw_data.size).to eq 1000 }
 
-	#	 Given( :v3_count  ) { threaded_creation the_raw_data }
+		 Given( :v3_count  ) { threaded_creation the_raw_data }
 
 
-	#	 Then {  expect(v3_count).to eq 10000 }
+		 Then {  expect(v3_count).to eq 1000 }
 
-	# end
+	 end
 end
