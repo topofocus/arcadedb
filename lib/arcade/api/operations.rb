@@ -138,18 +138,14 @@ module Arcade
       s= begin_transaction database
       success = args.map do | name, format |
         r= execute(database, session_id: s) {" create property #{type.to_s}.#{name.to_s} #{format.to_s} " } &.first
-        puts "R: #{r.inspect}"
-        if r.nil?
-          false
-        else
-          r[:operation] == 'create property'
-        end
+        r.nil? ?  false : r[:operation] == 'create property'
       end.uniq
       if success == [true]
-        commit database session_id: s
+        commit database, session_id: s
         true
       else
         rollback database log: false, session_id: s
+        false
       end
 
 

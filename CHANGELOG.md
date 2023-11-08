@@ -24,3 +24,5 @@ All notable changes to this project will be documented in this file.
 - Type.create returns a rid
 - Type.insert returns a type-object
 - Vertex.nodes supports conditions on edges
+- Vertex.in, Vertex.out Vertex.inE, Vertex.outE support depth as second parameter
+- IRuby-Support. Formatted output for Base-Objects

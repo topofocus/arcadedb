@@ -390,22 +390,28 @@ module Arcade
     def inspect
       to_human
     end
+#
 
     def to_html  # iruby
+      in_and_out = ->(r) { "[#{r}] : {#{self.in.count}->}{->#{self.out.count }}"   }
+      the_rid =  rid? && rid != "0:0" ? in_and_out[rid] : ""
       _modul, _class =  self.class.to_s.split "::"
       the_class =  _modul == 'Arcade' ? _class : self.class.to_s
-      IRuby.display IRuby.html "<b style=\"color: #50953DFF\"><#{ the_class}</b>"
-      + rid? ? "[#{ rid }]: " : " " + invariant_attributes.map do |attr, value|
-        v= case value
+       the_attribute = ->(v) do
+         case v
            when Base
-             "< #{ self.class.to_s.snake_case }: #{ value.rid } >"
+             "< #{ self.class.to_s.snake_case }: #{ v.rid } >"
            when Array
-             value.map{|x| x.to_s}
+             v.map{|x| x.to_s}
            else
-             value.from_db
+             v.to_s
            end
-        "%s : %s" % [ attr, v]  unless v.nil?
-      end.compact.sort.join(', ') + ">".gsub('"' , ' ')
+       end
+        last_part = invariant_attributes.map do |attr, value|
+          [ attr, the_attribute[value]].join(": ")
+      end.join(', ') 
+
+      IRuby.display( [IRuby.html("<span style=\"color: #50953DFF\"><b>#{the_class}</b><#{ the_class}</b>#{the_rid}</span><br/> ")  , IRuby.table(invariant_attributes) ])
     end
 
     def update **args

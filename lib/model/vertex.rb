@@ -13,31 +13,6 @@ module Arcade
     end
     ## ----------------------------------------- Class Methods------------------------------------ ##
     #                                                                                               #
-=begin
-    Vertex.delete fires a "delete vertex" command to the database.
-
-    To remove all records  use  »all: true« as argument
-
-    To remove a specific rid, use  rid: "#nn:mmm" as argument
-
-    "where" parameter is optional
-
-     ExtraNode.delete where: { item: 67  }  == ExtraNode.delete item: 67
-
-=end
-    def self.delete where: {} , **args
-      if args[:all] == true
-        where = {}
-      elsif args[:rid].present?
-        return db.transmit { "delete from #{args[:rid]}" }.first["count"]
-      else
-        where.merge!(args) if where.is_a?(Hash)
-        return 0 if where.empty?
-      end
-      # query returns [{count => n }]
-      puts "delete from  #{database_name} #{compose_where(where)}"
-      db.transmit { "delete  from `#{database_name}` #{compose_where(where)}"  } &.first[:count] rescue 0
-    end
 
 =begin
    Creates a Vertex-Instance.
@@ -77,27 +52,37 @@ module Arcade
       #  fetches adjacet nodes
       #  supported
       #  nodes  in_or_out =  :in, :out, :both, :inE, :outE
-      #         via       =   Arcade Database Type (the ruby class)
-      #         where     =   a condition
+      #         depth     =  fetch the n'th node through travese
+      #         via:      =  Arcade Database Type (the ruby class)
+      #         where:    =  a condition
       #                      inE, outE  -->  matches attributes on the edge
       #                      in, out, both -> matches attributes on the adjacent vertex
       #  Example  Strategie.first nodes  where: {size: 10}
       #  "select  both()[ size = 10  ]  from #113:8 "
       #
     def nodes in_or_out=:both, depth= 1, via: nil , execute: true, **args
-      s =  Query.new from: rid
-      s.nodes in_or_out, via: via, **args
-      if execute
-         s.query &.select_result
-       else
-         s  #  just return the query
-       end
+      if depth <= 1
+        s= query.nodes in_or_out, via: via, **args
+        execute ? s.query &.select_result : s
+      else
+       travese in_or_out, depth: depth, start_at: depth-1, via: via, execute: execute, where: args[:where]
+      end
     end
 
     # Supports where: { where condition for edges }
-    def edges in_or_out = :both, depth= 1, via: nil , execute: true, **args
-      in_or_out = in_or_out.to_s + "E"
-      nodes in_or_out, depth, via: via , execute: execute, **args
+    def edges in_or_out = :both, depth= 1, via: nil , execute: true
+
+      v = in_or_out.to_s.delete_suffix 'E'
+      e = v + 'E'
+      edge_name = via.nil? ? "" : resolve_edge_name( via )
+      argument =  "#{e}(#{edge_name})"
+      q= if depth > 1
+            repeated_argument = Array.new(depth -1 , "#{v}(#{edge_name})").join(".")
+            query.projection repeated_argument + "." + argument
+         else
+            query.projection  argument
+         end
+      execute ?  q.execute &.allocate_model : q
     end
 
 
@@ -131,17 +116,17 @@ module Arcade
 
     # get via-type-edges  through in
     def inE count=1, via:nil
-      nodes :inE,  count, via: via
+      edges :in,  count, via: via
     end
     #
     # get via-type-edges  through  out
     def outE count=1, via:nil
-      nodes :outE, count,  via: via
+      edges :out, count,  via: via
     end
 
     # get  all via-type-edges
     def bothE  count=1, via:nil
-      nodes :bothE, count, via: via
+      edges :both, count, via: via
     end
 
 
@@ -169,12 +154,7 @@ module Arcade
 			the_query.where where if where.present?
 			the_query.while "$depth < #{depth} " unless depth <=0
 			outer_query = Query.new from: the_query, where: "$depth >= #{start_at}"
-			if execute
-        outer_query.execute.allocate_model
-				else
-		#			the_query.from self  #  complete the query by assigning self
-					the_query            #  returns the Query  -traverse object
-				end
+			execute ?  outer_query.execute.allocate_model :  the_query # return only the traverse part
 		end
 
 =begin
@@ -216,12 +196,12 @@ Format: < Classname: Edges, Attributes >
 =end
 	def to_human
 
-    in_and_out = -> { "{#{self.in.count}->}{->#{self.out.count }}, " }
+    in_and_out =  "{#{inE.count}->}{->#{outE.count }}, "
 
 		#Default presentation of Arcade::Base::Model-Objects
 
 		"<#{self.class.to_s.snake_case}[#{rid}]:"  +
-      in_and_out[] +
+      in_and_out +
       invariant_attributes.map do |attr, value|
 			v= case value
 				 when  Class

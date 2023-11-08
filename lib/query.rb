@@ -316,8 +316,12 @@ end # class << self
 			 argument = " #{in_or_out}(#{via.to_or if via.present?})"
 		end
 		# adds a connection
-		#  in_or_out:  :out --->  outE('edgeClass').in[where-condition]
-		#              :in  --->  inE('edgeClass').out[where-condition]
+		#  in_or_out:  :out  --->  out('edgeClass')[where-condition]
+		#              :in   --->  in('edgeClass')[where-condition]
+    #              :inE  --->  inE('edgeClass')[where-condition].outV()
+    #              :outE --->  outE('edgeClass')[where-condition].inV()
+    #
+    # where conditions on both edges and vertices are not supported
 
 		def nodes in_or_out = :out, via: nil, where: nil, expand:  false
 
@@ -351,7 +355,7 @@ end # class << self
 		# returns nil if the query was not sucessfully executed
 		def execute(reduce: false, autoload: true )
 #      unless projection.nil?    || projection.empty?
-      result = db.execute { compose }
+      result = db.transmit { compose }
 			return nil unless result.is_a?(Array)
 			block_given?  ? result.map{|x| yield x }  : result
 #			return  result.first if reduce && result.size == 1

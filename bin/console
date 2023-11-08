@@ -113,11 +113,11 @@ loader.setup
 puts  "DB = Arcade::Database-instance"
 DB = Arcade::Init.connect e
 #require 'pry'
-if e.to_s[0] == 't'
-    DB.create_type :document, 'test_document'
-    DB.create_type :vertex, :test_vertex
-
-end
+#if e.to_s[0] == 't'
+#    DB.create_type :document, 'test_document'
+#    DB.create_type :vertex, :test_vertex
+#
+#end
 require 'irb'
 ARGV.clear
 
