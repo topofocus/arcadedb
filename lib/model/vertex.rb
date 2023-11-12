@@ -29,6 +29,30 @@ module Arcade
     end
 
 
+=begin
+    Vertex.delete fires a "delete vertex" command to the database.
+    To remove all records  use  »all: true« as argument
+    To remove a specific rid, use  rid: "#nn:mmm" as argument
+
+    The "where" parameter is optional
+
+    Example:
+    ExtraNode.delete where: { item: 67   }  == ExtraNode.delete item: 67
+=end
+    def self.delete where: {} , **args
+      if args[:all] == true
+        where = {}
+      elsif args[:rid].present?
+        return db.transmit { "delete from #{args[:rid]}"  }.first["count"]
+      else
+        where.merge!(args) if where.is_a?(Hash)
+        return 0 if where.empty?
+      end
+      # query returns [{count => n }]
+      #  puts "delete from  #{database_name} #{compose_where(where)}"
+      db.transmit { "delete  from `#{database_name}` #{compose_where(where)}"   } &.first[:count] rescue 0
+    end
+
 ## get adjacent nodes based on a query on the actual model
 
 
