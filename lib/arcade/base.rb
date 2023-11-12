@@ -390,29 +390,41 @@ module Arcade
     def inspect
       to_human
     end
-#
+
+
+    def html_attributes
+      invariant_attributes
+    end
+
+    def in_and_out_attributes
+      _modul, _class =  self.class.to_s.split "::"
+      the_class =  _modul == 'Arcade' ? _class : self.class.to_s
+      the_attributes = { :"CLASS" => the_class, :"IN" => self.in.count, :"OUT" =>  self.out.count, :"RID" => rid  }
+    end
 
     def to_html  # iruby
-      in_and_out = ->(r) { "[#{r}] : {#{self.in.count}->}{->#{self.out.count }}"   }
+      in_and_out = ->(r) { "[#{r}] : {#{self.in.count}->}{->#{self.out.count }}"    }
       the_rid =  rid? && rid != "0:0" ? in_and_out[rid] : ""
       _modul, _class =  self.class.to_s.split "::"
       the_class =  _modul == 'Arcade' ? _class : self.class.to_s
-       the_attribute = ->(v) do
-         case v
-           when Base
-             "< #{ self.class.to_s.snake_case }: #{ v.rid } >"
-           when Array
-             v.map{|x| x.to_s}
-           else
-             v.to_s
-           end
-       end
-        last_part = invariant_attributes.map do |attr, value|
-          [ attr, the_attribute[value]].join(": ")
-      end.join(', ') 
+      #    the_attribute = ->(v) do
+      #      case v
+      #        when Base
+      #          "< #{ self.class.to_s.snake_case  }: #{ v.rid  } >"
+      #        when Array
+      #          v.map{|x| x.to_s}
+      #        else
+      #          v.to_s
+      #        end
+      #    end
+      #     last_part = invariant_attributes.map do |attr, value|
+      #       [ attr, the_attribute[value] ].join(": ")
+      #   end.join(', ') 
 
-      IRuby.display( [IRuby.html("<span style=\"color: #50953DFF\"><b>#{the_class}</b><#{ the_class}</b>#{the_rid}</span><br/> ")  , IRuby.table(invariant_attributes) ])
+      # IRuby.display( [IRuby.html("<span style=\"color: #50953DFF\"><b>#{the_class}</b><#{ the_class }</b>#{the_rid}</span><br/> ")  , IRuby.table(html_attributes) ] )
+      IRuby.display IRuby.html("<span style=\"color: #50953DFF\"><b>#{the_class}</b><#{ the_class }</b>#{the_rid}</span>< #{ html_attributes.map{|_,v|  v }.join(', ')  } >")
     end
+
 
     def update **args
       Query.new( from: rid , kind: :update, set: args).execute
