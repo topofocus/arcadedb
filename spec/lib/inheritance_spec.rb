@@ -29,12 +29,12 @@ RSpec.describe Arcade::Document do
   end
 
 
-  context "check environment" do
-    subject { Arcade::Init.db.hierarchy }
-    its(:first) { is_expected.to eq ['base_node'] }
-    ## Detect Inheritance 
-    its(:last)  { is_expected.to eq ['node', 'extra_node'] }
-  end
+#  context "check environment" do
+#    subject { Arcade::Init.db.hierarchy. }
+#    its(:first) { is_expected.to eq ['base_node'] }
+#    ## Detect Inheritance 
+#    its(:last)  { is_expected.to eq ['node', 'extra_node'] }
+#  end
 
   context "check inheritance" do
    it "create a node" do

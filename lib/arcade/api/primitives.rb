@@ -17,8 +17,16 @@ module Arcade
 
     # ------------------------------  get data -------------------------------------------------------- #
     def get_data command
-      response = http.get( Config.base_uri + command )
-      response.raise_for_status
+      case response = http.get( Config.base_uri + command )
+        in {status: 200..299}
+          # success
+        JSON.parse( response.body, symbolize_names: true )[:result]
+         in {status: 400..}
+         raise Arcade::QueryError.new **response.json( symbolize_names: true  )
+      else
+        #   # http error
+             raise   response
+      end
 
       JSON.parse( response.body, symbolize_names: true )[:result]
       #      alternative to `raise for status `
@@ -41,9 +49,17 @@ module Arcade
 
     # ------------------------------ post data -------------------------------------------------------- #
     def post_data command,  payload
-      response = http.post( Config.base_uri + command, json:  payload )
-      response.raise_for_status
-      JSON.parse( response.body, symbolize_names: true )[:result]
+      case response = http.post( Config.base_uri + command, json:  payload )
+        in {status: 200..299}
+          # success
+        JSON.parse( response.body, symbolize_names: true )[:result]
+         in {status: 400..}
+           raise Arcade::QueryError.new **response.json( symbolize_names: true  )
+      else
+        #   # http error
+             raise   response
+      end
+  #    response.raise_for_status
     end
 
     # ------------------------------ transaction      ------------------------------------------------- #
@@ -60,19 +76,28 @@ module Arcade
     # ------------------------------ post transaction ------------------------------------------------- #
     def post_transaction command, params, session_id:
       http_a = http.with(  headers: { "arcadedb-session-id" => session_id } , debug_level: 1)
-      response = http_a.post( Config.base_uri + command, json:  params )
-      response.raise_for_status
-      JSON.parse( response.body, symbolize_names: true )[:result]
-
+      case response = http_a.post( Config.base_uri + command, json:  params )
+        in {status: 200..299}
+          # success
+        JSON.parse( response.body, symbolize_names: true )[:result]
+         in {status: 400..}
+           ## debug
+#          puts "Command: #{command}"
+#           puts "params: #{params}"
+#           puts response.json( symbolize_names: true  )
+           raise Arcade::QueryError.new **response.json( symbolize_names: true  )
+      else
+        #   # http error
+             raise   response
+      end
     end
 
     # ------------------------------ commit           ------------------------------------------------- #
     def commit database, session_id:
       http_a = http.with(  headers: { "arcadedb-session-id" => session_id } , debug_level: 1)
       response = http_a.post( Config.base_uri + "commit/#{database}" )
-      response.raise_for_status
       response.status  #  returns 204 --> success
-                       #          403 --> incalid credentials
+                       #          403 --> invalid credentials
                        #          500 --> Transaction  not begun
 
     end
@@ -81,7 +106,6 @@ module Arcade
     def rollback database, session_id: , log: true
       http_a = http.with(  headers: { "arcadedb-session-id" => session_id } , debug_level: 1)
       response = http_a.post( Config.base_uri + "rollback/#{database}" )
-      response.raise_for_status
       logger.info  "A Transaction has been rolled back"   if log
       response.status    # returns 500 !
     end

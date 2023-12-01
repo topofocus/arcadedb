@@ -311,17 +311,23 @@ end # class << self
 			self
     end
 
-		# connects by adding {in_or_out}('edgeClass')
-		def connect_with in_or_out, via: nil
-			 argument = " #{in_or_out}(#{via.to_or if via.present?})"
-		end
+#		# connects by adding {in_or_out}('edgeClass')
+#		def connect_with in_or_out, via: nil
+#			 argument = " #{in_or_out}(#{via.to_or if via.present?})"
+#		end
+
 		# adds a connection
 		#  in_or_out:  :out  --->  out('edgeClass')[where-condition]
 		#              :in   --->  in('edgeClass')[where-condition]
     #              :inE  --->  inE('edgeClass')[where-condition].outV()
     #              :outE --->  outE('edgeClass')[where-condition].inV()
     #
-    # where conditions on both edges and vertices are not supported
+    #  via:        Edge-Class
+    #  where:      Condition to be applied on the targed vertex (in_or_out = :in, :out, :both)
+    #                                or on the intermitted edge (in_or_out =  :inE, :outE, :bothE)
+    #              Condition ist inserted as "in_or_out[ condition ]"
+    #  Attention: ranges have to be included as array, ie [ 2..4 ]
+    #
 
 		def nodes in_or_out = :out, via: nil, where: nil, expand:  false
 

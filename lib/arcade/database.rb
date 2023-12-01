@@ -50,8 +50,8 @@ module Arcade
       Kernel.exit
     end
 
-    def indexes
-      types.find{|x| x.key? :indexes }[:indexes]
+    def indexes refresh=false
+      types(refresh).find_all{|x| x.key? :indexes }.map{|y| y[:indexes]}.flatten
     end
 
     # ------------ hierarchy -------------
@@ -111,13 +111,12 @@ module Arcade
       types( true )  # update cached schema
       dbe
 
-    rescue HTTPX::HTTPError => e
-#      puts "ERROR:  #{e.message.to_s}"
-      if e.status == 500 && e.message.to_s =~ /already exists/
+    rescue Arcade::QueryError => e
+       if e.message  =~/Type\s+.+\salready\s+exists/
         Arcade::Database.logger.debug "Database type #{type} already present"
-      else
-        raise
-      end
+       else
+         raise
+       end
     end
 
     alias create_class create_type
@@ -271,7 +270,7 @@ module Arcade
      else
        []
      end
-    rescue  Dry::Struct::Error, HTTPX::HTTPError => e
+    rescue  Dry::Struct::Error, Arcade::QueryError => e
       Api.rollback database, session_id: s, log: false
       logger.info "Execution  FAILED -->  Status #{e.status}"
       []  #  return empty result

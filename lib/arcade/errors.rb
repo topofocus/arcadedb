@@ -22,6 +22,14 @@ module Arcade
   end
 
   class QueryError < RuntimeError
+    attr_reader :error, :args
+    def initialize  error:, detail:, exception:, **args
+      super detail
+#      @exception = exception
+      @error = error
+#      @detail = detail
+      @args = args
+    end
   end
 
   # used by Dry::Validation,  not covered by "error"

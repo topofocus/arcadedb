@@ -77,7 +77,7 @@ module Arcade
           the_command =  command[0 .. -2]  #  remove '\n'
           next if the_command == ''
         #  db.logger.info "Custom Setup:: #{the_command}"
-          db.execute { the_command }
+          db.transmit { the_command }
         end unless custom_setup.nil?
 
         rescue RollbackError => e
@@ -439,13 +439,13 @@ module Arcade
                 obj.to_or
               end
 #      if send( name ).nil? || send( name ).empty?
-        db.execute { "update #{ rid } set  #{ name } =  #{ value }" }.first[:count]
+        db.transmit { "update #{ rid } set  #{ name } =  #{ value }" }.first[:count]
 #      end
     end
 
     # updates a single property in an embedded document
     def update_embedded embedded, embedded_property, value
-      db.execute{ " update #{rid} set `#{embedded}`.`#{embedded_property}` =  #{value.to_or}" }
+      db.transmit { " update #{rid} set `#{embedded}`.`#{embedded_property}` =  #{value.to_or}" }
     end
 
     def update_list list, value
@@ -455,9 +455,9 @@ module Arcade
                 value.to_or
               end
       if send( list ).nil? || send( list ).empty?
-        db.execute { "update #{ rid } set  #{ list } =  [#{ value }]" }
+        db.transmit { "update #{ rid } set  #{ list } =  [#{ value }]" }
       else
-        db.execute { "update #{ rid } set  #{ list } += #{ value }" }
+        db.transmit { "update #{ rid } set  #{ list } += #{ value }" }
       end
       refresh
     end
@@ -465,14 +465,14 @@ module Arcade
     # updates a map  property ,  actually adds the key-value pair to the property
     def update_map m, key, value
       if send( m ).nil?
-        db.execute { "update #{ rid } set #{ m } = MAP ( #{ key.to_s.to_or } , #{ value.to_or } ) "  }
+        db.transmit { "update #{ rid } set #{ m } = MAP ( #{ key.to_s.to_or } , #{ value.to_or } ) "  }
       else
-        db.execute { "update #{ rid } set #{ m }.`#{ key.to_s }` = #{ value.to_or }" }
+        db.transmit { "update #{ rid } set #{ m }.`#{ key.to_s }` = #{ value.to_or }" }
       end
       refresh
     end
     def delete
-      response = db.execute { "delete from #{ rid }" }
+      response = db.transmit { "delete from #{ rid }" }
       true if response == [{ count: 1 }]
     end
     def == arg

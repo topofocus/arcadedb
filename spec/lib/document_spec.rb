@@ -14,9 +14,9 @@ RSpec.describe Arcade::Document do
   before(:all) do
     connect
     db = Arcade::Init.db
-  #  db.execute{ "DROP TYPE test_document UNSAFE IF EXISTS" }
-  #  db.execute{ "DROP TYPE dep_test_doc  UNSAFE IF EXISTS" }
     db.begin_transaction
+    db.transmit{ "DROP TYPE test_document IF EXISTS" }
+    db.transmit{ "DROP TYPE dep_test_doc  IF EXISTS" }
     Arcade::TestDocument.create_type
     Arcade::DepTestDoc.create_type
   end
@@ -31,11 +31,7 @@ RSpec.describe Arcade::Document do
     Then{ expect( databases.flatten ).to include 'test_document' }
   end
   context "check indexes" do
-    Given( :indexes ){ Arcade::Init.db.indexes.first }
-    ###
-    ## expected output: {:unique=>false, :name=>"test_document[name]",:typeName=>"test_document",:automatic=>true, :type=>"LSM_TREE",:properties=>["name"]}
-    # check if the index ist applied
-#    it{ puts indexes.inspect }
+    Given( :indexes ){ Arcade::Init.db.indexes.find{|x| x[:name] =~ /test_document/} }
     Then { indexes.is_a? Hash }
     And  { indexes[:name] == "test_document[name,age]" }
     # check if the declared properties are set

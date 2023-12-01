@@ -25,7 +25,7 @@ RSpec.describe Arcade::Api do
   end
   context "create a document type " do
     before(:all) do
-      r= Arcade::Api.execute( Arcade::Config.database[:test]) { "create document type test_document" } 
+      r= Arcade::Api.execute( Arcade::Config.database[:test]) { "create document type test_document" }
       expect( r.size ).to eq 1
       expect( r.first ).to be_a Hash
       expect( r.first.keys.sort).to eq [:operation, :typeName]
@@ -52,7 +52,10 @@ RSpec.describe Arcade::Api do
                                      :age, :unique)).to be_truthy
     end
     it "Insert a dataset"  do
-      r= Arcade::Api.create_document  Arcade::Config.database[:test], 'test_document' ,  name: "Gugo",  bes: "Über", age: 54.3
+      r= Arcade::Api.create_document  Arcade::Config.database[:test], 'test_document' ,
+                                                                       name: "Gugo",
+                                                                       bes: "Über",
+                                                                       age: 54.3
       expect(r).to eq "#1:0"   # returns the rid
 
       r=  Arcade::Api.get_record Arcade::Config.database[:test], "#1:0"

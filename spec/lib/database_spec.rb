@@ -3,13 +3,24 @@ require 'database_helper'
 
 RSpec.describe Arcade::Database do
   before(:all) do
-    clear_arcade
-    DB = Arcade::Database.new Arcade::Config.database[:test]
+    connect
+    DB = Arcade::Init.db
+    DB.begin_transaction
+    begin
     DB.create_type :document, 'test_document'
     DB.create_type :vertex, :test_vertex
+    Arcade::TestVertex.delete all: true
+    rescue Arcade::QueryError => e
+      unless e.message  =~/Type\s+.+\salready\s+exists/
+        raise
+      end
+    end
+  end
+  after(:all) do
+    DB.rollback
   end
 
-  context "It memoises the database" do
+  context "It memoises the database"  do
     subject {  Arcade::Database.new( :test )  }
     its( :database ){ is_expected.to eq Arcade::Config.database[:test] }
   end
@@ -59,7 +70,7 @@ RSpec.describe Arcade::Database do
 
   context "Reading a record loads an Arcade::Base-Object" do
     before( :all ){ @rid=  DB.create :test_vertex, name: "parent", age: 54}
-    it "retreives the correct model" do
+    it "retrieves the correct model" do
       r =  DB.get @rid
       expect(r).to be_an Arcade::TestVertex
       expect(r.age).to eq 54
@@ -69,9 +80,8 @@ RSpec.describe Arcade::Database do
 
   context "Querying the database load Arcade::Base-Objects"   do
     before( :all ){ @rid=  DB.create :test_vertex, name: "parent", age: 54}
-    it "retreives the correct model" do
+    it "retrieves the correct model" do
       r =  DB.query(" select from test_vertex").allocate_model
-      puts "R: #{r}"
       expect( r ).to be_an Array
       r.each do | record |
         expect( record ).to be_an Arcade::TestVertex

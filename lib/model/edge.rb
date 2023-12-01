@@ -13,6 +13,18 @@ module Arcade
     #
     def self.create  from:, to:, **attr
         db.create_edge  database_name, from: from, to: to, **attr
+    rescue Arcade::QueryError => e
+      if  e.message =~ /Duplicated key\s+.+\sfound on index/
+        if e.args.keys.first == :exceptionArgs
+          # return the  previously assigned edge
+          e.args[:exceptionArgs].split('|').last.load_rid
+        else
+          raise
+        end
+      else
+        raise
+       end
+
     end
 
     def delete

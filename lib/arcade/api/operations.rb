@@ -99,6 +99,9 @@ module Arcade
       else
         post_transaction "query/#{database}" , provide_payload(query), session_id: session_id
       end
+   # rescue HTTPX::HTTPError => e
+   #   puts e.inspect
+   #   e
     end
 
     # ------------------------------  get_record      ------------------------------------------------- #
