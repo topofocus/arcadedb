@@ -16,8 +16,8 @@ end
 __END__
 CREATE PROPERTY my_embedded_document.a_label STRING
 CREATE PROPERTY my_embedded_document.a_emb   EMBEDDED
-CREATE INDEX `Embedded[label]` ON my_embedded_document ( a_label ) UNIQUE
 CREATE PROPERTY my_embedded_document.a_list LIST
 CREATE PROPERTY my_embedded_document.a_set MAP
+CREATE INDEX  ON my_embedded_document ( a_label ) UNIQUE
 
 

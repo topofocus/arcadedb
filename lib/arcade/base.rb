@@ -231,9 +231,9 @@ module Arcade
       #  is equivalent to
       #  Strategie.all.find{|y| y.symbol == 'Still' }
       def find **args
-        f= where(**args).first
-        f= where( "#{ args.keys.first } like #{ args.values.first.to_or }" ).first if f.nil? || f.empty?
-        f
+        where(**args).first
+#        f= where( "#{ args.keys.first } like #{ args.values.first.to_or }" ).first if f.nil? || f.empty?
+#        f
       end
       # update returns a list of updated records
       #

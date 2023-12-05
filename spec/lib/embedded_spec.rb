@@ -19,8 +19,8 @@ RSpec.describe Arcade::Query do
     Arcade::TestDocument.create_type
     Arcade::DatDocument.delete all: true
     Arcade::TestDocument.delete all: true
-    TestDocument.create date: Date.new( 2019,5,16 ), name:"hugi", age: rand(99)
-    TestDocument.create date: Date.new( 2020,5,16 ), name:"imara", age: rand(99)
+      TestDocument.create date: Date.new( 2019,5,16 ), name:"hugi", age: rand(99)
+      TestDocument.create date: Date.new( 2020,5,16 ), name:"imara", age: rand(99)
     DatDocument.create date: Date.today, name: 'Hugi', age: rand(99)
       #Arcade::Init.db.execute { " insert into test_document set (name, age, emb) content 
       #                           { 'name': 'Äugi',''age': #{rand(99) }, 
@@ -58,7 +58,10 @@ RSpec.describe Arcade::Query do
   end
 
 
-  context "add an ebedded document"   do
+  ### ---------- a single embedded document -----------
+  ###            similar to a link
+
+  context "add an embedded document"  do
     before( :all ) do
     the_document = Arcade::TestDocument.find name: 'imara'
     the_document.insert_document :emb,
@@ -70,24 +73,29 @@ RSpec.describe Arcade::Query do
 
     Given( :the_document ){  Arcade::TestDocument.find name: 'imara'}
     Then { the_document.emb.is_a? Arcade::DatDocument }
+    Then { the_document.emb.name == 'berta' }
   end
 
 
-  context "update an ebedded document" do
+  context "update an embedded document" do
     before(:all) do
     emb_document =  Arcade::TestDocument.find name:'Tussi'
+
     emb_document.update_embedded :emb, :name, 'Gertrude'
     end
     Given( :emb_document ) { Arcade::TestDocument.find name:'Tussi'}
     Then { emb_document.emb.is_a? Arcade::DatDocument }
     Then { emb_document.refresh.emb.name == 'Gertrude' }
   end
+
+  ### ---------- a list of  embedded documents -----------
+  ###            similar to a 1:n relation
+
   context "many embedded documents" , focus: true   do
     before(:all) do
       document = Arcade::TestDocument.find name:'karl'
       list = ->(a){ Arcade::DatDocument.new date: Date.new( 2022,rand(11)+1, rand(16)+1), name: 'Herta'+a, age: rand(99), rid: '#0:0' }
 
-      #  todo:  make execute work in transaction
        Arcade::Init.db.transmit{ " update #{document.rid} set  many += #{list["w"].to_json}" } 
        Arcade::Init.db.transmit{ " update #{document.rid} set  many += #{list["x"].to_json}" } 
 

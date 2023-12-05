@@ -1,6 +1,6 @@
 
 module My
-  class  Emb < Arcade::Vertex
+  class  Emb < Arcade::Document
     attribute :a_string?, Types::String
    attribute :b_int?, Types::Nominal::Integer
    attribute :c_array?, Types::Array
@@ -16,7 +16,6 @@ end
 ## The code below is executed on the database after the database-type is created
 ## Use the output of `ModelClass.database_name` as DB type  name
 ## 
-#CREATE INDEX `Emb[]` ON my_embedded_document ( a_label ) UNIQUE
 __END__
 CREATE PROPERTY my_emb.a_string STRING
 CREATE PROPERTY my_emb.b_int    Integer

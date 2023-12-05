@@ -54,7 +54,18 @@ module Arcade
           # success
         JSON.parse( response.body, symbolize_names: true )[:result]
          in {status: 400..}
+           detail = response.json( symbolize_names: true )[:detail]
+           if  detail =~ /Please retry the operation/ 
+             logger.error "--------------------------------"
+             logger.error " ----> Operation repeated <---- "
+             logger.error detail
+             logger.error "The query --> #{payload.inspect}"
+             logger.error "--------------------------------"
+             sleep 1
+             post_data command,  payload
+           else
            raise Arcade::QueryError.new **response.json( symbolize_names: true  )
+           end
       else
         #   # http error
              raise   response
