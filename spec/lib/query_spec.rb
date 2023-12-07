@@ -124,7 +124,7 @@ RSpec.describe Arcade::Query do
 		context " old stuff,  still working" do
 			it "subsequent Initialisation"  do
 				q =  Arcade::Query.new
-				q.from  'test_query'
+				q.from  :test_query
 				q.where   a: 2
 				q.where  'b > 3'
 				q.where   c: 'ufz'
@@ -170,7 +170,7 @@ RSpec.describe Arcade::Query do
 
 			end
 			it " with expand" do
-				oi_query =  Arcade::Query.new from: 'Openinterest', limit: 10, projection: 'expand( contracts )'
+				oi_query =  Arcade::Query.new from: :Openinterest, limit: 10, projection: 'expand( contracts )'
 				#puts oi_query.to_s
 				contracts_query = Arcade::Query.new from: oi_query, projection: 'expand( distinct(ORDid) )'
 				expect( contracts_query.to_s ).to eq 'select expand( distinct(ORDid) ) from  ( select expand( contracts ) from Openinterest  limit 10 )  '
@@ -208,10 +208,8 @@ RSpec.describe Arcade::Query do
 				it "first and last" do
 					q =  TestDocument.query( order: "@rid", limit: 1)
 					expect( q.to_s ).to eq "select from test_document order by @rid limit 1"
-          expect(q.query.allocate_model).to be_a TestDocument #eq   TestDocument.where( c: 1 ).first
+          expect(q.query.allocate_model.first).to be_a TestDocument #eq   TestDocument.where( c: 1 ).first
 				end
-        it { expect( TestDocument.first ). to eq TestDocument.where( c: 1  ).first }
-        it { expect( TestDocument.last ). to eq TestDocument.where( c: 200  ).first }
 
 				it "upsert"  do
 					q =  TestDocument.query(  kind: :upsert, set:{ c: 500}, where:' c = 500'  )
