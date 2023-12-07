@@ -25,18 +25,27 @@ module Arcade
     end
 
     # Inspect the generated match statement
-    def to_s
+    def to_s &b
       r = ""
       r = "DISTINCT " if @distinct
       r << @as.join(",")
+      r= yield(r) if block_given?
       @stack.join("") + " RETURN #{r} "
     end
 
 
     # Execute the @stack
     # generally followed by `select_result` to convert json-hashes  to arcade objects
-    def execute
-      Arcade::Init.db.query self
+    #
+    # The optional block  modifies the result-statement
+    # i.e
+    # TG::TimeGraph.grid( 2023, 2..9  ).out(HasPosition)
+    #                                  .node( as: :contract  )
+    #                                  .execute { "contract.symbol"  }
+    #                                  .select_result
+    # gets all associated contracts connected to the month-grid
+    def execute &b
+      Arcade::Init.db.query( to_s( &b ) )
     end
 
 
