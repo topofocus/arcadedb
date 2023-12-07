@@ -110,12 +110,16 @@ module Arcade
 										' ( '+ the_argument.compose + ' ) '
 									when Class
 										the_argument.database_name
-									else
+                  when Arcade::Match
+                    '(' + the_argument.to_s + ')'
+                  when String
 										if the_argument.to_s.rid?	  # a string with "#ab:cd"
 											the_argument
-										else		  # a database-class-name
+                    else
+                      '(' + the_argument + ')'
+                    end
+                  else		  # a database-class-name
 											the_argument.to_s
-										end
 									end
 			else
 				raise "cannot complete until a target is specified"
@@ -325,7 +329,7 @@ end # class << self
     #  via:        Edge-Class
     #  where:      Condition to be applied on the targed vertex (in_or_out = :in, :out, :both)
     #                                or on the intermitted edge (in_or_out =  :inE, :outE, :bothE)
-    #              Condition ist inserted as "in_or_out[ condition ]"
+    #              Condition is inserted as "in_or_out[ condition ]"
     #  Attention: ranges have to be included as array, ie [ 2..4 ]
     #
 

@@ -28,9 +28,9 @@ require_relative '../lib/arcade/api/primitives'
 require_relative '../lib/arcade/api/operations'
 require_relative '../lib/arcade/base'
 require_relative '../lib/arcade/database'
+require_relative '../lib/arcade/match'
 require_relative '../lib/init'
 require_relative "../lib/models"
 require_relative '../lib/query'
-require_relative '../lib/match'
 require_relative '../lib/railtie'  if defined? Rails::Railtie
 

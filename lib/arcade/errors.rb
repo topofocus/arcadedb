@@ -23,12 +23,12 @@ module Arcade
 
   class QueryError < RuntimeError
     attr_reader :error, :args
-    def initialize  error:, detail:, exception:, **args
-      super detail
-#      @exception = exception
+    def initialize  error: "", detail: "", exception: "", **args
       @error = error
 #      @detail = detail
       @args = args
+      @exception = exception
+      super detail
     end
   end
 

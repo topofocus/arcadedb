@@ -5,7 +5,7 @@ Ruby Interface to a [Arcade Database](https://arcadedb.com/).
 The program utilizes the HTTP-JSON API to direct database queries to an ArcadeDB server. 
 The server's response is then mapped to an ORM (Object-Relational Mapping) based on DRY::Struct. 
 Each database type is represented by a dedicated Model Class, where complex queries are encapsulated. 
-The program also includes a  Query-Preprocessor for constructing custom queries in ruby fashion.
+The program also includes a  Query-Preprocessor and Match-statment generator for constructing custom queries in ruby fashion.
 
 ***ArcadeDB internally uses `Arcade` as primary namespace**** 
 
@@ -56,7 +56,7 @@ The `spec`-files in the rspec-test-suite-section are worth reading, too.
 The adapter uses a 3 layer concept. 
 
 Top-Layer : `Arcade::Base`-Model-Objects. 
-They operate similar to ActiveRecord Model Objects but are based on [Dry-Struct](https://dry-rb.org/gems/dry-struct/1.0/).
+Similar to ActiveRecord Model Objects but based on [Dry-Struct](https://dry-rb.org/gems/dry-struct/1.0/).
 
 ```ruby
 # Example model file  /model/demo/user.rb
@@ -78,7 +78,7 @@ Only the `name` attribute is declared.
 
 `Demo::User.create_type`  creates the type and executes provided database-commands after __END__.   
 
-Other properties are schemaless. 
+Other properties are schemaless, but have to be declared in the model-file. 
 
 ```ruby
 Person.insert name: "Hubert", age: 35
@@ -130,6 +130,24 @@ gets all wives where the divorced-condition, which is set on the edge, is false.
 
 A **Query Preprocessor** is implemented. Its adapted from ActiveOrient. The [documentation](https://github.com/topofocus/active-orient/wiki/OrientQuery)
 is still valid,  however the class has changed to `Arcade::Query`. 
+
+## Match
+
+A simple **Match Statement Generator** is provided for convenience. As the [declarative syntax](https://github.com/ArcadeData/arcadedb-docs/blob/main/src/main/asciidoc/sql/SQL-Match.adoc)  seems to be  very  intuitive, a preprocessor should not be 
+necessary. With the help of some ruby magic, the creation of match-statements is simply an no-brainer.
+
+```ruby
+a =  Arcade::Match.new( type: Person, as: :persons)
+                  .out( IsMarriedTo )
+                  .node( where: 'age < 30')
+a.to_s
+=>  Match { type: person, as: persons }.out('is_married_to'){ where: ( age < 30) } RETURN persons
+
+a.execute.select_results  #  sends the statement to the database and returns Arcade Objects. 
+```
+
+Arcade::Match-objects can be used as `from:` argument to Arcade::Query-Statements, thus hybrid queries are 
+easily constructed without extensive string-manipulations.
 
 The **second Layer** handles Database-Requests.  
 In its actual implementation, these requests are delegated to the HTTP/JSON-API.
