@@ -13,8 +13,9 @@ include Arcade
 #/*    Embedd a document in a database-class (document or vertex)                                      */
 #/* -------------------------------------------------------------------------------------------------- */
 #/*                                                                                                    */
-#/*    Date is only stored as Date-Field in the database if a `date`-property is used                  */
-#/*    If an ad-hoc database is used, dates are stored as strings                                      */
+#/*    Dates are only retreived as Date-Objects if DryStruct::JSON::Date or DryStruct::Params::Date    */
+#/*    Validations are used. Even then, sometimes Unitx-timestamps are received. Therefor its          */
+#/*    necessary to use the custom DryStruct::Date Modification as introduced in My::V3                */
 #/* -------------------------------------------------------------------------------------------------- */
 
 
@@ -22,21 +23,16 @@ RSpec.describe Arcade::Query do
   before( :all ) do
     connect
     db = Arcade::Init.db
-    db.begin_transaction
     Arcade::DatDocument.create_type
-#CREATE PROPERTY dat_document.date DATE
-#CREATE PROPERTY dat_document.name STRING
-#CREATE PROPERTY dat_document.age INTEGER
-#CREATE INDEX  ON dat_document (date) UNIQUE
+    My::V3.create_type
+    My::E1.create_type
 
     Arcade::TestDocument.create_type
-#CREATE PROPERTY test_document.name STRING
-#CREATE PROPERTY test_document.age INTEGER
-#CREATE PROPERTY test_document.d  MAP
-#CREATE PROPERTY test_document.emb  EMBEDDED
-#CREATE PROPERTY test_document.many  LIST
-#CREATE INDEX  ON test_document (name, age) UNIQUE
 
+    db.begin_transaction
+    Arcade::TestDocument.delete all: true
+    Arcade::DatDocument.delete all: true
+    My::V3.delete all:true
 ## insert a record with an ad-hoc date field
     TestDocument.insert date: Date.new( 2019,5,16 ), name:"hugi", age: rand(99)
 ## insert a  record with a predefined date property
@@ -65,5 +61,35 @@ RSpec.describe Arcade::Query do
 #
   end
 
+  ## Tests passing with
+  ##   Types::Params::Date
+  ## and
+  ##   Types::JSON::Date
+  ##
+  ## but fail with
+  ##   Types::Date                --> converts Date to a Date-String
+  ## and
+  ##   Types::Nominal::Date       --> converts Date to a Date-String
+  ##
+  ## ---> USE the Types::Date-Modification in My::V3a           <---
+
+  context "Node-Edge-Node Environment" do
+    before( :all  ) do 
+#      My::V3.delete all: true
+      v= My::V3.insert datum: Date.new(2014,5,6), a: "eins"
+      v.assign via: My::E1, vertex: My::V3.insert( datum: Date.new(2024,5,6), a: 'zwei' )
+    end
+
+    Given( :the_primary_vertex ){ My::V3.where( a: 'eins' ).first }
+    Then {  the_primary_vertex.datum.is_a? Date }
+    it { puts the_primary_vertex.attributes }
+    Then {  the_primary_vertex.datum == Date.new( 2014,5,6 ) }
+    When( :the_second_vertex ){ the_primary_vertex.nodes(:out, via: My::E1).first }
+    it { puts Arcade::Init.db.query "select out('my_e1') from #{the_second_vertex.rid}" }
+    Then{ the_second_vertex.datum == Date.new( 2024,5,6  ) }
+
+    Then{ the_second_vertex.in.first.datum == Date.new(2014,5,6) }
+
+  end
 
 end

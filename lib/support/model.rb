@@ -78,6 +78,7 @@ module Arcade
      elsif response.rid?
        # Autoload rid's
        response.load_rid
+       #auto ? response.load_rid : response
      else
        response
       end
