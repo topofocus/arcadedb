@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
-## loads the active-orient environment 
+## loads the arcadeDB environment
 ## and starts an interactive shell
 ##
-## Parameter:  
+## Parameter:
 ##	       production (p)
 ##	       development (d)  [default]
 ##	       test (t)
