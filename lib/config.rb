@@ -3,11 +3,11 @@ module Arcade
     extend Dry::Configurable
     # central place to initialize constants
     #
-    # ProjectRoot has to be a Pathname-Object
+    # ProjectRoot should to be a Pathname-Object and has to be defined before `arcadedb`  is required
     #
     #puts "expand: #{File.expand_path(__dir__)}"
-    unless Arcade.const_defined?( :ProjectRoot )
-      Arcade::ProjectRoot = if defined?( Rails.env )
+    unless Object.const_defined?( :ProjectRoot )
+      ::ProjectRoot = if defined?( Rails.env )
                               Rails.root
                             else
                               STDERR.puts "Using default (arcadedb gem)  database credentials and settings"
@@ -15,7 +15,7 @@ module Arcade
                               Pathname.new(  File.expand_path( "../../", __FILE__ ))
       end
     else
-      STDERR.puts "Using provided database credentials and settings fron #{Arcade::ProjectRoot}"
+      STDERR.puts "Using provided database credentials and settings from #{::ProjectRoot}"
     end
 
 
@@ -53,7 +53,7 @@ module Arcade
      def self.config_file
 
        configdir =  -> do
-         pr =  ProjectRoot.is_a?(Pathname)?  ProjectRoot : Pathname.new( ProjectRoot )
+         pr =  ::ProjectRoot.is_a?(Pathname)?  ::ProjectRoot : Pathname.new( ::ProjectRoot )
          ( cd =  pr + 'arcade.yml' ).exist? || ( cd =   pr + 'config' + 'arcade.yml' ).exist? || ( cd =   pr + 'config.yml' )
          cd
        end
