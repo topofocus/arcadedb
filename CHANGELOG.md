@@ -27,7 +27,7 @@ All notable changes to this project will be documented in this file.
 - Vertex.in, Vertex.out Vertex.inE, Vertex.outE support depth as second parameter
 - IRuby-Support. Formatted output for Base-Objects
 
-## 0.5 - scheduled in dec. 2023
+## 0.5.0 - 2023-12-12
 - Arcade::Match simple match-statement generator
-- return to Arcade::QueryError messages instead of HTTPX::HttpError
--
+- return to Arcade::QueryError messages instead of HTTPX::HTTPError
+- The ProjectRoot Const is used to read configuration files (Changed from Arcade::ProjectRoot)
