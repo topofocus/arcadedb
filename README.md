@@ -112,6 +112,8 @@ This can be queried through
 ```ruby
 hubert =  Person.find name: 'Hubert'
 pauline = hubert.nodes( :out, via: IsMarriedTo ).first
+# or simply
+pauline = hubert.out.first
 
 ```
 Conditions may be set, to. 
@@ -292,16 +294,16 @@ Select a range of nodes and perform a mathematical operation
 Database-Transactions are largely encapsulated
 
 ```
-TestVertex.create_type
-TestVertex.begin_transaction
+db =  Arcade::Init.db
+db.begin_transaction
 
-{ perform insert, update, query, etc tasks in the database (not only the type) }
+{ perform insert, update, query, etc tasks in the database }
 
-TestVertex.commit 
+db.commit 
 
 # or
 
-TestVertex.rollback
+db.rollback
 
 ```
 
