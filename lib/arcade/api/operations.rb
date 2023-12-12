@@ -38,7 +38,7 @@ module Arcade
       return if databases.include?( name.to_s )
       payload = { "command" => "create database #{name}" }
         post_data  "server", payload
-    rescue HTTPX::HTTPError => e
+    rescue  Arcade::QueryError => e
       logger.fatal "Create database #{name} through \"POST create/#{name}\" failed"
       logger.fatal  e
       raise
@@ -50,7 +50,7 @@ module Arcade
       return unless databases.include?( name.to_s )
       payload = {"command" => "drop database #{name}" }
        post_data  "server",  payload
-    rescue HTTPX::HTTPError => e
+    rescue Arcade::QueryError => e
       logger.fatal "Drop database #{name} through \"POST drop database/#{name}\" failed"
       raise
     end
@@ -99,9 +99,6 @@ module Arcade
       else
         post_transaction "query/#{database}" , provide_payload(query), session_id: session_id
       end
-   # rescue HTTPX::HTTPError => e
-   #   puts e.inspect
-   #   e
     end
 
     # ------------------------------  get_record      ------------------------------------------------- #

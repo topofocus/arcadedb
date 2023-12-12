@@ -23,34 +23,38 @@ module Arcade
       if response.is_a? Hash
         # save rid to a safe place
         temp_rid = response.delete :"@rid"
-        type           = response.delete :"@type"
-        cat            = response.delete :"@cat"
+        type     = response.delete :"@type"
+        cat      = response.delete :"@cat"
 
         return response if type.nil?
         temp_rid = "#0:0" if temp_rid.nil?
         type = "d" if type.nil?
         # extract type infos  and convert to database-name
-        n, type_name = type.camelcase_and_namespace
-        n = self.namespace if n.nil?
+        namespace, type_name = type.camelcase_and_namespace
+        namespace = self.namespace if namespace.nil?
         # autoconvert rid's in attributes to model-records  (exclude edges!)
         if auto && !(cat.to_s =='e')
           response.transform_values! do  |x|
             case x
             when String
-              x.rid? ?  x.load_rid : x
+              x.rid? ?  x.load_rid : x                   # follow links
             when Array
+              a =[]
               x.map do| y |
-                if y.is_a?(Hash) && y.include?(:@type)   # if embedded documents are present, load them
-                  y.allocate_model(false)
-                elsif y.rid?                             # if links are present, load the object
-                  y.load_rid(false) # do not autoload further records, prevents from recursive locking
-                else
-                  y
-                end
+                # Thread.new do  ## thread or fiber decrease the performance significantly.
+                  if y.is_a?(Hash) && y.include?(:@type)   # if embedded documents are present, load them
+                    y.allocate_model(false)
+                  elsif y.rid?                             # if links are present, load the object
+                    y.load_rid(false) # do not autoload further records, prevents from recursive locking
+                  else
+                    y
+                  end
+               # end
               end
             when Hash
               if x.include?(:@type)
-                x.allocate_model(false)
+                #x.allocate_model(false)
+                _allocate_model(x,false)
               else
                 x.transform_values!{|z|  z.rid? ?  z.load_rid(false) : z }
               end
@@ -60,7 +64,7 @@ module Arcade
           end
         end
         # choose the appropriate class
-        klass=  Dry::Core::ClassBuilder.new(  name: type_name, parent:  nil, namespace:  n).call
+        klass=  Dry::Core::ClassBuilder.new(  name: type_name, parent: nil, namespace: namespace ).call
         #
       begin
         # create a new object of that  class with the appropriate attributes
@@ -74,11 +78,11 @@ module Arcade
      elsif response.is_a? Array
        puts "Allocate_model..detected array"
        ## recursive behavior, just in case
-       response.map{ | y | _allocate_model y }
+       response.map{ | y | _allocate_model y, auto }
      elsif response.rid?
        # Autoload rid's
        response.load_rid
-       #auto ? response.load_rid : response
+      # auto ? response.load_rid : response
      else
        response
       end

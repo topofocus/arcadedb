@@ -184,23 +184,27 @@ module Arcade
 =begin
 Assigns another Vertex via an EdgeClass. If specified, puts attributes on the edge.
 
+`Vertex.assign via: Edge to: Vertex`
+
 Returns the reloaded assigned vertex
 
 Wrapper for
-  Edge.create in: self, out: a_vertex,  some: attributes.  on: the,  edge: type }
+  Edge.create from: self, to: a_vertex,  some: attributes.  on: the,  edge: type }
 
 returns the assigned vertex, thus enabling to chain vertices through
 
-    Vertex.assign() via: E , vertex: VertexClass.create()).assign( via: E, ... )
+    Vertex.assign() via: E , to: VertexClass.create()).assign( via: E, ... )
 or
 	  (1..100).each{|n| vertex = vertex.assign(via: E2, vertex: V2.create(item: n))}
 =end
 
-  def assign vertex: , via:   , **attributes
+  def assign vertex: nil , via: Arcade::Edge   , **attributes
+    vertex = attributes[:to] if attributes.has_key? :to
+    raise "vertex not provided" if vertex.nil?
 
     via.create from: self, to: vertex,  **attributes
 
-    db.get vertex.rid  # return the assigned vertex
+    db.get vertex.rid unless vertex.is_a? Array # return the assigned vertex
   rescue IndexError => e
     db.logger.error "Edge not created, already present."
     vertex  #  return the vertex (for chaining)

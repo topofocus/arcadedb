@@ -18,7 +18,6 @@ module Arcade
       STDERR.puts "Using provided database credentials and settings from #{::ProjectRoot}"
     end
 
-
     # initialised a hash  { environment => property }
     setting :username, default: :user,      reader: true,
       constructor:  ->(v) { yml(:environment).map{|x,y|  [x , y[v.to_s]] }.to_h }

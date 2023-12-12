@@ -292,9 +292,9 @@ module Arcade
         begin
           cmd = -> (){  "create edge #{edge_class} from #{f.rid} to #{t.rid} #{content}" }
         edges = transmit( &cmd ).allocate_model(false)
-        rescue HTTPX::HTTPError => e
+        rescue Arcade::QueryError => e
           raise unless e.message =~ /Found duplicate key/
-         puts "#"+e.message.split("#").last[0..-3]
+         puts "#"+e.detail.split("#").last[0..-3]
         end
       end
       from =  [from] unless from.is_a? Array
