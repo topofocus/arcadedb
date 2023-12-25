@@ -22,13 +22,13 @@ module Arcade
 
       if response.is_a? Hash
         # save rid to a safe place
-        temp_rid = response.delete :"@rid"
-        type     = response.delete :"@type"
-        cat      = response.delete :"@cat"
+        temp_rid = response.delete( :"@rid"  ) || response.delete( :rid )
+        type     = response.delete( :"@type" ) || response.delete( :type )
+        cat      = response.delete( :"@cat"  ) || response.delete( :cat )
 
         return response if type.nil?
         temp_rid = "#0:0" if temp_rid.nil?
-        type = "d" if type.nil?
+        cat = "d" if cat.nil?
         # extract type infos  and convert to database-name
         namespace, type_name = type.camelcase_and_namespace
         namespace = self.namespace if namespace.nil?
@@ -82,7 +82,7 @@ module Arcade
      elsif response.rid?
        # Autoload rid's
        response.load_rid
-      # auto ? response.load_rid : response
+     #  auto ? response.load_rid : response
      else
        response
       end
