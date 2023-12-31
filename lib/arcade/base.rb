@@ -1,4 +1,5 @@
 module Arcade
+
   class Base  < Dry::Struct
 
     extend Arcade::Support::Sql
@@ -294,16 +295,19 @@ module Arcade
         Query.new( **{ from: self }.merge(args) )
       end
 
-      # immutable support
-      # to make a database type immutable add
+      # ## Immutable Support
+      #
+      # To make a database type immutable add  
       #  `not_permitted :update, :upsert, :delete`
       # to the model-specification
       #
+      # Even after applying `not_permitted` the database-type can be modified via class-methods.
+      #
       def not_permitted *m
         m.each do | def_m |
-          define_method(  def_m ) do | v = nil |
-          raise ArcadeImmutableError "operation not permitted", caller
-        end
+          define_method( def_m ) do | v = nil |
+            raise  Arcade::ImmutableError.new( "operation  #{def_m} not permitted" )
+          end
         end
       end
 
@@ -448,21 +452,37 @@ module Arcade
       db.transmit { " update #{rid} set `#{embedded}`.`#{embedded_property}` =  #{value.to_or}" }
     end
 
-    def update_list list, value
-      value = if value.is_a? Document
+    # Adds List-Elements to embedded List
+    #
+    # Arguments:
+    # * list: A symbol of the list property
+    # * value: A embedded document or a hash
+    # * modus: :auto, :first, :append
+    #
+    # Prefered modus operandi
+    # * the-element.insert  (...) , #{list}:[]
+    # * the_element.update_list list, value: :append
+    #
+    def update_list list, value, modus: :auto
+      value = if value.is_a? Document   # embedded mode
                 value.to_json
               else
                 value.to_or
               end
-      if send( list ).nil? || send( list ).empty?
-        db.transmit { "update #{ rid } set  #{ list } =  [#{ value }]" }
+      if modus == :auto
+        modus =  db.query( "select #{list}.size() from #{rid}" ).select_result.first.zero? ? :first : :append
+      end
+
+     if modus == :first
+        db.transmit { "update #{ rid } set  #{ list } = [#{ value }]" }
       else
         db.transmit { "update #{ rid } set  #{ list } += #{ value }" }
       end
-      refresh
+     # refresh
     end
 
     # updates a map  property ,  actually adds the key-value pair to the property
+    ## does not work on reduced model records
     def update_map m, key, value
       if send( m ).nil?
         db.transmit { "update #{ rid } set #{ m } = MAP ( #{ key.to_s.to_or } , #{ value.to_or } ) "  }

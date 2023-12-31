@@ -9,6 +9,7 @@
 require 'bundler/setup'
 #require 'terminal-table'
 require 'zeitwerk'
+ProjectRoot =  Pathname.new( Dir.pwd ).parent
 require 'pastel'
 require 'arcade'
 #require 'pry'

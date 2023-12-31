@@ -67,19 +67,37 @@ module Arcade
     end
 
     # add conditions on  edges to the match statement
-    def inE edge="", **args
+    def inE edge="", **a
       raise "edge must be a Database-class"  unless edge.is_a?(Class) || edge.empty?
-      @stack << ".inE(#{edge.is_a?(Class) ? edge.database_name.to_or : ''}) #{assigned_parameters}.outV()"
+      n = if a.empty?
+            ""
+          else
+            @args = a
+            "{ #{ assigned_parameters } }"
+          end
+      @stack << ".inE(#{edge.is_a?(Class) ? edge.database_name.to_or : ''})#{ n }.outV()"
       return self
     end
-    def outE edge="", **args
+    def outE edge="", **a
       raise "edge must be a Database-class"  unless edge.is_a?(Class) || edge.empty?
-      @stack << ".outE(#{edge.is_a?(Class) ? edge.database_name.to_or : ''}) #{assigned_parameters}.inV()"
+      n = if a.empty?
+            ""
+          else
+            @args = a
+            "{ #{ assigned_parameters } }"
+          end
+      @stack << ".outE(#{edge.is_a?(Class) ? edge.database_name.to_or : ''})#{ n }.inV()"
       return self
     end
-    def bothE edge="", **args
+    def bothE edge="", **a
       raise "edge must be a Database-class"  unless edge.is_a?(Class) || edge.empty?
-      @stack << ".bothE(#{edge.is_a?(Class) ? edge.database_name : ''}) #{assigned_parameters}.bothV()"
+      n = if a.empty?
+            ""
+          else
+            @args = a
+            "{ #{ assigned_parameters } }"
+          end
+      @stack << ".bothE(#{edge.is_a?(Class) ? edge.database_name : ''})#{ n }.bothV()"
       return self
     end
 

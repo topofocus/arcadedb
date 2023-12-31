@@ -6,7 +6,7 @@ require 'rspec/collection_matchers'
 require 'yaml'
 require 'zeitwerk'
 #require 'active_support'
-ProjectRoot =  Pathname.new( `pwd` ).parent
+ProjectRoot =  Pathname.new( Dir.pwd )
 require 'arcade'
 ## todo: is this necessary?
 module My; end
