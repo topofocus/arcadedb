@@ -76,9 +76,9 @@ __END__
 
 Only the `name` attribute is declared. 
 
-`Demo::User.create_type`  creates the type and executes provided database-commands after __END__.   
+`Demo::User.create_type`  creates the type and executes provided database-commands after `__END__`.   
 
-Other properties are schemaless, but have to be declared in the model-file. 
+Other properties are schemaless. They are present in the database and are mapped to the `value`-attribute on the ruby side.  
 
 ```ruby
 Person.insert name: "Hubert", age: 35
@@ -97,8 +97,8 @@ Person.delete all: true || where: age: 56 , ...
 
 Suppose
 ```ruby 
-m = Person.create name: 'Hubert', age: '25'
-f = Person.create name: 'Pauline', age: '28'
+m = Person.insert name: 'Hubert', age: 25
+f = Person.insert name: 'Pauline', age: 28
 m.assign via: IsMarriedTo, vertex: f , divorced: false
 
 ```
@@ -128,12 +128,12 @@ Person.nodes( :outE, via: IsMarriedTo, where: { divorced: false } )
 ```
 gets all wives where the divorced-condition, which is set on the edge, is false. 
 
-## Query
+### Query
 
 A **Query Preprocessor** is implemented. Its adapted from ActiveOrient. The [documentation](https://github.com/topofocus/active-orient/wiki/OrientQuery)
 is still valid,  however the class has changed to `Arcade::Query`. 
 
-## Match
+### Match
 
 A simple **Match Statement Generator** is provided for convenience. As the [declarative syntax](https://github.com/ArcadeData/arcadedb-docs/blob/main/src/main/asciidoc/sql/SQL-Match.adoc)  seems to be  very  intuitive, a preprocessor should not be 
 necessary. With the help of some ruby magic, the creation of match-statements is simply an no-brainer.
@@ -151,6 +151,7 @@ a.execute.select_results  #  sends the statement to the database and returns Arc
 Arcade::Match-objects can be used as `from:` argument to Arcade::Query-Statements, thus hybrid queries are 
 easily constructed without extensive string-manipulations.
 
+## Low Level Database Requests
 The **second Layer** handles Database-Requests.  
 In its actual implementation, these requests are delegated to the HTTP/JSON-API.
 
@@ -158,26 +159,26 @@ In its actual implementation, these requests are delegated to the HTTP/JSON-API.
 The database-handle is always present through `Arcade::Init.db`
 
 ```ruby
-DB =  Arcade::Init.db
+db =  Arcade::Init.db
 
-$ DB.get nn, mm                                 # returns a Aracde:Base object
+$ db.get nn, mm                                 # returns a Aracde:Base object
                                                 # rid is either "#11:10:" or two numbers
-$ DB.query querystring                          # returns either an Array of results (as  Hash) 
-$ DB.execute { querystring }                    # execute a non idempotent query within a (nested) transaction
-$ DB.create <name>, attribute: value ....       # Creates a new <Document | Vertex> and returns the rid
+$ db.query querystring                          # returns either an Array of results (as  Hash) 
+$ db.execute { querystring }                    # execute a non idempotent query within a (nested) transaction
+$ db.create <name>, attribute: value ....       # Creates a new <Document | Vertex> and returns the rid
                                                 # Operation is performed as Database-Transaction and is rolled back on error
-$ DB.insert <name>, attribute: value ....       # Inserts a new <Document | Vertex> and returns the new object
-$ DB.create_edge <name>, from: <rid> or [rid, rid, ..] , to: <rid> or [rid, rid, ..]
+$ db.insert <name>, attribute: value ....       # Inserts a new <Document | Vertex> and returns the new object
+$ db.create_edge <name>, from: <rid> or [rid, rid, ..] , to: <rid> or [rid, rid, ..]
 
 ```
 
 **Convert database input to Arcade::Base Models**
 
-Either  `DB.query` or  `DB.execute` return the raw JSON-input from the database. It can always converted to model-objects by chaining
+Either  `db.query` or  `dbB.execute` return the raw JSON-input from the database. It can always converted to model-objects by chaining
 `allocate_model` or `select_result`.
 
 ```ruby
-$ DB.query "select from my_names limit 1"
+$ db.query "select from my_names limit 1"
 # which is identical to
 $ My::Names.query( limit: 1).query
  => [{:@out=>0, :@rid=>"#225:6", :@in=>0, :@type=>"my_names", :@cat=>"v", :name=>"Zaber"}] 
