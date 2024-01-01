@@ -116,7 +116,7 @@ pauline = hubert.nodes( :out, via: IsMarriedTo ).first
 pauline = hubert.out.first
 
 ```
-Conditions may be set, to. 
+Conditions may be set, too. 
 ```ruby
 hubert.nodes( :out, via: IsMarriedTo, where: "age < 30" )
 ```
