@@ -14,28 +14,28 @@ RSpec.describe Arcade::Query do
   before( :all ) do
     connect
     db = Arcade::Init.db
-    db.begin_transaction
     Arcade::DatDocument.create_type
     Arcade::TestDocument.create_type
+    db.begin_transaction
     Arcade::DatDocument.delete all: true
     Arcade::TestDocument.delete all: true
-      TestDocument.create date: Date.new( 2019,5,16 ), name:"hugi", age: rand(99)
-      TestDocument.create date: Date.new( 2020,5,16 ), name:"imara", age: rand(99)
-    DatDocument.create date: Date.today, name: 'Hugi', age: rand(99)
+      Arcade::TestDocument.insert date: Date.new( 2019,5,16 ), name:"hugi", age: rand(99)
+      Arcade::TestDocument.insert date: Date.new( 2020,5,16 ), name:"imara", age: rand(99)
+    Arcade::DatDocument.insert date: Date.today, name: 'Hugi', age: rand(99)
       #Arcade::Init.db.execute { " insert into test_document set (name, age, emb) content 
       #                           { 'name': 'Äugi',''age': #{rand(99) }, 
       #                              { '@type': 'dat_document', 'name': 'ope', 'date': '#{Date.today.to_or}' }}" }
-      d = DatDocument.new date: Date.new( 2022,4,5 ), name: 'berta', age: 25, rid: '#0:0'
-      TestDocument.create date: Date.new( 1989, 4,2 ),name: "Tussi", age: rand(45),  emb: d
-      TestDocument.create date: Date.new( 1989, 4,3 ),name: "karl", age: rand(45),  many: [d]
-  end # beforDatDocument.create Date: Date.today, name: 'Hugi', age: rand(99) e
+      d = Arcade::DatDocument.new date: Date.new( 2022,4,5 ), name: 'berta', age: 25, rid: '#0:0'
+      Arcade::TestDocument.insert date: Date.new( 1989, 4,2 ),name: "Tussi", age: rand(45),  emb: d
+      Arcade::TestDocument.insert date: Date.new( 1989, 4,3 ),name: "karl", age: rand(45),  many: [d]
+  end # beforDatDocument.insert Date: Date.today, name: 'Hugi', age: rand(99) e
 
   after(:all) do
      db = Arcade::Init.db
      db.rollback
   end
 
-  context "single documents" do
+  context "single documents"  do
     Given( :the_document ){  Arcade::TestDocument.find name: 'hugi'}
 #    it{  puts Arcade::TestDocument.all.map &:to_human }
 #    it{  puts Arcade::DatDocument.all.map &:to_human }

@@ -43,11 +43,11 @@ RSpec.describe Arcade::Document do
 
 
     Given( :match_edge ){ simple_statement.out(Arcade::TestEdge) }
-    Then { match_edge.to_s == "MATCH { type: base_node, where: ( item='hugo' ), as: item }.out(test_edge) RETURN item "  }
+    Then { match_edge.to_s == "MATCH { type: base_node, where: ( item='hugo' ), as: item }.out('test_edge') RETURN item "  }
 
 
     Given( :node_edge ){ match_edge.node( where: { item: 'berta' }) }
-    Then { node_edge.to_s == "MATCH { type: base_node, where: ( item='hugo' ), as: item }.out(test_edge){ where: ( item='berta' ) } RETURN item "  }
+    Then { node_edge.to_s == "MATCH { type: base_node, where: ( item='hugo' ), as: item }.out('test_edge'){ where: ( item='berta' ) } RETURN item "  }
     Then { node_edge.execute.allocate_model.first.is_a? Arcade::BaseNode }
 
     ## No Match
@@ -64,10 +64,10 @@ RSpec.describe Arcade::Document do
                                      .out( Arcade::TestEdge )
                                      .node( as: :c )
                                      .in.node( while: true , as: :o) }
-    Then { the_real.to_s == "MATCH { type: base_node, where: ( symbol='Still' ) }.out(test_edge){ as: c }.in(){ while: ( true ), as: o } RETURN c,o "}
+    Then { the_real.to_s == "MATCH { type: base_node, where: ( symbol='Still' ) }.out('test_edge'){ as: c }.in(){ while: ( true ), as: o } RETURN c,o "}
 
     Given( :complete_query ){ Arcade::Query.new from: the_real.to_s, where: { "o.order_type"  => 'constructed' }, projection: 'c.@rid' }
-    Then { complete_query.to_s == "select c.@rid from (MATCH { type: base_node, where: ( symbol='Still' ) }.out(test_edge){ as: c }.in(){ while: ( true ), as: o } RETURN c,o ) where o.order_type='constructed' " }
+    Then { complete_query.to_s == "select c.@rid from (MATCH { type: base_node, where: ( symbol='Still' ) }.out('test_edge'){ as: c }.in(){ while: ( true ), as: o } RETURN c,o ) where o.order_type='constructed' " }
     # thats the working order for finished trades
   end
 

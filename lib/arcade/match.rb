@@ -49,57 +49,38 @@ module Arcade
     end
 
 
-    # todo : metaprogramming!
-    def out edge=""
-      raise "edge must be a Database-class"  unless edge.is_a?(Class) || edge.empty?
-      @stack << ".out(#{edge.is_a?(Class) ? edge.database_name.to_or : ''})"
-      return self
-    end
-    def in edge=""
-      raise "edge must be a Database-class"  unless edge.is_a?(Class) || edge.empty?
-      @stack << ".in(#{edge.is_a?(Class) ? edge.database_name.to_or : ''})"
-      return self
-    end
-    def both edge=""
-      raise "edge must be a Database-class"  unless edge.is_a?(Class) || edge.empty?
-      @stack << ".both(#{edge.is_a?(Class) ? edge.database_name.to_or : ''})"
-      return self
+
+    def self.define_base_edge *direction
+      direction.each do | e_d |
+        define_method e_d do | edge = "" |
+          raise "edge must be a Database-class" unless edge.is_a?(Class) || edge.empty?
+          @stack << ".#{ e_d  }(#{edge.is_a?(Class) ? edge.database_name.to_or : ''})"
+          self
+        end
+      end
     end
 
+
     # add conditions on  edges to the match statement
-    def inE edge="", **a
-      raise "edge must be a Database-class"  unless edge.is_a?(Class) || edge.empty?
-      n = if a.empty?
-            ""
-          else
-            @args = a
-            "{ #{ assigned_parameters } }"
-          end
-      @stack << ".inE(#{edge.is_a?(Class) ? edge.database_name.to_or : ''})#{ n }.outV()"
-      return self
+    def self.define_inner_edge start_dir, final_dir
+      define_method start_dir do | edge = "", **a |
+        raise "edge must be a Database-class"  unless edge.is_a?(Class) || edge.empty?
+        n = if a.empty?
+              ""
+            else
+              @args = a
+              "{ #{ assigned_parameters } }"
+            end
+        @stack << ".#{ start_dir }(#{edge.is_a?(Class) ? edge.database_name.to_or : ''})#{ n }.#{ final_dir }()"
+        return self
+      end
+
     end
-    def outE edge="", **a
-      raise "edge must be a Database-class"  unless edge.is_a?(Class) || edge.empty?
-      n = if a.empty?
-            ""
-          else
-            @args = a
-            "{ #{ assigned_parameters } }"
-          end
-      @stack << ".outE(#{edge.is_a?(Class) ? edge.database_name.to_or : ''})#{ n }.inV()"
-      return self
-    end
-    def bothE edge="", **a
-      raise "edge must be a Database-class"  unless edge.is_a?(Class) || edge.empty?
-      n = if a.empty?
-            ""
-          else
-            @args = a
-            "{ #{ assigned_parameters } }"
-          end
-      @stack << ".bothE(#{edge.is_a?(Class) ? edge.database_name : ''})#{ n }.bothV()"
-      return self
-    end
+
+    define_base_edge :out, :in, :both
+    define_inner_edge :inE, :outV
+    define_inner_edge :outE, :inV
+
 
 
     # general declation of a node (ie. vertex)
