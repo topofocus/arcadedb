@@ -313,11 +313,11 @@ Although ArcadeDB is a mutable database, the ruby-Interface supports basic audit
 Two specialized Database-Types are included:
 
 * Arcade::RevisionRecord –  A document class, intended to be embedded in Revision-Records
-* Arcade::Revision       –  A vertex-class with specialized `insert-` and `udate-` methods
+* Arcade::Revision       –  A vertex-class with specialized `insert-` and `update-` methods
 
-If a vertex is based on `Arcade::Revision`, a `protocol`-property is included. Its initialised with a single `Arcade::RevisionRecord` Object. Each `update` adds an `Arcade::RevisionRecord`.
+If a vertex is based on `Arcade::Revision`, a `protocol`-property is included. Its initialised with a single `Arcade::RevisionRecord` Object. Each `update` adds an `Arcade::RevisionRecord` to the protocol stack.
 
-```
+```ruby
   m= Member.insert( name: "Hubert", 
                  surname: "Hugo", 
                    birth: Date.new( 1976,3,15  ) ) { 'record initiated' }
