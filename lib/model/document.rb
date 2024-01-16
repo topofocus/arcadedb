@@ -11,7 +11,7 @@ module Arcade
    end
 
 =begin
-    Document.delete fires a "delete vertex" command to the database.
+    Document.delete fires a "delete" command to the database.
     To remove all records  use  »all: true« as argument
 
     The "where" parameter is optional

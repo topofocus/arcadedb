@@ -31,3 +31,7 @@ All notable changes to this project will be documented in this file.
 - Arcade::Match simple match-statement generator
 - return to Arcade::QueryError messages instead of HTTPX::HTTPError
 - The ProjectRoot Const is used to read configuration files (Changed from Arcade::ProjectRoot)
+
+## 0.5.1 - 2024-1-16
+- Included Arcade::RevisionRecord and Arcade::Revision model classes
+- Both provide basic support for audit proofed bookings
