@@ -9,6 +9,12 @@ module Arcade
 
     def http
 #     break_on = -> (response) { response.status == 500  }
+      #     Version 23.12: Persistent connection are inactive after 3 sec.
+      #     Implemented a walk around, that renews the connection after 2 sec. of inactivity
+      t = Time.now
+      @t ||= Time.now
+      @http = nil if t-@t > 2
+      @t = t
       @http ||= HTTPX.plugin(:basic_auth).basic_auth(auth[:username], auth[:password])
                   .plugin(:persistent)
                   .plugin(:circuit_breaker)
