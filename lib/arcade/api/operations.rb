@@ -114,7 +114,7 @@ module Arcade
       rid =  rid.join(':')
       rid = rid[1..-1] if rid[0]=="#"
       if rid.rid?
-      get_data  "document/#{database}/#{rid}"
+      query database , "select from ##{rid}"
       else
         raise Error "Get requires a rid input"
       end
