@@ -32,6 +32,13 @@ module Arcade
       get_data 'databases'
     end
 
+    # ------------------------------ database?        ------------------------------------------------- #
+    #  returns true if the database exists                                                              #
+
+    def self.database? name
+      get_data "exists/#{name}"
+    end
+
     # ------------------------------ create database  ------------------------------------------------- #
     #  creates a database if not present                                                                #
     def self.create_database name
@@ -94,11 +101,11 @@ module Arcade
     # ------------------------------  query           ------------------------------------------------- #
     # same for idempotent queries
     def self.query database, query, session_id: nil
-      if session_id.nil?
-        post_data   "query/#{database}" , provide_payload(query)
-      else
-        post_transaction "query/#{database}" , provide_payload(query), session_id: session_id
-      end
+#      if session_id.nil?
+        get_data   "query/#{database}/sql/" + provide_payload(query, action: :get)[:query]
+ #     else
+ #       post_transaction "query/#{database}" , provide_payload(query), session_id: session_id
+ #     end
     end
 
     # ------------------------------  get_record      ------------------------------------------------- #
@@ -114,7 +121,7 @@ module Arcade
       rid =  rid.join(':')
       rid = rid[1..-1] if rid[0]=="#"
       if rid.rid?
-      query database , "select from ##{rid}"
+        get_data "query/#{database}/sql/" + URI.encode_uri_component("select from #{rid}")
       else
         raise Error "Get requires a rid input"
       end
@@ -181,7 +188,11 @@ module Arcade
                                 the_yield.map do | key,  value |
                                   case key
                                   when :query
-                                   action == :post ? [ :command, value ] : [ :query, value ]
+                                    if action == :post
+                                      [ :command, value ]
+                                    else
+                                      [ :query, URI.encode_uri_component(value )]
+                                    end
                                   when :limit
                                     [ :limit , value ]
                                   when :params
