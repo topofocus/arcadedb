@@ -15,35 +15,31 @@ module Arcade
         end.join(',')
       end
 
-
     #  used by array#allocate_model
       def _allocate_model response=nil, auto = Config.autoload
 
-
       if response.is_a? Hash
         # save rid to a safe place
-        temp_rid = response.delete( :"@rid"  ) || response.delete( :rid )
-        type     = response.delete( :"@type" ) || response.delete( :type )
-        cat      = response.delete( :"@cat"  ) || response.delete( :cat )
+        temp_rid = response.delete( :"@rid"  ) || response.delete( :rid ) || "#0:0"
+        type     = response.delete( :"@type" ) || response.delete( :type )  || nil
+        cat      = response.delete( :"@cat"  ) || response.delete( :cat )  || "d"
 
         return response if type.nil?
-        temp_rid = "#0:0" if temp_rid.nil?
-        cat = "d" if cat.nil?
         # extract type infos  and convert to database-name
         namespace, type_name = type.camelcase_and_namespace
         namespace = self.namespace if namespace.nil?
         # autoconvert rid's in attributes to model-records  (exclude edges!)
         if auto && !(cat.to_s =='e')
-          response.transform_values! do  |x|
+          response.transform_values do  |x|
             case x
             when String
               x.rid? ?  x.load_rid : x                   # follow links
             when Array
               a =[]
-              x.map do| y |
-                # Thread.new do  ## thread or fiber decrease the performance significantly.
+              x.map do | y |
+                # Thread.new do  ## using thread or fiber decreases the performance significantly.
                   if y.is_a?(Hash) && y.include?(:@type)   # if embedded documents are present, load them
-                    y.allocate_model(false)
+                    _allocate_model(y,false)
                   elsif y.rid?                             # if links are present, load the object
                     y.load_rid(false) # do not autoload further records, prevents from recursive locking
                   else

@@ -11,9 +11,12 @@ module Arcade
           delimiters = Regexp.union(['-', '_'])
           n,c= self.split(delimiters).then { |first, *rest| [first.tap {|s| s[0] = s[0].upcase}, rest.map(&:capitalize).join]  }
           ## if base is the first part of the type-name, probably Arcade::Base is choosen a namespace. thats wrong
-          namespace_present = unless n == 'Base'
+          # Arcade::Base descendants are prefetched in Init.models
+          # They have to be fetched to  load both  `Arcade::Ge` and `Arcade::GeSomething`
+          #                (otherwise: Arcade::Ge and Arcade::Ge::Something)
+          namespace_present = unless n == 'Base'  ||  Arcade::Init.models.include?(n)
                                 Object.const_get(n)  rescue  false # Database.namespace
-                              else 
+                              else
                                 false
           end
           # if no namespace is found, leave it empty and return the capitalized string as class name
@@ -51,7 +54,7 @@ module Arcade
       end
 #  return a valid rid (format: "nn:mm") or nil
       def rid
-        self["#"].nil? ? "#"+ self : self if rid? 
+        self["#"].nil? ? "#"+ self : self if rid?
       end
 
       def where **args

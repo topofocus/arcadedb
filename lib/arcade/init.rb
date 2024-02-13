@@ -14,7 +14,8 @@ module Arcade
   #
   class Init
     extend Dry::Core::ClassAttributes
-    defines :db    # database handle
+    defines :db        # database handle
+    defines :models    # static array of database name for arcade-model classes
 
     def self.connect e= :development
 
@@ -25,10 +26,12 @@ module Arcade
              else
                :development
              end
-      #      set the class attribute
 
+      # set the class attributes
+      models Base.descendants.map{|x| x.to_s.split("Arcade::").last }
       db Database.new(env)
     end
+
   end
 
   # Provides method  `db` to every Model class

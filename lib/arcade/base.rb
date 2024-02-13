@@ -432,7 +432,7 @@ module Arcade
 
     def update **args
       Query.new( from: rid , kind: :update, set: args).execute
-      refresh
+      refresh   # return the updated record (the object itself is untouched!)
     end
 
     # inserts or updates a embedded document
