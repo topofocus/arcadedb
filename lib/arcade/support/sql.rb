@@ -44,7 +44,7 @@ If »NULL« should be addressed, { key: nil } is translated to "key = NULL"  (us
           attributes.map do |key, value|
             case value
             when nil
-              "#{key}=NULL"
+              "#{key} is NULL"
             when ::Array
               if value == [nil]
                 "#{key} is NULL"
