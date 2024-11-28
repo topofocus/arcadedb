@@ -11,6 +11,26 @@ module Arcade
   Inspect      b.to_s
   Query DB     b.execute [.allocate_model]
                          [.analyse_result]
+  Customize the return values:
+               b.to_s{ "customized return statement" }
+               b.execute{ "cusomized return statment" }s
+
+
+  Example
+
+   symbol_or_title =  symbol.present? ? { :symbol => symbol } : { :title => title }
+   where = { :right => right }
+
+   a= Arcade::Match.new( type: self.class, where: symbol_or_title )
+                   .out( Arcade::HasContract )
+                   .node( as: :c, where: where )
+   a.execute do "c.last_trading_day as expiry,         # c is returned form the query [as: :c]                                               
+                 count(c) as contracts,
+                 min(c.strike) as s_min,
+                 max(c.strike) as s_max
+                 group by c.last_trading_day order by c.last_trading_day"
+             end
+
 
 =end
 
