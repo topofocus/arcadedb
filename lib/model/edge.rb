@@ -27,6 +27,23 @@ module Arcade
 
     end
 
+
+    ## class-method: Delete Edge between two vertices
+    ##
+    ## returns the count of deleted edges
+    ##
+    ## todo: add conditions
+    def self.delete from:, to:
+      return 0 if from.nil? || to.nil?
+      raise "parameter ( from: ) must be a String or a Vertex" unless from.is_a?(String) || from.is_a?( Arcade::Vertex)
+      raise "parameter ( to: ) must be a String or a Vertex" unless to.is_a?(String) || to.is_a?( Arcade::Vertex)
+      raise "parameters (from: + to:) must respond to `.rid`" unless from.respond_to?( :rid) && to.respond_to?(:rid)
+
+      db.execute{ "delete edge from #{from.rid} to #{to.rid} " } &.select_result &.first
+    end
+
+
+    ## instance method: Delete specified edge
     def delete
       db.execute{  "delete edge #{ rid }" }.select_result
     end
