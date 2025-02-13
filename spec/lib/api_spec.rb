@@ -106,7 +106,7 @@ RSpec.describe Arcade::Api do
       expect(r).to be_an Hash
       ## includes system attributes
       expect(r.keys).to include(:"@rid",:"@type", :"@cat" )
-      expect(r.keys).to include(:"@in", :"@out" )
+  #    expect(r.keys).to include(:"@in", :"@out" )  ## not supported anymore
       # rid is proper formated
       expect(r[:"@rid"]).to  match /\A[#]{,1}[0-9]{1,}:[0-9]{1,}\z/
       # includes  fields from »create document call« and proper values

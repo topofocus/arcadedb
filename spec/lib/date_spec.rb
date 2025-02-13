@@ -29,7 +29,7 @@ RSpec.describe Arcade::Query do
 
     Arcade::TestDocument.create_type
 
-    db.begin_transaction
+#    db.begin_transaction
     Arcade::TestDocument.delete all: true
     Arcade::DatDocument.delete all: true
     My::V3.delete all:true
@@ -44,7 +44,7 @@ RSpec.describe Arcade::Query do
   end # before
   after(:all) do
      db = Arcade::Init.db
-     db.rollback
+#     db.rollback
   end
 
   context "single documents"  do

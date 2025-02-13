@@ -11,7 +11,7 @@ RSpec.describe Arcade::Base do
     db = Arcade::Init.db
     My::V1.create_type
     My::E1.create_type
-    db.begin_transaction
+#    db.begin_transaction
     My::V1.delete all: true
     g,a,b,c = ["Gateway", "ServiceA", "ServiceB", "ServiceC"].map {|y| My::V1.insert a: y}
     request='get_user_info'
@@ -23,7 +23,7 @@ RSpec.describe Arcade::Base do
   end
   after(:all) do
      db = Arcade::Init.db
-     db.rollback
+ #    db.rollback
   end
 
 

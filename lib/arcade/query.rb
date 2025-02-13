@@ -62,12 +62,10 @@ module Arcade
 			@q[:kind]
 			end
 		end
-=begin
-  Output the compiled query
-  Parameter: destination (rest, batch )
-  If the query is submitted via the REST-Interface (as get-command), the limit parameter is extracted.
-=end
-
+    # ------------------ compose---------------------------------------
+    #  Output the compiled query
+    #  Parameter: destination (rest, batch )
+    #  If the query is submitted via the REST-Interface (as get-command), the limit parameter is extracted.
 		def compose(destination: :batch)
 			if kind.to_sym == :update
 				return_statement = "return after " + ( @q[:aliases].empty? ?  "$current" : @q[:aliases].first.to_s)
@@ -126,9 +124,8 @@ module Arcade
 			end
 		end
 
-=begin
-	from can either be a Databaseclass to operate on or a Subquery providing data to query further
-=end
+	# -------------------- from ---------------------------------------
+	#  arg  can either be a Database class to operate on or a Subquery providing data to query further
 		def from arg = nil
 			if arg.present?
 				@q[:database] =  arg
@@ -315,11 +312,8 @@ end # class << self
 			self
     end
 
-#		# connects by adding {in_or_out}('edgeClass')
-#		def connect_with in_or_out, via: nil
-#			 argument = " #{in_or_out}(#{via.to_or if via.present?})"
-#		end
 
+    # ------------------ nodes ---------------------------------------
 		# adds a connection
 		#  in_or_out:  :out  --->  out('edgeClass')[where-condition]
 		#              :in   --->  in('edgeClass')[where-condition]
@@ -335,7 +329,7 @@ end # class << self
 
 		def nodes in_or_out = :out, via: nil, where: nil, expand:  false
 
-			 condition = where.present? ?  "[ #{generate_sql_list(where)} ]" : ""
+			 condition = where.present? ? "[ #{generate_sql_list(where)} ]" : ""
        via = resolve_edge_name(via) unless via.nil?
 
        argument = if in_or_out.to_s[-1] == 'E'

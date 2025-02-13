@@ -19,13 +19,14 @@ RSpec.describe Arcade::Document do
   before(:all) do
     connect
     db = Arcade::Init.db
-    db.begin_transaction
+#    db.begin_transaction
     Arcade::BaseNode.create_type
     Arcade::ExtraNode.create_type
+    Arcade::Node.delete all: true
   end
   after(:all) do
      db = Arcade::Init.db
-     db.rollback
+ #    db.rollback
   end
 
 
@@ -38,6 +39,7 @@ RSpec.describe Arcade::Document do
 
   context "check inheritance" do
    it "create a node" do
+      Arcade::ExtraNode.delete all: true
       node =  Arcade::ExtraNode.insert name: 'Hugo', age: 40, item: 1
       expect( node ).to be_a Arcade::ExtraNode
       expect( node.rid ).to  match /\A[#]{,1}[0-9]{1,}:[0-9]{1,}\z/

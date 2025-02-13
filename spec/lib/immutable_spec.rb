@@ -10,13 +10,13 @@ RSpec.describe Arcade::Base do
     connect
     db = Arcade::Init.db
     My::ReadOnly.create_type
-    db.begin_transaction
+#    db.begin_transaction
     My::ReadOnly.insert node: 1
 
   end
   after(:all) do
      db = Arcade::Init.db
-     db.rollback
+ #    db.rollback
   end
 
 

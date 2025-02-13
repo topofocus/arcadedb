@@ -9,15 +9,16 @@ RSpec.describe Arcade::Query do
   before( :all ) do
     connect
     db = Arcade::Init.db
-    db.begin_transaction
+#    db.begin_transaction
     Arcade::TestQuery.create_type
     Arcade::TestDocument.create_type
+    Arcade::TestDocument.delete all: true
 #    @db.create_class 'Openinterest'
 #    @db.create_class "match_query"
   end # before
   after(:all) do
      db = Arcade::Init.db
-     db.rollback
+ #    db.rollback
   end
 
 

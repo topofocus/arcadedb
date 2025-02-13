@@ -5,7 +5,7 @@ RSpec.describe Arcade::Database do
   before(:all) do
     connect
     DB = Arcade::Init.db
-    DB.begin_transaction
+#    DB.begin_transaction
     begin
     DB.create_type :document, 'test_document'
     DB.create_type :vertex, :test_vertex
@@ -17,7 +17,7 @@ RSpec.describe Arcade::Database do
     end
   end
   after(:all) do
-    DB.rollback
+ #   DB.rollback
   end
 
   context "It memoises the database"  do

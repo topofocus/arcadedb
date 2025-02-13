@@ -13,7 +13,7 @@ RSpec.describe Arcade::Document do
     My::EmbeddedDocument.create_type
     My::Alist.create_type
     My::Aset.create_type
-    db.begin_transaction
+#    db.begin_transaction
     Arcade::DatDocument.delete all: true
     My::EmbeddedDocument.delete all: true
     My::Alist.delete all: true
@@ -22,7 +22,7 @@ RSpec.describe Arcade::Document do
   end
   after(:all) do
      db = Arcade::Init.db
-     db.rollback
+ #    db.rollback
   end
 
   context "work on the generated schema of base"  do
@@ -79,7 +79,7 @@ RSpec.describe Arcade::Document do
 
     #--------------------------- embedded list  ---------------------------------------------------- #
 
-    context "realize a 1:n  relation on embedded documents" , focus: true do
+    context "realize a 1:n  relation on embedded documents"  do
       before( :all  ) do
         a = My::Alist.new name: 'testrecord 1', number: 1, rid: "#0:0"
         b = My::Alist.new name: 'testrecord 2', number: 2, rid: "#0:0"
@@ -89,14 +89,17 @@ RSpec.describe Arcade::Document do
         c.update_list :emb, b
       end
 
+    ##  simply a where statement loads embe3dded datasets as hash
     Given( :embedded3 ){  My::EmbeddedDocument.where(label: 'Test3').first }
+      Then{ puts embedded3.inspect }
       Then{ embedded3.is_a? My::EmbeddedDocument }
       Then{ embedded3.emb.is_a? Array }
       Then{ embedded3.emb.each{ |y| y.is_a? My::Alist  }}
-      Then{ embedded3.emb.first.number == 1  }
-      Then{ embedded3.emb.last.number == 2  }
+      Then{ embedded3.emb.first.is_a? Hash  }
+      Then{ embedded3.emb.first[:number] == 1  }
+      Then{ embedded3.emb.last[:number] == 2  }
 
-
+    ##  After expanding, the embedded document is accessible
     When( :query) { embedded3.query expand: :emb  }
       Then{ query.to_s == "select  expand ( emb ) from "+ embedded3.rid + " " }
       Then{ query.execute ==   [{:number=>1, :@type=>"my_alist", :name=>"testrecord 1"},

@@ -12,7 +12,7 @@ RSpec.describe "Edges" do
   before( :all ) do
     connect
     db = Arcade::Init.db
-    db.begin_transaction
+ #   db.begin_transaction
 
     Arcade::BaseNode.create_type
     Arcade::Node.create_type
@@ -21,7 +21,12 @@ RSpec.describe "Edges" do
   end
   after(:all) do
      db = Arcade::Init.db
-     db.rollback
+     Arcade::Connects.delete all: true
+     Arcade::ExtraNode.delete all: true
+     Arcade::Node.delete all: true
+     Arcade::BaseNode.delete all: true
+     
+  #   db.rollback
   end
 
 

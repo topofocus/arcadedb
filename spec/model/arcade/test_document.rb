@@ -6,6 +6,7 @@ module Arcade
     attribute :d?, Types::Hash
     attribute :emb?, Types::Any
     attribute :many?, Types::Any
+    attribute :mydate?, Types::JSON::DateTime
 
    def self.db_init
       File.read(__FILE__).gsub(/.*__END__/m, '')
@@ -22,3 +23,4 @@ CREATE PROPERTY test_document.d  MAP
 CREATE PROPERTY test_document.emb  EMBEDDED
 CREATE PROPERTY test_document.many  LIST
 CREATE INDEX  ON test_document (name, age) UNIQUE
+

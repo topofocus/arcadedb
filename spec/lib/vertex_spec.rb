@@ -47,7 +47,7 @@ RSpec.describe Arcade::Vertex do
   before(:all) do
     connect
     db = Arcade::Init.db
-    db.begin_transaction
+ #   db.begin_transaction
     My::V2.create_type
     My::V3.create_type
     My::E2.create_type
@@ -55,7 +55,7 @@ RSpec.describe Arcade::Vertex do
   end
   after(:all) do
      db = Arcade::Init.db
-     db.rollback
+  #   db.rollback
   end
 
 	describe "CRUD"  do

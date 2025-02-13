@@ -13,7 +13,7 @@
     user: root
     pass: topo1focus
 :admin:
-  :host: 10.247.8.109
+  :host: localhost
   :port: 2480
   :user: root
   :pass: topo1focus

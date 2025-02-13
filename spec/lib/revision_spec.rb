@@ -7,14 +7,14 @@ RSpec.describe Arcade::Revision do
   before(:all) do
     connect
     db = Arcade::Init.db
-    db.begin_transaction
+  #  db.begin_transaction
     My::NamesR.create_type
     Arcade::RevisionRecord.create_type
     My::NamesR.delete all: true
   end
   after(:all) do
      db = Arcade::Init.db
-     db.rollback
+   #  db.rollback
   end
 
   context "create a revision record" do

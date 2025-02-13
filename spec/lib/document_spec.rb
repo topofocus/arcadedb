@@ -14,7 +14,7 @@ RSpec.describe Arcade::Document do
   before(:all) do
     connect
     db = Arcade::Init.db
-    db.begin_transaction
+  #  db.begin_transaction
     db.transmit{ "DROP TYPE test_document IF EXISTS" }
     db.transmit{ "DROP TYPE dep_test_doc  IF EXISTS" }
     Arcade::TestDocument.create_type
@@ -22,7 +22,7 @@ RSpec.describe Arcade::Document do
   end
   after(:all) do
      db = Arcade::Init.db
-     db.rollback
+  #   db.rollback
   end
 
 
@@ -108,12 +108,26 @@ RSpec.describe Arcade::Document do
    it " Add a link  to the document" do
       primary_document =  Arcade::TestDocument.insert name: 'Fred', age: 40, item: 4
       dependend_document =  Arcade::TestDocument.insert name: 'Berta', age: 50, item: 5
+      puts dependend_document
       modified_document = primary_document.update dep: dependend_document
-      expect( modified_document.dep ).to eq dependend_document
+      puts modified_document.to_human
+      puts modified_document.dep
+      expect( modified_document.dep ).to eq dependend_document.rid
+   end
 
 
+   it " Store and retreive a DateTime property ", focus: true do
 
+    the_date=  DateTime.parse('2025-02-09 18:56:20')
+     primary_document =  Arcade::TestDocument.insert name: 'Hansi', age: 90, item: 5, mydate: the_date 
+     db =  Arcade::Init.db
+          
+#          db.execute { " ALTER DATABASE DATETIMEFORMAT \"yyyy-MM-dd HH:mm:ss\"" }
+    #  a= db.execute{ " insert into test_document set name='Hanri', age=50, item=6, mydate= #{the_date}"}
+    # puts a.inspect
+     puts primary_document.inspect
 
+       
    end
 
 

@@ -21,6 +21,9 @@ module Arcade
     ## ----------------------------------------- Class Methods------------------------------------ ##
     #                                                                                               #
     class << self
+     def descendants
+         ObjectSpace.each_object(Class).select { |klass| klass < self }
+     end
 
       # this has to be implemented on class level
       # otherwise it interfere  with attributes
@@ -370,8 +373,6 @@ module Arcade
     end
 
     def to_human
-
-
 		"<#{ self.class.to_s.snake_case }" + rid? ? "[#{ rid }]: " : " " + invariant_attributes.map do |attr, value|
 			v= case value
 				 when Base

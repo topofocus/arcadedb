@@ -13,7 +13,7 @@ RSpec.describe Arcade::Vertex do
     My::V1.create_type
     My::Alist.create_type
     My::Aset.create_type
-    db.begin_transaction
+ #   db.begin_transaction
     My::V1.delete all: true
     My::Alist.delete all: true
     My::Aset.delete all: true
@@ -21,7 +21,7 @@ RSpec.describe Arcade::Vertex do
   end
   after(:all) do
      db = Arcade::Init.db
-     db.rollback
+  #   db.rollback
   end
 
   context "create nodes"  do

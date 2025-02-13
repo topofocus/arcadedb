@@ -9,13 +9,13 @@ RSpec.describe Arcade::Edge do
   before( :all ) do
     connect
     db = Arcade::Init.db
-    db.begin_transaction
+#    db.begin_transaction
     Arcade::Node.create_type
     Arcade::UniqEdge.create_type
   end # before
   after(:all) do
      db = Arcade::Init.db
-     db.rollback
+ #    db.rollback
   end
 
 

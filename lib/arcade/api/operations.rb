@@ -61,23 +61,6 @@ module Arcade
       logger.fatal "Drop database #{name} through \"POST drop database/#{name}\" failed"
       raise
     end
-    # ------------------------------  create document ------------------------------------------------- #
-    # adds a document to the specified database table
-    #
-    # specify database-fields as hash-type parameters
-    #
-    # i.e   Arcade::Api.create_document 'devel', 'documents',  name: 'herta meyer', age: 56, sex: 'f'
-    #
-    # returns the rid of the inserted dataset
-    #
-    def self.create_document database, type, session_id: nil, **attributes
-      payload = { "@type" => type }.merge( attributes )
-      if session_id.nil?
-        post_data "document/#{database}", payload
-      else
-        post_transaction "document/#{database}", payload, session_id: session_id
-      end
-    end
 
     # ------------------------------  execute         ------------------------------------------------- #
     # executes a sql-query in the specified database
@@ -108,6 +91,21 @@ module Arcade
  #     end
     end
 
+    # ------------------------------  create Document   ------------------------------------------------- #
+    # adds a record ( document, vertex or edge ) to the specified database type
+    #
+    # specify database-fields as hash-type parameters
+    #
+    # i.e   Arcade::Api.create_record 'devel', 'documents',  name: 'herta meyer', age: 56, sex: 'f'
+    #
+    # returns the rid of the inserted dataset
+    #
+    def self.create_document database, type, session_id: nil, **attributes
+        content = "CONTENT #{ attributes.to_json }"
+        result = execute( database, session_id: session_id ){ "INSERT INTO #{type} #{content} "}
+        result.first[:@rid]   #  emulate the »old« behavior of the /post/create_document api endpoint
+    end
+    
     # ------------------------------  get_record      ------------------------------------------------- #
     # fetches a record by providing  database and  rid
     # and returns the result as hash
@@ -121,7 +119,7 @@ module Arcade
       rid =  rid.join(':')
       rid = rid[1..-1] if rid[0]=="#"
       if rid.rid?
-        get_data "query/#{database}/sql/" + URI.encode_uri_component("select from #{rid}")
+        get_data( "query/#{database}/sql/" + URI.encode_uri_component("select from #{rid}")) &.first
       else
         raise Error "Get requires a rid input"
       end

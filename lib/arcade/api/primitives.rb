@@ -55,7 +55,7 @@ module Arcade
 
     # ------------------------------ post data -------------------------------------------------------- #
     def post_data command,  payload
-      case response = http.post( Config.base_uri + command, json:  payload )
+        case response = http.post( Config.base_uri + command, json:  payload )
         in {status: 200..299}
           # success
         JSON.parse( response.body, symbolize_names: true )[:result]
@@ -70,7 +70,7 @@ module Arcade
              sleep 1
              post_data command,  payload
            else
-           raise Arcade::QueryError.new **response.json( symbolize_names: true  )
+             raise Arcade::QueryError.new **response.json( symbolize_names: true  )
            end
       else
         #   # http error
@@ -93,6 +93,7 @@ module Arcade
     # ------------------------------ post transaction ------------------------------------------------- #
     def post_transaction command, params, session_id:
       http_a = http.with(  headers: { "arcadedb-session-id" => session_id } , debug_level: 1)
+      puts "params #{params.inspect}"
       case response = http_a.post( Config.base_uri + command, json:  params )
         in {status: 200..299}
           # success

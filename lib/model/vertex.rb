@@ -224,7 +224,7 @@ Format: < Classname: Edges, Attributes >
 =end
 	def to_human
 
-    in_and_out =  "{#{inE.count}->}{->#{outE.count }}, "
+    in_and_out =  coe.then{| i,o| "{#{i}->}{->#{o}}, "}
 
 		#Default presentation of Arcade::Base::Model-Objects
 
@@ -243,6 +243,13 @@ Format: < Classname: Edges, Attributes >
 		end.compact.sort.join(', ') + ">".gsub('"' , ' ')
 	end
 
+
+ # Count Of Edges (coe)
+ # returns an Array: [ count-of-in-edges, count-of-out-edges ]
+   def coe 
+      db.query( "select in().size() as ie, out().size() as oe from #{rid}" ) &.first.values
+   end
+	            
 
     def refresh
       # force reloading of edges and nodes

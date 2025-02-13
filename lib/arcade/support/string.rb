@@ -25,6 +25,10 @@ module Arcade
           [ Database.namespace, self.capitalize ]
         end
       end
+      def camelcase
+      # Split the string into words, capitalize each word, and join them together
+        self.split('_').map(&:capitalize).join
+      end
 
       def snake_case
         n= if split('::').first == Database.namespace.to_s
@@ -107,13 +111,3 @@ module Arcade
 end
 
 String.include Arcade::Support::String
-
-module Types
-  include Dry.Types()
-
-  # include in attribute definitions
-  Rid = String.constrained( format:  /\A[#]{1}[0-9]{1,}:[0-9]{1,}\z/ )
-  Blockchain =  String.constrained( format: /^(algo|eth|btc)$/ )  #  add other blockchain symbols here
-  Email = String.constrained( format: /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z]+)*\.[a-z]+\z/i )
-
-end

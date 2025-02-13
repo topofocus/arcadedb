@@ -157,7 +157,7 @@ module Arcade
 
 
 
-    # ------------ create  -----------
+    # ------------ create  -----------  ## not supported anymore  by the api
     # returns an rid of the successfully  created vertex or document
     #
     #  Parameter:  name of the vertex or document type
@@ -192,12 +192,13 @@ module Arcade
       elsif content_params.empty?
         logger.error "Nothing to Insert"
       else
-        content =  "CONTENT #{ content_params.to_json }"
+        content = "CONTENT #{ content_params.to_json }"
         target =  target_params.map{|y,z|  y==:type ?  z : "#{y.to_s} #{ z } "}.join
-        result = Api.execute( database, session_id: session ){ "INSERT INTO #{target} #{content} "}
+        result =  Api.execute( database, session_id: session ){ "INSERT INTO #{target} #{content} "}
         result &.first.allocate_model(false)
       end
     end
+
 
     # ------------------------------  get        ------------------------------------------------------ #
     # Get fetches the record associated with the rid given as parameter.
@@ -224,7 +225,7 @@ module Arcade
       end
     end
 
-    # ------------------------------  get        ------------------------------------------------------ #
+    # ------------------------------  delete     ------------------------------------------------------ #
     #
     #  Delete the specified rid
     #
@@ -272,7 +273,7 @@ module Arcade
      end
     rescue  Dry::Struct::Error, Arcade::QueryError => e
       Api.rollback database, session_id: s, log: false
-      logger.info "Execution  FAILED -->  Status #{e.status}"
+      logger.fatal "Execution  FAILED -->  Status #{e}"
       []  #  return empty result
     end
 

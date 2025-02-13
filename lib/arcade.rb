@@ -9,9 +9,10 @@ require "dry/core/class_builder"
 require "dry/core/class_attributes"
 require 'json'
 
-module Types
-  include Dry.Types()
-end
+require_relative '../lib/types'
+#module Types
+#  include Dry.Types()
+#end
 require 'yaml'
 require 'securerandom'
 require 'httpx'

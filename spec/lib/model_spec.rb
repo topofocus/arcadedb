@@ -17,13 +17,13 @@ RSpec.describe Arcade::Document do
   before(:all) do
     connect
     db = Arcade::Init.db
-    db.begin_transaction
+#    db.begin_transaction
     Arcade::TestDocument.create_type
     Arcade::TestDocument.delete all: true
   end
   after(:all) do
      db = Arcade::Init.db
-     db.rollback
+ #    db.rollback
   end
 
 
@@ -60,7 +60,7 @@ RSpec.describe Arcade::Document do
                                                                          # loaded seperately. There is
                                                                          # no caching!
                                                                          # ToDo: Implement lazy loading
-    Then { document.married_to == linked_document }
+    Then { document.married_to == linked_document.rid }
     Then { document.d == { a: 2, b: 45, c: 67 } }
   end
   context "Document with an embedded Hash" do

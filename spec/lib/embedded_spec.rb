@@ -16,7 +16,7 @@ RSpec.describe Arcade::Query do
     db = Arcade::Init.db
     Arcade::DatDocument.create_type
     Arcade::TestDocument.create_type
-    db.begin_transaction
+#    db.begin_transaction
     Arcade::DatDocument.delete all: true
     Arcade::TestDocument.delete all: true
       Arcade::TestDocument.insert date: Date.new( 2019,5,16 ), name:"hugi", age: rand(99)
@@ -32,7 +32,7 @@ RSpec.describe Arcade::Query do
 
   after(:all) do
      db = Arcade::Init.db
-     db.rollback
+ #    db.rollback
   end
 
   context "single documents"  do

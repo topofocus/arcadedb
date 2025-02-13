@@ -19,7 +19,7 @@ RSpec.describe Arcade::Document do
     db = Arcade::Init.db
     Arcade::BaseNode.create_type
     Arcade::TestEdge.create_type
-    db.begin_transaction
+#    db.begin_transaction
     Arcade::BaseNode.delete all: true
     a = Arcade::BaseNode.insert :item => "hugo"
     b = Arcade::BaseNode.insert :item => "berta"
@@ -28,7 +28,7 @@ RSpec.describe Arcade::Document do
   end
   after(:all) do
      db = Arcade::Init.db
-     db.rollback
+ #    db.rollback
   end
 
 
