@@ -35,3 +35,11 @@ All notable changes to this project will be documented in this file.
 ## 0.5.1 - 2024-1-16
 - Included Arcade::RevisionRecord and Arcade::Revision model classes
 - Both provide basic support for audit proofed bookings
+##       - 2025-02-11
+- Include method Object#descendants (part of active-support)
+- Separate Dry::Type definitions to /lib/types.rb
+- added Vertex#coe (count of edeges) as service method for to_human
+
+
+
+
