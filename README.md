@@ -148,7 +148,17 @@ a.to_s
 a.execute.select_results  #  sends the statement to the database and returns Arcade Objects. 
 ```
 
-Arcade::Match-objects can be used as `from:` argument to Arcade::Query-Statements, thus hybrid queries are 
+To query properties on Edges, `inE`, and `outE` are present.
+```ruby
+a =  Arcade::Match.new( type: Person, as: :persons)   ->  Match { type: person, as: persons}
+a.outE via: IsMarriedTo, where: { year: 1990..2000 }  ->  .outE('is_married_to'){ where: year between 1990 and 2000}
+                                                      ->  .outV('is_maried_to')  ...
+
+a.outE via: [IsMarriedTo, IsMarriedIn], where: { year: 1990..2000 }, as: :bride 
+                                                      ->   .outV('is_married_in') ... 
+```
+
+Arcade::Match-objects can be used as `from:` argument to Arcade::Query-Statements; hybrid queries are 
 easily constructed without extensive string-manipulations.
 
 ## Low Level Database Requests

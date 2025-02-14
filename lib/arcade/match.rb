@@ -4,7 +4,7 @@ module Arcade
     include Arcade::Support::Sql
 
 =begin
-  This is a very simple wrapper for the match statement
+  This is a wrapper for the match statement
 
   Initialize:  a= Arcade::Match.new type: Arcade::DatabaseType, where: { property: 'value' }, as: :alias
   Complete:    b = a.out( Arcade::EdgeType ).node( while: true, as: item )[ .in.node ... ]
@@ -13,7 +13,12 @@ module Arcade
                          [.analyse_result]
   Customize the return values:
                b.to_s{ "customized return statement" }
-               b.execute{ "cusomized return statment" }s
+               b.execute{ "customized return statment" }
+               
+  Conditions on edges:
+        m =  Match.new type: Arcade::DatabaseType
+        m.inE via: Arcade::Edge  || via: [Arcade::Edge1, Arcade::Edge2], where: { var: 3..6 }  
+         --->  inE('edge(1)'){ where: (var between 3 and 6 )}.outV('edge(2)')
 
 
   Example
@@ -85,13 +90,17 @@ module Arcade
     def self.define_inner_edge start_dir, final_dir
       define_method start_dir do | edge = "", **a |
         raise "edge must be a Database-class"  unless edge.is_a?(Class) || edge.empty?
+
+        print_edges = -> (e){ e.is_a?(Class) ? e.database_name.to_or : ''}
+        edges = [ a.delete(:via) ].flatten
+        edges << edge unless edge == ''
         n = if a.empty?
               ""
             else
               @args = a
               "{ #{ assigned_parameters } }"
             end
-        @stack << ".#{ start_dir }(#{edge.is_a?(Class) ? edge.database_name.to_or : ''})#{ n }.#{ final_dir }()"
+        @stack << ".#{ start_dir }(#{print_edges.call(edges.first)})#{ n }.#{ final_dir }(#{print_edges.call(edges.last)})"
         return self
       end
 

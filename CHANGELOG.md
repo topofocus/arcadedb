@@ -39,6 +39,7 @@ All notable changes to this project will be documented in this file.
 - Include method Object#descendants (part of active-support)
 - Separate Dry::Type definitions to /lib/types.rb
 - added Vertex#coe (count of edeges) as service method for to_human
+- updated Match#inE, #outE methods to facilitate queries on properties on edges
 
 
 
