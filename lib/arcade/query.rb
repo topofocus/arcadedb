@@ -27,7 +27,8 @@ module Arcade
 								[],   # aliases
 								'',  # database
 								[],   #set,
-								[]  # remove
+								[],  # remove
+							  []   # group by
 			  args.each{|k,v| send k, v}
 				@fill = block_given? ?   yield  : 'and'
 		end
