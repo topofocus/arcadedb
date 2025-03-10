@@ -53,12 +53,12 @@ module Arcade
          [ "MATCH { rid: #{rid} }" ]
                elsif rid.present? && rid.rid?
          [ "MATCH { rid: #{rid}, #{ assigned_parameters } }" ]
-               elsif type.present? && type.is_a?( Arcade::Vertex) && args.empty?
+               elsif type.present? && type.is_a?( Class) && type.ancestors.include?(Arcade::Vertex) && args.empty?
          [ "MATCH { type: #{type.database_name} }" ]
-               elsif type.present? && type.is_a?( Arcade::Vertex)
+               elsif type.present? && type.is_a?( Class) && type.ancestors.include?(Arcade::Vertex)
          [ "MATCH { type: #{type.database_name}, #{ assigned_parameters } }" ]
                else
-         raise "Match:: Either type  (an Arcade::Vertex-Class) or rid (String or Arcade::Vertex-Object) is required as parameter"
+         raise "Match:: Either type  (Arcade::Vertex-Class) or rid (String or Arcade::Vertex-Object) is required as parameter"
                end
 
       return self
