@@ -20,6 +20,10 @@ module Arcade
         m.inE via: Arcade::Edge  || via: [Arcade::Edge1, Arcade::Edge2], where: { var: 3..6 }  
          --->  inE('edge(1)'){ where: (var between 3 and 6 )}.outV('edge(2)')
 
+  Address a rid:
+        m = Match.new( rid: "#1:0") #  (or Arcade::Vertex-Object)
+            .....
+            .node( rid: "#2:0")     # instead of where statement           
 
   Example
 
@@ -39,12 +43,23 @@ module Arcade
 
 =end
 
-    def initialize type: , **args
-
+    def initialize  **args
+      type = args.delete :type
+      rid =  args.delete :rid
       @args = args
       @as = []
 
-      @stack = [ "MATCH { type: #{type.database_name}, #{ assigned_parameters } }" ]
+      @stack = if rid.present? && rid.rid? && args.empty?
+         [ "MATCH { rid: #{rid} }" ]
+               elsif rid.present? && rid.rid?
+         [ "MATCH { rid: #{rid}, #{ assigned_parameters } }" ]
+               elsif type.present? && type.is_a?( Arcade::Vertex) && args.empty?
+         [ "MATCH { type: #{type.database_name} }" ]
+               elsif type.present? && type.is_a?( Arcade::Vertex)
+         [ "MATCH { type: #{type.database_name}, #{ assigned_parameters } }" ]
+               else
+         raise "Match:: Either type  (an Arcade::Vertex-Class) or rid (String or Arcade::Vertex-Object) is required as parameter"
+               end
 
       return self
     end
@@ -114,12 +129,13 @@ module Arcade
 
     # general declation of a node (ie. vertex)
     def node **args
+      rid =  args.delete :rid
       @args = args
       @stack << if args.empty?
-       "{}"
-              else
-       "{ #{ assigned_parameters } }"
-              end
+       rid.present? ? "{ rid: #{rid} }" : "{}"
+                else
+       rid.present? ? "{ rid: #{rid}, #{assigned_parameters} }" :  "{ #{ assigned_parameters } }"
+                end
       return self
     end
 
