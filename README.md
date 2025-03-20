@@ -7,7 +7,7 @@ The server's response is then mapped to an ORM (Object-Relational Mapping) based
 Each database type is represented by a dedicated Model Class, where complex queries are encapsulated. 
 The program also includes a  Query-Preprocessor and Match-statment generator for constructing custom queries in ruby fashion.
 
-***ArcadeDB internally uses `Arcade` as primary namespace**** 
+***ArcadeDB internally uses `Arcade` as primary namespace*** 
 
 ## Prerequisites
 
@@ -158,6 +158,19 @@ a.outE via: [IsMarriedTo, IsMarriedIn], where: { year: 1990..2000 }, as: :bride
                                                       ->   .outV('is_married_in') ... 
 ```
 
+Match statements can also refer to a vertex:
+```ruby 
+p = Person.find name: 'tux'
+c = Person.find name: 'hilde'
+a = Arcade::Match.new( vertex: p )                    -> Match { type: person, rid: 2:0 }
+                 .out( IsMarriedTo )                  ->       .out('is_married_to')
+                 .node( as: :wife )                   ->       { as: wife }
+                 .out( HasChild )                     ->       .out('has_child')
+                 .node( vertex: c )                   ->       { type: person, rid: 2:1 }
+                                                      -> Return wife
+``` 
+fetches the vertex between two known vertices. This is the fastest lookup mechanism if the vertices are prefetched. 
+
 Arcade::Match-objects can be used as `from:` argument to Arcade::Query-Statements; hybrid queries are 
 easily constructed without extensive string-manipulations.
 
@@ -171,7 +184,7 @@ The database-handle is always present through `Arcade::Init.db`
 ```ruby
 db =  Arcade::Init.db
 
-$ db.get nn, mm                                 # returns a Aracde:Base object
+$ db.get nn, mm  # nn=2; mm=0                   # returns a Aracde:Base object
                                                 # rid is either "#11:10:" or two numbers
 $ db.query querystring                          # returns either an Array of results (as  Hash) 
 $ db.execute { querystring }                    # execute a non idempotent query within a (nested) transaction
@@ -184,19 +197,20 @@ $ db.create_edge <name>, from: <rid> or [rid, rid, ..] , to: <rid> or [rid, rid,
 
 **Convert database input to Arcade::Base Models**
 
-Either  `db.query` or  `dbB.execute` return the raw JSON-input from the database. It can always converted to model-objects by chaining
+Either  `db.query` or  `db.execute` return the raw JSON-input from the database. It can always converted to model-objects by chaining
 `allocate_model` or `select_result`.
 
 ```ruby
 $ db.query "select from my_names limit 1"
 # which is identical to
-$ My::Names.query( limit: 1).query
+$ My::Names.query( limit: 1).execute
  => [{:@out=>0, :@rid=>"#225:6", :@in=>0, :@type=>"my_names", :@cat=>"v", :name=>"Zaber"}] 
 # then
-$ My::Names.query( limit: 1).query.allocate_model.to_human
+$ My::Names.query( limit: 1).execute.allocate_model.to_human
  => ["<my_names[#225:6]: name: Zaber>" ]
  # replaces the hash with a My::Names Object 
 ```
+
 
 The **Base Layer** implements a low level access to the database API. 
 

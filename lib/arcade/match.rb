@@ -20,10 +20,10 @@ module Arcade
         m.inE via: Arcade::Edge  || via: [Arcade::Edge1, Arcade::Edge2], where: { var: 3..6 }  
          --->  inE('edge(1)'){ where: (var between 3 and 6 )}.outV('edge(2)')
 
-  Address a rid:
-        m = Match.new( rid: "#1:0") #  (or Arcade::Vertex-Object)
+  Address a single database record:
+        m = Match.new( vertex: { Arcade::Vertex-Instance } )
             .....
-            .node( rid: "#2:0")     # instead of where statement           
+            .node( vertex: { Arcade::Vertex-Instance } )     # instead of where statement           
 
   Example
 
@@ -45,20 +45,22 @@ module Arcade
 
     def initialize  **args
       type = args.delete :type
+      vertex =  args.delete :vertex
       rid =  args.delete :rid
+      raise "MATCH#new:: parameter rid is not supported. Use `vertex: Arcade::Vertex.instance` instead." if rid.present?
       @args = args
       @as = []
 
-      @stack = if rid.present? && rid.rid? && args.empty?
-         [ "MATCH { rid: #{rid} }" ]
-               elsif rid.present? && rid.rid?
-         [ "MATCH { rid: #{rid}, #{ assigned_parameters } }" ]
-               elsif type.present? && type.is_a?( Class) && type.ancestors.include?(Arcade::Vertex) && args.empty?
+      @stack = if vertex.is_a?( Arcade::Vertex ) && args.empty?
+         [ "MATCH { type: #{vertex.class.database_name }, rid: #{vertex.rid} }" ]
+               elsif  vertex.is_a?( Arcade::Vertex ) 
+         [ "MATCH { type: #{vertex.class.database_name }, rid: #{vertex.rid}, #{ assigned_parameters } }" ]
+               elsif  type.is_a?( Class) && type.ancestors.include?(Arcade::Vertex) && args.empty?
          [ "MATCH { type: #{type.database_name} }" ]
-               elsif type.present? && type.is_a?( Class) && type.ancestors.include?(Arcade::Vertex)
+               elsif  type.is_a?( Class) && type.ancestors.include?(Arcade::Vertex)
          [ "MATCH { type: #{type.database_name}, #{ assigned_parameters } }" ]
                else
-         raise "Match:: Either type  (Arcade::Vertex-Class) or rid (String or Arcade::Vertex-Object) is required as parameter"
+         raise "Match:: Either type  (Arcade::Vertex-Class) or vertex (Arcade::Vertex-Object) is required as parameter"
                end
 
       return self
@@ -129,12 +131,14 @@ module Arcade
 
     # general declation of a node (ie. vertex)
     def node **args
+      vertex =  args.delete :vertex
       rid =  args.delete :rid
+      raise "MATCH#node:: parameter rid is not supported. Use `vertex: Arcade::Vertex.instance` instead." if rid.present?
       @args = args
       @stack << if args.empty?
-       rid.present? ? "{ rid: #{rid} }" : "{}"
+       vertex.present? ? "{ type: #{vertex.class.database_name }, rid: #{vertex.rid} }" : "{}"
                 else
-       rid.present? ? "{ rid: #{rid}, #{assigned_parameters} }" :  "{ #{ assigned_parameters } }"
+       vertex.present? ? "{ type: #{vertex.class.database_name }, rid: #{vertex.rid}, #{assigned_parameters} }" :  "{ #{ assigned_parameters } }"
                 end
       return self
     end
