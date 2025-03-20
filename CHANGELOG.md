@@ -40,7 +40,8 @@ All notable changes to this project will be documented in this file.
 - Separate Dry::Type definitions to /lib/types.rb
 - added Vertex#coe (count of edeges) as service method for to_human
 - updated Match#inE, #outE methods to facilitate queries on properties on edges
-
+##       - 2025-03-15
+- support of Match.new vertex: {a prefetched Arcade::Vertex} and match.node( vertex: ...) 
 
 
 
