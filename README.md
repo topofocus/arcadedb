@@ -131,12 +131,12 @@ gets all wives where the divorced-condition, which is set on the edge, is false.
 ### Query
 
 A **Query Preprocessor** is implemented. Its adapted from ActiveOrient. The [documentation](https://github.com/topofocus/active-orient/wiki/OrientQuery)
-is still valid,  however the class has changed to `Arcade::Query`. 
+is still valid, but the class has changed to `Arcade::Query`. 
 
 ### Match
 
-A simple **Match Statement Generator** is provided for convenience. As the [declarative syntax](https://github.com/ArcadeData/arcadedb-docs/blob/main/src/main/asciidoc/sql/SQL-Match.adoc)  seems to be  very  intuitive, a preprocessor should not be 
-necessary. With the help of some ruby magic, the creation of match-statements is simply an no-brainer.
+A simple **Match Statement Generator** is provided for convenience. As the [declarative syntax](https://github.com/ArcadeData/arcadedb-docs/blob/main/src/main/asciidoc/sql/SQL-Match.adoc)  is very intuitive, a preprocessor should not be 
+necessary. However, with the help of some ruby magic, the creation of match-statements is simply an no-brainer.
 
 ```ruby
 a =  Arcade::Match.new( type: Person, as: :persons)
