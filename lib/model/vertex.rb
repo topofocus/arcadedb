@@ -213,6 +213,50 @@ or
     nil
   end
 
+=begin
+----------------------------------- Match ------------------------------------------
+(ClassMethod)
+
+Creates a Match-Statement based on the vertex type
+
+```
+m = Watchlist.match( symbol: 'iBit', as: :ibit ) 
+           .out( HasUnderlying)
+           .node( as: :u )
+           
+m.to_s
+  => "MATCH { type: watchlist, where: ( symbol='iBit' ), as: ibit }
+            .out('has_underlying'){ as: u } 
+      RETURN ibit,u "
+```
+=end
+  def self.match **args
+       as = args.delete( :as) || :a
+       args = args.delete( :where ) if args.key?( :where )
+       Arcade::Match.new type: self,  where: args, as: as
+  end
+
+=begin
+----------------------------------- Match ------------------------------------------
+(InstanceMethod)
+
+Creates a Match-Statement based on the current vertex ( i.e  as response to a website-request )
+
+```
+params[:rid] =>  "#49:0"
+
+m= params[:rid].load_rid.match.out( HasUnterlying ).node( as: :u )
+m.to_s
+ => "MATCH { type: strategie, rid: #49:0 }.out('has_underlying'){ as: u } RETURN u "
+```
+=end
+  def match as: nil
+    if as.nil?
+      Arcade::Match.new vertex: self
+    else
+      Arcade::Match.new vertex: self, as: as
+    end
+  end
 
   def remove
     db.execute{ "delete vertex #{rid}" }

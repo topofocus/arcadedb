@@ -174,6 +174,34 @@ fetches the vertex between two known vertices. This is the fastest lookup mechan
 Arcade::Match-objects can be used as `from:` argument to Arcade::Query-Statements; hybrid queries are 
 easily constructed without extensive string-manipulations.
 
+#### Vertex based Match statements
+
+A `match`-method is implemented for  Vertex-Classes and vertices.
+
+The class-method takes any argument (except `as:`) as part of a `where`-condition.
+
+```ruby
+  
+m = Watchlist.match( symbol: 'iBit', as: :ibit ) 
+             .out( HasUnderlying)
+             .node( as: :u )
+           
+m.to_s
+  => "MATCH { type: watchlist, where: ( symbol='iBit' ), as: ibit }
+            .out('has_underlying'){ as: u } 
+      RETURN ibit,u "
+```
+
+The instance-method is extremly handy in web-applications. If the `rid` is part of the `params`-hash,
+associated nodes are easily selected
+
+```ruby
+params[:rid] =>  "#49:0"
+
+m= params[:rid].load_rid.match.out( HasUnterlying ).node( as: :u )
+m.to_s
+ => "MATCH { type: strategie, rid: #49:0 }.out('has_underlying'){ as: u } RETURN u "
+```
 ## Low Level Database Requests
 The **second Layer** handles Database-Requests.  
 In its actual implementation, these requests are delegated to the HTTP/JSON-API.

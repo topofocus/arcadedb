@@ -42,6 +42,9 @@ All notable changes to this project will be documented in this file.
 - updated Match#inE, #outE methods to facilitate queries on properties on edges
 ##       - 2025-03-15
 - support of Match.new vertex: {a prefetched Arcade::Vertex} and match.node( vertex: ...) 
+##       - 2025-03-25
+- support of Vertex.match( where conditions [, as: :return_element] )
+- added Vertex#match to build  'MATCH type: {class} rid: {rid}'
 
 
 
