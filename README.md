@@ -7,6 +7,8 @@ The server's response is then mapped to an ORM (Object-Relational Mapping) based
 Each database type is represented by a dedicated Model Class, where complex queries are encapsulated. 
 The program also includes a  Query-Preprocessor and Match-statment generator for constructing custom queries in ruby fashion.
 
+** New in version 0.5.3: RAG Support ** 
+
 ***ArcadeDB internally uses `Arcade` as primary namespace*** 
 
 ## Prerequisites
