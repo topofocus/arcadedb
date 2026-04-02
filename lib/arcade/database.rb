@@ -195,12 +195,15 @@ module Arcade
         content = "CONTENT #{ content_params.to_json }"
         target =  target_params.map{|y,z|  y==:type ?  z : "#{y.to_s} #{ z } "}.join
         result =  Api.execute( database, session_id: session ){ "INSERT INTO #{target} #{content} "}
-        record = result&.first
+        # 
+        result &.record&.allocate_model(false)
+        ## commented for now. reactivate if necessary (performance issue)
+        #record = result&.first
         # Ensure @type is present for proper model allocation
-        if record && !record.key?(:@type) && target_params[:type]
-          record = record.merge( :"@type" => target_params[:type] )
-        end
-        record&.allocate_model(false)
+        #if record && !record.key?(:@type) && target_params[:type]
+        #  record = record.merge( :"@type" => target_params[:type] )
+        #end
+        #record&.allocate_model(false)
       end
     end
 
