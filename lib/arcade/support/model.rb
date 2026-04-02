@@ -60,7 +60,18 @@ module Arcade
           end
         end
         # choose the appropriate class
-        klass=  Dry::Core::ClassBuilder.new(  name: type_name, parent: nil, namespace: namespace ).call
+        # First, try to find an existing model class
+        klass = nil
+        begin
+          klass = namespace.const_get(type_name) if namespace && namespace.const_defined?(type_name)
+        rescue NameError
+          # Class not found, will create dynamically
+        end
+        
+        # If no existing class found, create a new one
+        unless klass
+          klass = Dry::Core::ClassBuilder.new( name: type_name, parent: nil, namespace: namespace ).call
+        end
         #
       begin
         # create a new object of that  class with the appropriate attributes

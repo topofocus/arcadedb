@@ -47,4 +47,7 @@ All notable changes to this project will be documented in this file.
 - added Vertex#match to build  'MATCH type: {class} rid: {rid}'
 
 
+## 0.5.3 - 2026-04-02
+- support for RAG
+- RAG modus is invoked through "rag_db_init"  in the model file
 

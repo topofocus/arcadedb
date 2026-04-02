@@ -186,7 +186,7 @@ module Arcade
 
       content_params = params.except( :type, :bucket, :index, :from, :return, :session_id )
       target_params = params.slice( :type, :bucket, :index )
-#      session_id = params[:session_id]   # extraxt session_id  --> future-use? 
+#      session_id = params[:session_id]   # extraxt session_id  --> future-use?
       if  target_params.empty?
         raise "Could not insert: target missing (type:, bucket:, index:)"
       elsif content_params.empty?
@@ -195,7 +195,15 @@ module Arcade
         content = "CONTENT #{ content_params.to_json }"
         target =  target_params.map{|y,z|  y==:type ?  z : "#{y.to_s} #{ z } "}.join
         result =  Api.execute( database, session_id: session ){ "INSERT INTO #{target} #{content} "}
-        result &.first.allocate_model(false)
+        # 
+        result &.record&.allocate_model(false)
+        ## commented for now. reactivate if necessary (performance issue)
+        #record = result&.first
+        # Ensure @type is present for proper model allocation
+        #if record && !record.key?(:@type) && target_params[:type]
+        #  record = record.merge( :"@type" => target_params[:type] )
+        #end
+        #record&.allocate_model(false)
       end
     end
 

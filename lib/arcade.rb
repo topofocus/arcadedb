@@ -32,6 +32,7 @@ require_relative '../lib/arcade/database'
 require_relative '../lib/arcade/match'
 require_relative '../lib/arcade/query'
 require_relative '../lib/arcade/init'
+require_relative '../lib/arcade/rag_schema'
 require_relative "../lib/models"
 require_relative '../lib/railtie'  if defined? Rails::Railtie
 

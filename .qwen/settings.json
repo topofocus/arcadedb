@@ -1,0 +1,48 @@
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "qwen3.5",
+        "name": "qwen3.5-35b (vLLM)",
+        "envKey": "VLLM_API_KEY",
+        "baseUrl": "http://172.28.50.138:11435/v1",
+        "generationConfig": {
+          "timeout": 120000,
+          "maxRetries": 2,
+          "contextWindowSize": 128000,
+          "samplingParams": {
+            "temperature": 0.6,
+            "max_tokens": 8196
+          }
+        }
+      }
+    ]
+  },
+  "$version": 3,
+  "security": {
+    "auth": {
+      "selectedType": "qwen-oauth"
+    }
+  },
+  "model": {
+    "name": "coder-model"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(python3 *)",
+      "Bash(curl *)",
+      "Bash(mkdir *)",
+      "Bash(gem *)",
+      "Bash(cat)",
+      "Bash(source *)",
+      "Bash(gemspec)",
+      "Bash(group *)",
+      "Bash(end)",
+      "Bash(eof)",
+      "Bash(bundle *)",
+      "Bash(sudo *)",
+      "WebFetch(github.com)",
+      "WebFetch(docs.arcadedb.com)"
+    ]
+  }
+}
