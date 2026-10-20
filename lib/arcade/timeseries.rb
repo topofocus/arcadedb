@@ -30,13 +30,18 @@ module Arcade
     TYPES = { String => 'STRING', Float => 'DOUBLE', Integer => 'LONG',
               :bool => 'BOOLEAN', :datetime => 'DATETIME' }.freeze
 
-    # SQL keyword and nanosecond-multiplier per supported precision
-    PRECISIONS = { second:      ['SECOND',      1],
-                   millisecond: ['MILLISECOND', 1_000],
-                   microsecond: ['MICROSECOND', 1_000_000],
-                   nanosecond:  ['NANOSECOND',  1_000_000_000] }.freeze
+    # The engine stores EVERY timestamp in milliseconds: on 26.10.1 the declared
+    # precision was honoured by no ingestion path (all converted to ms anyway, and
+    # RETENTION on a SECOND type deleted everything — fixed in 26.10.2, #9800);
+    # from 26.10.2 on, CREATE refuses anything but MILLISECOND. The DDL keyword is
+    # therefore always MILLISECOND; the class precision only documents the unit of
+    # values passed to .write (normalised to ms before sending, LP precision ms).
+    PRECISIONS = { second:      'MILLISECOND',
+                   millisecond: 'MILLISECOND',
+                   microsecond: 'MILLISECOND',
+                   nanosecond:  'MILLISECOND' }.freeze
 
-    LP_PRECISION = { second: 's', millisecond: 'ms', microsecond: 'us', nanosecond: 'ns' }.freeze
+    LP_PRECISION = 'ms'.freeze
 
     # ts.<fn>(field, ts) where the engine needs the timestamp, plain SQL otherwise
     AGGREGATES = { last:  ->(f, ts){ "ts.last(#{ f }, #{ ts })" },
@@ -82,7 +87,7 @@ module Arcade
         tag_cols  = tags.map  { |k, t| "#{ k } #{ sql_type t }" }.join(', ')
         field_cols = fields.map { |k, t| "#{ k } #{ sql_type t }" }.join(', ')
         cmd = "CREATE TIMESERIES TYPE #{ type_name } " \
-              "TIMESTAMP #{ ts_name } PRECISION #{ PRECISIONS[ts_precision].first } " \
+              "TIMESTAMP #{ ts_name } PRECISION #{ PRECISIONS[ts_precision] } " \
               "TAGS (#{ tag_cols }) FIELDS (#{ field_cols })"
         cmd += " SHARDS #{ @ts_shards }"   if @ts_shards
         cmd += " RETENTION #{ @ts_retention }" if @ts_retention
@@ -117,7 +122,7 @@ module Arcade
       def write_many samples
         return 0 if samples.empty?
         lines = samples.map { |s| line_for s }
-        Api.post_text "ts/#{ db.database }/write?precision=#{ LP_PRECISION[ts_precision] }", lines.join("\n")
+        Api.post_text "ts/#{ db.database }/write?precision=#{ LP_PRECISION }", lines.join("\n")
       end
 
       # ---- reading ----------------------------------------------------------------------
@@ -189,7 +194,7 @@ module Arcade
                   when String then Time.parse(value).to_i
                   else nil end
         return nil if seconds.nil?
-        seconds * PRECISIONS[ts_precision].last
+        seconds * 1_000                      # engine stores milliseconds — always
       end
 
       def sql_time value

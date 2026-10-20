@@ -116,7 +116,8 @@ Native ArcadeDB time-series types: columnar, compressed, tag-partitioned.
 ```ruby
 # model/ohlcv.rb
 class Ohlcv < Arcade::Timeseries
-  timestamp :ts, precision: :second          # date-granular series: use :second
+  timestamp :ts, precision: :second          # unit of values passed to .write only —
+                                             # the engine stores milliseconds on every version
   tags   symbol: String, currency: String
   fields open: Float, high: Float, low: Float, close: Float, volume: Integer
 end
@@ -175,7 +176,7 @@ Query payload hash: `{ query:, language: :sql|:cypher|:gremlin|:neo4j, params:, 
 | `schema:types` does not list timeseries types | existence probe: `POST /ts/{db}/query` → 400 `unknownTypes`/`does not exist` = absent (`type_exists?` uses this) |
 | `CREATE TIMESERIES TYPE` registers asynchronously (~1 s) | `create_type` waits for visibility; a write right after create fails with `unknownTypes` otherwise |
 | `DELETE FROM <ts-type> WHERE ...` reports a count but keeps rows (26.10.1) | no window-replace possible; re-writing a timestamp **appends** — deduplicate on read |
-| timeseries timestamp precision defaults to NANOSECOND | declare `PRECISION` explicitly; numeric literals are interpreted per precision |
+| timestamps are stored in **milliseconds** on every server version | declare `PRECISION MILLISECOND`; from 26.10.2 the server refuses the other precisions — on 26.10.1 they were accepted but honoured by no ingestion path, and RETENTION on a `SECOND` type deleted every sample (#9800). Types created with another precision pre-26.10.2 keep loading but report `maintenanceSuspended: true` in `schema:types` — retention/downsampling are suspended until confirmed |
 | `bucket` is a reserved word in SQL | aliased in backticks by `bucket()` |
 | `IF NOT EXISTS` unsupported on `CREATE TIMESERIES TYPE` | guarded by `type_exists?` |
 | Line Protocol needs pre-created types (`tsAutoCreateType` off by default) | `write_many` fails with `unknownTypes` if the type is missing |

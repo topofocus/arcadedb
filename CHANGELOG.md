@@ -51,6 +51,13 @@ All notable changes to this project will be documented in this file.
 - support for RAG
 - RAG modus is invoked through "rag_db_init"  in the model file
 
+## 0.5.5 - 2026-10-20
+- Timeseries: timestamps are normalised to MILLISECOND on every server version
+  - CREATE always emits PRECISION MILLISECOND (26.10.2 refuses the other precisions;
+    26.10.1 accepted them but honoured none — #9800)
+  - line protocol writes send precision=ms
+  - docs: server-notes row on maintenanceSuspended for pre-26.10.2 types
+
 ## 0.5.4 - 2026-10-20
 - Arcade::Timeseries — model class for native time-series types
   - schema DSL: timestamp (precision-aware) / tags / fields → CREATE TIMESERIES TYPE
