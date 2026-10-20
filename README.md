@@ -1,394 +1,212 @@
-#  ArcadeDB
+# ArcadeDB — Ruby Interface
 
-Ruby Interface to a [Arcade Database](https://arcadedb.com/).
+Ruby interface to [ArcadeDB](https://arcadedb.com/) via the HTTP-JSON API.
+Responses map to a Dry::Struct based ORM: each database type is a model class; graph,
+document and time-series queries are expressed in ruby. Includes a Query preprocessor
+and a MATCH statement generator.
 
-The program utilizes the HTTP-JSON API to direct database queries to an ArcadeDB server. 
-The server's response is then mapped to an ORM (Object-Relational Mapping) based on DRY::Struct. 
-Each database type is represented by a dedicated Model Class, where complex queries are encapsulated. 
-The program also includes a  Query-Preprocessor and Match-statment generator for constructing custom queries in ruby fashion.
+| | |
+|---|---|
+| Namespace | `Arcade` |
+| Requires | Ruby ≥ 2.7, running ArcadeDB server (tested against 26.10.x) |
+| Transport | HTTP/JSON (HTTPX, persistent connection, basic auth) |
+| Model layer | Dry::Struct — not ActiveRecord |
+| Sibling docs | `RAG_SCHEMA.md` (vector schema), `rails.md`, `CHANGELOG.md` |
 
-** New in version 0.5.3: RAG Support ** 
+## Quick start
 
-***ArcadeDB internally uses `Arcade` as primary namespace*** 
-
-## Prerequisites
-
-A running AracdeDB-Instance. [Quick-Start-Guide](https://docs.arcadedb.com/#Quick-Start-Docker).
-
-## New Project
-
-```
+```bash
 mkdir project && cd project
-bundle init
-bundle add arcadedb
-bundle add pastel  # for console output
-mkdir model
-mkdir bin
-```
-copy `https://github.com/topofocus/arcadedb/blob/main/bin/console` to the `bin` directory  
-copy `https://github.com/topofocus/arcadedb/blob/main/arcade.yml` to the project root and modify to your needs
-
-## Console
-
-To start an interactive console, a script is provided in the bin-directory.
-```
-$ cd bin && ./console.rb  t   ( or "d" or "p" for Test, Development and Production environment)
-
-**in Test environment Database definitions  (model-files) of the test-suite are included!**
+bundle init && bundle add arcadedb
+mkdir model bin
+# copy bin/console and arcade.yml from this repo, adapt arcade.yml
 ```
 
-## Add to a project
-Just require it in your program:
-```ruby
-require "arcade"
+`arcade.yml` (project root or `config/`):
+
+```yaml
+:environment:
+  :test:        { dbname: playground, user: root, pass: xxx }
+  :development: { dbname: devel,      user: root, pass: xxx }
+  :production:  { dbname: production, user: root, pass: xxx }
+:admin: { :host: localhost, :port: 2480, :user: root, :pass: xxx }
+:logger: stdout
 ```
-## Config
 
-Add a file `arcade.yml` at the root of your program or in the `config`-dir  and  provide suitable databases for test, development and production environment.
+Console: `bin/console t|d|p` (test environment also loads the spec model files).
+Connection handle: always available as `Arcade::Init.db` after `Arcade::Init.connect :production`.
 
+## Architecture
 
-## Examples  & Specs
+```
+Arcade::Base (Dry::Struct)          model layer
+├── Arcade::Vertex   +nodes/edges/traverse/match
+├── Arcade::Edge
+├── Arcade::Document
+├── Arcade::Revision / RevisionRecord    audit trail
+└── Arcade::Timeseries                   native time-series types (0.5.4+)
 
-The `example` directory contains documented sample files for typical usecases
+Arcade::Database   db.query / db.execute / db.transmit   (transactions, model allocation)
+Arcade::Api        raw HTTP primitives (query, execute, post_text, get_json, ...)
+```
 
-The `spec`-files in the rspec-test-suite-section are worth reading, too. 
+Class name maps to database type via `snake_case` (`Demo::User` → `demo_user`).
 
-## Implementation
-
-The adapter uses a 3 layer concept. 
-
-Top-Layer : `Arcade::Base`-Model-Objects. 
-Similar to ActiveRecord Model Objects but based on [Dry-Struct](https://dry-rb.org/gems/dry-struct/1.0/).
+## Models
 
 ```ruby
-# Example model file  /model/demo/user.rb
+# model/demo/user.rb
 module Demo
   class User < Arcade::Vertex
     attribute :name, Types::Nominal::String
-    
+
     def grandparents
-      db.query( "select in('is_family') from #{rid} ") &.allocate_model
+      db.query("select in('is_family') from #{rid}")&.allocate_model
     end
   end
 end
 __END__
   CREATE PROPERTY demo_user.name STRING
-  CREATE INDEX on demo_user( name ) UNIQUE
+  CREATE INDEX ON demo_user(name) UNIQUE
 ```
 
-Only the `name` attribute is declared. 
-
-`Demo::User.create_type`  creates the type and executes provided database-commands after `__END__`.   
-
-Other properties are schemaless. They are present in the database and are mapped to the `value`-attribute on the ruby side.  
+`Demo::User.create_type` creates the type and runs the `__END__` DDL.
+Undeclared properties are schemaless — they arrive in the `values` attribute.
 
 ```ruby
 Person.insert name: "Hubert", age: 35
 Person.update set: { age: 36 }, where: { name: 'Hubert' }
-persons = Person.where "age > 40"
-persons.first.update age: 37
-persons.first.update father: Person.create( name: 'Mike', age: 94 )
-
-Person.all
-Person.delete all: true || where: age: 56 , ...
+Person.where("age > 40").first.update age: 37
+Person.upsert name: 'Hugo'                       # ensure-exists (needs index on field)
+Person.delete all: true                          # or where: {...}
 ```
 
-### Nodes and Traverse
-
-`ArcadeDB` wraps common queries of bidirectional connected vertices.
-
-Suppose
-```ruby 
-m = Person.insert name: 'Hubert', age: 25
-f = Person.insert name: 'Pauline', age: 28
-m.assign via: IsMarriedTo, vertex: f , divorced: false
-
-```
-This creates the simple graph 
->  Hubert --- is_married_to --> Pauline 
->                  |
->                  -- divorced (attribute on the edge)
-
-This can be queried through
+## Graph: nodes, traverse, match
 
 ```ruby
-hubert =  Person.find name: 'Hubert'
-pauline = hubert.nodes( :out, via: IsMarriedTo ).first
-# or simply
-pauline = hubert.out.first
+m = Person.insert(name: 'Hubert'); f = Person.insert(name: 'Pauline')
+m.assign via: IsMarriedTo, vertex: f, divorced: false
 
+hubert = Person.find(name: 'Hubert')
+hubert.nodes(:out, via: IsMarriedTo, where: "age < 30").first   # or hubert.out.first
+hubert.edges(via: IsMarriedTo)                                   # edges carry attributes
+
+start_node.traverse :out, via: Connects, depth: 100              # depth-limited walk
 ```
-Conditions may be set, too. 
-```ruby
-hubert.nodes( :out, via: IsMarriedTo, where: "age < 30" )
-```
-gets all wives of hubert, who are younger then 30 years.  
-or
-```ruby
-Person.nodes( :outE, via: IsMarriedTo, where: { divorced: false } )
 
-```
-gets all wives where the divorced-condition, which is set on the edge, is false. 
-
-### Query
-
-A **Query Preprocessor** is implemented. Its adapted from ActiveOrient. The [documentation](https://github.com/topofocus/active-orient/wiki/OrientQuery)
-is still valid, but the class has changed to `Arcade::Query`. 
-
-### Match
-
-A simple **Match Statement Generator** is provided for convenience. As the [declarative syntax](https://github.com/ArcadeData/arcadedb-docs/blob/main/src/main/asciidoc/sql/SQL-Match.adoc)  is very intuitive, a preprocessor should not be 
-necessary. However, with the help of some ruby magic, the creation of match-statements is simply an no-brainer.
+MATCH generator — also from a vertex instance (handy when `params[:rid]` is given):
 
 ```ruby
-a =  Arcade::Match.new( type: Person, as: :persons)
-                  .out( IsMarriedTo )
-                  .node( where: 'age < 30')
-a.to_s
-=>  Match { type: person, as: persons }.out('is_married_to'){ where: ( age < 30) } RETURN persons
-
-a.execute.select_results  #  sends the statement to the database and returns Arcade Objects. 
+Arcade::Match.new(type: Person, as: :p).out(IsMarriedTo).node(where: 'age < 30').execute.select_results
+Watchlist.match(symbol: 'iBit', as: :w).out(HasUnderlying).node(as: :u)
+"#49:0".load_rid.match.out(HasUnderlying).node(as: :u)
 ```
 
-To query properties on Edges, `inE`, and `outE` are present.
-```ruby
-a =  Arcade::Match.new( type: Person, as: :persons)   ->  Match { type: person, as: persons}
-a.outE via: IsMarriedTo, where: { year: 1990..2000 }  ->  .outE('is_married_to'){ where: year between 1990 and 2000}
-                                                      ->  .outV('is_maried_to')  ...
-
-a.outE via: [IsMarriedTo, IsMarriedIn], where: { year: 1990..2000 }, as: :bride 
-                                                      ->   .outV('is_married_in') ... 
-```
-
-Match statements can also refer to a vertex:
-```ruby 
-p = Person.find name: 'tux'
-c = Person.find name: 'hilde'
-a = Arcade::Match.new( vertex: p )                    -> Match { type: person, rid: 2:0 }
-                 .out( IsMarriedTo )                  ->       .out('is_married_to')
-                 .node( as: :wife )                   ->       { as: wife }
-                 .out( HasChild )                     ->       .out('has_child')
-                 .node( vertex: c )                   ->       { type: person, rid: 2:1 }
-                                                      -> Return wife
-``` 
-fetches the vertex between two known vertices. This is the fastest lookup mechanism if the vertices are prefetched. 
-
-Arcade::Match-objects can be used as `from:` argument to Arcade::Query-Statements; hybrid queries are 
-easily constructed without extensive string-manipulations.
-
-#### Vertex based Match statements
-
-A `match`-method is implemented for  Vertex-Classes and vertices.
-
-The class-method takes any argument (except `as:`) as part of a `where`-condition.
+Query objects nest (hybrid queries without string surgery):
 
 ```ruby
-  
-m = Watchlist.match( symbol: 'iBit', as: :ibit ) 
-             .out( HasUnderlying)
-             .node( as: :u )
-           
-m.to_s
-  => "MATCH { type: watchlist, where: ( symbol='iBit' ), as: ibit }
-            .out('has_underlying'){ as: u } 
-      RETURN ibit,u "
+Query.new(from: match_object, projection: 'median(note_count)', where: '$depth>=50')
 ```
 
-The instance-method is extremly handy in web-applications. If the `rid` is part of the `params`-hash,
-associated nodes are easily selected
+## TimeSeries (new in 0.5.4)
+
+Native ArcadeDB time-series types: columnar, compressed, tag-partitioned.
+**Not vertices** — no rid, no edges. Membership lives in tags, values in typed fields.
 
 ```ruby
-params[:rid] =>  "#49:0"
+# model/ohlcv.rb
+class Ohlcv < Arcade::Timeseries
+  timestamp :ts, precision: :second          # date-granular series: use :second
+  tags   symbol: String, currency: String
+  fields open: Float, high: Float, low: Float, close: Float, volume: Integer
+end
 
-m= params[:rid].load_rid.match.out( HasUnterlying ).node( as: :u )
-m.to_s
- => "MATCH { type: strategie, rid: #49:0 }.out('has_underlying'){ as: u } RETURN u "
+Ohlcv.create_type
+
+# write — Line Protocol under the hood, batched
+Ohlcv.write symbol: 'SAPX:GER', currency: 'EUR', ts: Date.new(2026,10,20),
+            open: 290.0, high: 296.0, low: 290.0, close: 295.5, volume: 120
+Ohlcv.write_many rows   # array of hashes, one POST per batch
+
+# read — SQL range pushdown
+Ohlcv.range from: '2026-01-01', tags: { symbol: 'SAPX:GER' }
+Ohlcv.latest tags: { symbol: 'SAPX:GER' }        # => {ts:, close:, ...} or nil
+
+# weekly candles in one query
+Ohlcv.bucket '7d', from: Date.new(2024,10,1), tags: { symbol: 'SAPX:GER' },
+                   aggregate: { close: :last, high: :max, low: :min, volume: :sum }
 ```
-## Low Level Database Requests
-The **second Layer** handles Database-Requests.  
-In its actual implementation, these requests are delegated to the HTTP/JSON-API.
 
-`Arcade::Init` uses the database specification of the `arcade.yml` file.   
-The database-handle is always present through `Arcade::Init.db`
+Accepted `ts` values: `Time`, `Date`, `DateTime`, ISO-String, epoch-seconds — normalised
+to UTC and to the declared precision. Timezones: server timestamps are stored absolute;
+build Date objects UTC (`Time.utc`) or comparisons drift by the host offset.
+
+## RAG
+
+`require 'arcade/rag_schema'` — vector + full-text schema for retrieval pipelines.
+See `RAG_SCHEMA.md` and `examples/rag_example.rb`.
+
+## Transactions & audit
 
 ```ruby
-db =  Arcade::Init.db
-
-$ db.get nn, mm  # nn=2; mm=0                   # returns a Aracde:Base object
-                                                # rid is either "#11:10:" or two numbers
-$ db.query querystring                          # returns either an Array of results (as  Hash) 
-$ db.execute { querystring }                    # execute a non idempotent query within a (nested) transaction
-$ db.create <name>, attribute: value ....       # Creates a new <Document | Vertex> and returns the rid
-                                                # Operation is performed as Database-Transaction and is rolled back on error
-$ db.insert <name>, attribute: value ....       # Inserts a new <Document | Vertex> and returns the new object
-$ db.create_edge <name>, from: <rid> or [rid, rid, ..] , to: <rid> or [rid, rid, ..]
-
+db = Arcade::Init.db
+db.begin_transaction; ... ; db.commit   # or db.rollback
 ```
 
-**Convert database input to Arcade::Base Models**
+`Arcade::Revision` subclasses keep an append-only `protocol` stack of
+`Arcade::RevisionRecord` entries; every `update` appends (old value + action + user).
 
-Either  `db.query` or  `db.execute` return the raw JSON-input from the database. It can always converted to model-objects by chaining
-`allocate_model` or `select_result`.
+## Low-level access
 
 ```ruby
-$ db.query "select from my_names limit 1"
-# which is identical to
-$ My::Names.query( limit: 1).execute
- => [{:@out=>0, :@rid=>"#225:6", :@in=>0, :@type=>"my_names", :@cat=>"v", :name=>"Zaber"}] 
-# then
-$ My::Names.query( limit: 1).execute.allocate_model.to_human
- => ["<my_names[#225:6]: name: Zaber>" ]
- # replaces the hash with a My::Names Object 
+Arcade::Api.query(db, "select from x")            # parsed :result (array)
+Arcade::Api.execute(db) { "update x set ..." }    # write, retry on 'Please retry'
+Arcade::Api.get_json("ts/#{db}/latest?type=...")  # raw body (ts endpoints)
+Arcade::Api.post_text("ts/#{db}/write?precision=s", lines)  # Line Protocol
+db.query("select ...").allocate_model             # hashes -> model objects
 ```
 
+Query payload hash: `{ query:, language: :sql|:cypher|:gremlin|:neo4j, params:, limit:, serializer: :graph|:record }`.
 
-The **Base Layer** implements a low level access to the database API. 
+## Server & version notes (verified ArcadeDB 26.10)
 
-```ruby
+| Observation | Consequence |
+|---|---|
+| `schema:types` does not list timeseries types | existence probe: `POST /ts/{db}/query` → 400 `unknownTypes`/`does not exist` = absent (`type_exists?` uses this) |
+| `CREATE TIMESERIES TYPE` registers asynchronously (~1 s) | `create_type` waits for visibility; a write right after create fails with `unknownTypes` otherwise |
+| `DELETE FROM <ts-type> WHERE ...` reports a count but keeps rows (26.10.1) | no window-replace possible; re-writing a timestamp **appends** — deduplicate on read |
+| timeseries timestamp precision defaults to NANOSECOND | declare `PRECISION` explicitly; numeric literals are interpreted per precision |
+| `bucket` is a reserved word in SQL | aliased in backticks by `bucket()` |
+| `IF NOT EXISTS` unsupported on `CREATE TIMESERIES TYPE` | guarded by `type_exists?` |
+| Line Protocol needs pre-created types (`tsAutoCreateType` off by default) | `write_many` fails with `unknownTypes` if the type is missing |
+| persistent HTTP connections die after ~3 s idle | Primitives renew the handle after 2 s inactivity |
 
-$ Arcade::Api.databases                        # returns an array of known databases
-$ Arcade::Api.create_database <a string>       # returns true if successfull
-$ Arcade::Api.drop_database   <a string>       # returns true if successfull
+## Testing
 
-$ Arcade::Api.begin_transaction <database>
-$ Arcade::Api.create_document <database>, <type>,  attribute: value , ...
-$ Arcade::Api.execute( <database>  ) { <query>  }
-$ Arcade::Api.commit <database>                #  or Arcade::Api.rollback  
-
-
-$ Arcade::Api.query( <database>  ) { <query>  }
-$ Arcade::Api.get_record <database>,  rid      #  returns a hash
+```bash
+bundle install && bundle exec rspec                  # needs a reachable ArcadeDB server
+bundle exec rspec spec/lib/timeseries_spec.rb        # single file; spec/lib/* against arcade.yml :test db
 ```
 
+Model files for specs live in `spec/model/` (Zeitwerk-loaded). The spec suite is the
+authoritative behaviour reference — read `spec/lib/*` before assuming API shape.
 
-`<query>` is  either a  string or   a hash: 
-```ruby 
-{  :query      => "<the query string> ",
-   :language   => one of :sql, :cypher, :gmelin: :neo4 ,
-	 :params     =>   a  hash of parameters,
-	 :limit      => a number ,
-	 :serializer =>  one of :graph, :record }    
-```	   
-
-## ORM Behavior
-
-Simple tasks are implemented on the model layer.
-
-### Ensure that a Record exists
-
-The `upsert` command either updates or creates a database record.   
-
-```ruby
-  User.upsert name: 'Hugo'
-  # or
-  User.upsert set: { age: 46 }, where: { name: 'Hugo' }
-```
-either creates the record (and returns it) or returns the existing database entry. Obviously, the addressed attribute (where condition) 
-must have a proper index. 
-
-The `upsert` statement provides a smart method to ensure the presence of a defined starting point. 
-
-### Assign Nodes to a Vertex 
-
-Apart from accessing attributes by their method-name, adjacent edges and notes are fetched through
-
-```ruby 
-  new_vertex = ->(n) { Node.create( note_count: n )  }                      ## lambda to create a Node type record
-  nucleus    =  BaseNode.create item: 'b'                                   ## create a start node
-  (1..10).each{ |n| nucleus.assign( via: Connects, vertex: new_vertex[n]) } ## connect nodes via Connects-Edges
-```
-After creating a star-like structure, the environment can be explored 
-```ruby 
-  nucleus.edges.to_human
-  =>["<connects[#80:14] :.: #4:0->{}->#34:2>",                                  
-     "<connects[#79:13] :.: #4:0->{}->#31:1>",                                  
-     ( ... )
-     "<connects[#79:14] :.: #4:0->{}->#31:2>"] 
-
-   nucleus.nodes.to_human
- => ["<node[#34:2]: item: 10>",                                                         
-     "<node[#31:1]: item: 1>",                                                          
-     ( ... )
-     "<node[#31:2]: item: 9>"]    
-```
-
-Edges provide a `vertices`-method to load connected ones.  Both vertices and edges expose `in`, `out`,  `both`-methods to select connections further. 
-Specific edge-classes (types) are provided with the `via:` parameter,  as shown in `assign` above. 
-
-
-### Traverse Facility
-
-To ease queries to the graph database, `Arcade::Query` supports traversal of nodes
-
-Create a Chain of Nodes:
-```ruby
-
-  def linear_elements start, count  #returns the edge created
-      new_vertex = ->(n) { Arcade::ExtraNode.create( note_count: n )  }
-      (2..count).each{ |n| start = start.assign vertex: new_vertex[n], via: Arcade::Connects  }
-  end
-   
-  start_node =  Arcade::ExtraNode.create( item: 'linear'  )
-  linear_elements start_node , 200
-```
-
-Select a range of nodes and perform a mathematical operation
-
-```ruby 
-  hundred_elements =  start_node.traverse :out, via: Arcade::Connects, depth: 100
-  median = Query.new from: hundred_elements,
-               projection: 'median(note_count)',
-                    where: '$depth>=50'
-  median.to_s
-  -=> select median(note_count) from  ( traverse out(connects) from #52:0 while $depth < 100 )  where $depth>=50  
-   =>   {:"median(note_count)"=>75.5 }
-```
-
-### Transactions
-
-Database-Transactions are largely encapsulated
+## Repository layout
 
 ```
-db =  Arcade::Init.db
-db.begin_transaction
-
-{ perform insert, update, query, etc tasks in the database }
-
-db.commit 
-
-# or
-
-db.rollback
-
-```
-### Audit proofed Bookings
-
-Although ArcadeDB is a mutable database, the ruby-Interface supports basic audit proofed transactions.
-Two specialized Database-Types are included:
-
-* Arcade::RevisionRecord –  A document class, intended to be embedded in Revision-Records
-* Arcade::Revision       –  A vertex-class with specialized `insert-` and `update-` methods
-
-If a vertex is based on `Arcade::Revision`, a `protocol`-property is included. Its initialised with a single `Arcade::RevisionRecord` Object. Each `update` adds an `Arcade::RevisionRecord` to the protocol stack.
-
-```ruby
-  m= Member.insert( name: "Hubert", 
-                 surname: "Hugo", 
-                   birth: Date.new( 1976,3,15  ) ) { 'record initiated' }
-
-  m.update( birth: Date.new( 1978,3,15  )  ) { "member provided correct date via mail"  }
-    
-  m.protocol  =>  Date    | User |  Action                                | old
-             --------------------------------------------------------------------------------
-             =>  1.1.2024 | root |  record initiated                      |
-             =>  1.2.2024 | root |  member provided correct date via mail | birth: "1976-3-15"
-
+lib/arcade.rb              entry point (requires below)
+lib/arcade/                base, database, query, match, timeseries, api/, support/
+lib/model/                 base classes (vertex, edge, document, revision, timeseries)
+lib/models.rb              base-class loader
+examples/                  documented use cases
+spec/lib, spec/model       rspec suite (authoritative)
+bin/console                irb shortcut per environment
 ```
 
 ## Contributing
 
-Bug reports and pull requests are welcome. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
-
-## Code of Conduct
-
-Everyone interacting in the Core project’s codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/topofocus/arcadedb/blob/master/CODE_OF_CONDUCT.md).
+Bug reports and pull requests are welcome — this project follows the
+[Contributor Covenant](http://contributor-covenant.org) code of conduct
+([detail](https://github.com/topofocus/arcadedb/blob/master/CODE_OF_CONDUCT.md)).
+New behaviour ships with a spec in `spec/lib/` and, if server-quirk-sensitive, a row
+in the Server & version notes table.

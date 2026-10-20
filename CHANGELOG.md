@@ -51,3 +51,14 @@ All notable changes to this project will be documented in this file.
 - support for RAG
 - RAG modus is invoked through "rag_db_init"  in the model file
 
+## 0.5.4 - 2026-10-20
+- Arcade::Timeseries — model class for native time-series types
+  - schema DSL: timestamp (precision-aware) / tags / fields → CREATE TIMESERIES TYPE
+  - write / write_many via InfluxDB Line Protocol (new Api.post_text)
+  - range, bucket (ts.timeBucket + ts.last aggregates), latest (Api.get_json / post_json)
+  - create_type waits for asynchronous type registration
+- README rebuilt for machine-readable consumption; server-quirk table added
+  (schema:types blind to TS types, DELETE reports but does not delete TS rows on 26.10.1,
+   ns timestamp default, reserved word `bucket`)
+- spec/lib/timeseries_spec.rb (5 examples)
+
