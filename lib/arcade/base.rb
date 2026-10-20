@@ -53,7 +53,7 @@ module Arcade
         begin
         loop do
           if the_class.respond_to?(:demodulize)
-            if [ 'Document','Vertex', 'Edge'].include?(the_class.demodulize)
+            if [ 'Document','Vertex', 'Edge', 'Timeseries'].include?(the_class.demodulize)
               if  the_class == superclass  # no inheritance
                   db.create_type the_class.demodulize, to_s.snake_case
               else

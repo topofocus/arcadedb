@@ -31,6 +31,7 @@ require_relative '../lib/arcade/config'
 require_relative '../lib/arcade/database'
 require_relative '../lib/arcade/match'
 require_relative '../lib/arcade/query'
+require_relative '../lib/arcade/timeseries'
 require_relative '../lib/arcade/init'
 require_relative '../lib/arcade/rag_schema'
 require_relative "../lib/models"

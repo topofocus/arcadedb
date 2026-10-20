@@ -79,6 +79,49 @@ module Arcade
   #    response.raise_for_status
     end
 
+    # ------------------------------  post text ----------------------------------------------------- #
+    # posts a plain-text body (used by the TimeSeries Line Protocol endpoint)
+    def post_text command, body
+      case response = http.post( Config.base_uri + command, body: body )
+      in {status: 200..299}
+        response.status
+       in {status: 400..}
+        answer = response.json( symbolize_names: true )
+        answer[:detail] ||= answer[:error]   # ts-endpoints report error only
+        raise Arcade::QueryError.new **answer
+      else
+        raise response
+      end
+    end
+
+    # ------------------------------  post json raw ------------------------------------------------- #
+    # posts a json body, returns the parsed body (not the :result part)
+    def post_json command, payload
+      case response = http.post( Config.base_uri + command, json: payload )
+      in {status: 200..299}
+        JSON.parse( response.body, symbolize_names: true )
+       in {status: 400..}
+        answer = response.json( symbolize_names: true )
+        answer[:detail] ||= answer[:error]
+        raise Arcade::QueryError.new **answer
+      else
+        raise response
+      end
+    end
+
+    # ------------------------------  get json ------------------------------------------------------ #
+    # GET returning the parsed body (not only the :result part)
+    def get_json command
+      case response = http.get( Config.base_uri + command )
+      in {status: 200..299}
+        JSON.parse( response.body, symbolize_names: true )
+       in {status: 400..}
+        raise Arcade::QueryError.new **response.json( symbolize_names: true )
+      else
+        raise response
+      end
+    end
+
     # ------------------------------ transaction      ------------------------------------------------- #
     #
     # The payload, optional as a JSON, accepts the following parameters:
