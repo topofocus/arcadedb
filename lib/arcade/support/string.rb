@@ -9,7 +9,7 @@ module Arcade
       def camelcase_and_namespace
         if  self.count("_")  >= 1 || self.count('-') >=1
           delimiters = Regexp.union(['-', '_'])
-          n,c= self.split(delimiters).then { |first, *rest| [first.tap {|s| s[0] = s[0].upcase}, rest.map(&:capitalize).join]  }
+          n,c= self.split(delimiters).then { |first, *rest| [first.tap {|s| s[0] = s[0].upcase if s[0]}, rest.map(&:capitalize).join]  }
           ## if base is the first part of the type-name, probably Arcade::Base is choosen a namespace. thats wrong
           # Arcade::Base descendants are prefetched in Init.models
           # They have to be fetched to  load both  `Arcade::Ge` and `Arcade::GeSomething`
